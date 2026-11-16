@@ -1,0 +1,1851 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 2 · 数据价值初探</title>
+
+<!-- Fonts: Noto Serif SC (中文标题) / Source Serif 4 (英文衬线) / Noto Sans SC (正文) / IBM Plex Mono (标签) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@600;700;900&family=Source+Serif+4:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+<style>
+/* === THEME ===
+   暖白纸面 + 墨色 + 唯一强调蓝；青、赭仅用于示意图 */
+:root {
+  --paper: #faf8f4;
+  --paper-2: #f2eee6;
+  --ink: #1d2433;
+  --ink-2: #4a5263;
+  --ink-3: #8a90a0;
+  --blue: #24509e;
+  --teal: #1f7a72;
+  --ochre: #c27a1a;
+  --rule: #cfcac0;
+
+  --f-serif-cn: 'Noto Serif SC', 'Source Serif 4', serif;
+  --f-serif-en: 'Source Serif 4', 'Noto Serif SC', serif;
+  --f-sans: 'Noto Sans SC', sans-serif;
+  --f-mono: 'IBM Plex Mono', monospace;
+
+  --stage-bg: #e9e5dc;
+  --slide-bg: var(--paper);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* === VIEWPORT-BASE (固定 1920×1080 舞台) === */
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-viewport { position: fixed; inset: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; background: var(--slide-bg, #fff); }
+.slide { position: absolute; inset: 0; width: 1920px; height: 1080px; overflow: hidden; display: block; visibility: hidden; opacity: 0; pointer-events: none; background: var(--slide-bg, #fff); }
+.slide.active, .slide.visible { visibility: visible; opacity: 1; pointer-events: auto; z-index: 1; }
+img, video, canvas, svg { max-width: 100%; max-height: 100%; }
+.deck-controls { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 1000; }
+@media print {
+  html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+  .deck-viewport { position: static; overflow: visible; background: #fff; }
+  .deck-stage { position: static; width: auto; height: auto; transform: none !important; background: none; }
+  .slide { position: relative; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 1920px; height: 1080px; break-after: page; page-break-after: always; }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+  .deck-controls { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+}
+
+/* === 动效：进入页面时依次浮现 === */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .9s var(--ease), transform .9s var(--ease); }
+.slide.visible .reveal { opacity: 1; transform: none; }
+.d1 { transition-delay: .10s; } .d2 { transition-delay: .25s; } .d3 { transition-delay: .40s; }
+.d4 { transition-delay: .55s; } .d5 { transition-delay: .70s; } .d6 { transition-delay: .85s; }
+
+/* === COVER 封面 === */
+.cover .toprule { position: absolute; left: 96px; right: 96px; top: 56px; height: 3px; background: var(--ink); }
+.cover .kicker {
+  position: absolute; left: 96px; top: 92px;
+  font: 500 22px/1 var(--f-mono); letter-spacing: .16em; color: var(--ink-3); text-transform: uppercase;
+}
+.cover .kicker b { color: var(--blue); font-weight: 500; }
+
+.cover .title { position: absolute; left: 96px; top: 140px; width: 980px; }
+.cover h1 { font: 900 144px/1.08 var(--f-serif-cn); color: var(--ink); letter-spacing: .02em; }
+.cover h1 span { color: var(--blue); display: block; }
+.cover .sub {
+  margin-top: 28px; font: 700 38px/1.5 var(--f-serif-cn); color: var(--ink);
+}
+
+/* 本讲结构 = outline（对应原稿"papers in this talk"） */
+.cover .outline { position: absolute; left: 96px; top: 650px; width: 940px; }
+.cover .outline .hd {
+  font: 500 18px/1 var(--f-mono); letter-spacing: .18em; color: var(--ink-3);
+  padding-bottom: 14px; border-bottom: 1px solid var(--rule); margin-bottom: 4px;
+}
+.cover .outline .row {
+  display: flex; align-items: baseline; gap: 28px; padding: 11px 0;
+  border-bottom: 1px solid var(--paper-2);
+}
+.cover .outline .no { font: 500 20px/1 var(--f-mono); letter-spacing: .12em; color: var(--blue); width: 120px; white-space: nowrap; }
+.cover .outline .en { font: 600 28px/1.2 var(--f-serif-en); color: var(--ink); }
+.cover .outline .cn { font: 400 24px/1.2 var(--f-sans); color: var(--ink-2); margin-left: auto; }
+
+/* 主讲人 + 校徽 */
+.cover .who { position: absolute; left: 96px; bottom: 56px; display: flex; align-items: center; gap: 28px; }
+.cover .who img { width: 124px; height: 124px; }
+.cover .who .name { font: 700 34px/1.2 var(--f-serif-cn); color: var(--ink); }
+.cover .who .org { font: 400 24px/1.55 var(--f-sans); color: var(--ink-2); margin-top: 6px; }
+.cover .who .meta { font: 400 20px/1.6 var(--f-mono); color: var(--ink-3); letter-spacing: .02em; }
+
+/* 右侧示意图：AI 四次浪潮 */
+.cover .fig { position: absolute; left: 1120px; top: 190px; width: 704px; height: 760px; }
+.fig svg { width: 100%; height: 100%; max-width: none; max-height: none; overflow: visible; }
+.fig .curve { stroke-dasharray: 1200; stroke-dashoffset: 1200; transition: stroke-dashoffset 2.2s .5s var(--ease); }
+.slide.visible .fig .curve { stroke-dashoffset: 0; }
+.fig .node { opacity: 0; transform-box: fill-box; transform-origin: center; transform: scale(.2); transition: opacity .6s var(--ease), transform .6s var(--ease); }
+.slide.visible .fig .node { opacity: 1; transform: none; }
+.fig .n1 { transition-delay: .6s; } .fig .n2 { transition-delay: 1.0s; } .fig .n3 { transition-delay: 1.4s; } .fig .n4 { transition-delay: 1.9s; }
+.fig .lab { opacity: 0; transition: opacity .8s ease; }
+.slide.visible .fig .lab { opacity: 1; }
+.fig .l1 { transition-delay: .8s; } .fig .l2 { transition-delay: 1.2s; } .fig .l3 { transition-delay: 1.6s; } .fig .l4 { transition-delay: 2.1s; }
+.fig text { font-family: var(--f-sans); }
+.fig .ver { font-family: var(--f-mono); font-weight: 500; }
+.fig .cap { font-family: var(--f-serif-en); font-style: italic; }
+
+/* === 页码/导航（舞台之外的 UI） === */
+.deck-controls { font: 500 14px var(--f-mono); color: var(--ink-3); letter-spacing: .1em; user-select: none; }
+
+/* =====================================================
+   CONTENT SLIDES（内页通用组件）
+   ===================================================== */
+.c .toprule { position: absolute; left: 96px; right: 96px; top: 56px; height: 3px; background: var(--ink); }
+.c .tag { position: absolute; left: 96px; top: 80px; font: 500 20px/1 var(--f-mono); letter-spacing: .16em; color: var(--ink-3); text-transform: uppercase; }
+.c .tag b { color: var(--blue); font-weight: 500; }
+.c .pg  { position: absolute; right: 96px; top: 80px; font: 500 20px/1 var(--f-mono); letter-spacing: .1em; color: var(--ink-3); }
+.c .body { position: absolute; left: 96px; right: 96px; top: 140px; bottom: 96px; }
+.c .src { position: absolute; left: 96px; right: 96px; bottom: 34px; padding-top: 10px; border-top: 1px solid var(--rule);
+          font: 400 17px/1.45 var(--f-mono); color: var(--ink-3); letter-spacing: .01em; }
+.c .src b { color: var(--ink-2); font-weight: 500; }
+
+.c h2 { font: 900 72px/1.18 var(--f-serif-cn); color: var(--ink); letter-spacing: .01em; }
+.c h2 em { font-style: normal; color: var(--blue); }
+.c h3 { font: 700 36px/1.3 var(--f-serif-cn); color: var(--ink); }
+.c .lede { font: 400 34px/1.65 var(--f-sans); color: var(--ink-2); }
+.c .lede b, .c p b { color: var(--ink); font-weight: 700; }
+.c p { font: 400 30px/1.65 var(--f-sans); color: var(--ink-2); }
+.c .mono { font-family: var(--f-mono); }
+.c .blue { color: var(--blue); } .c .teal { color: var(--teal); } .c .ochre { color: var(--ochre); }
+.c .muted { color: var(--ink-3); }
+.c .en { font-family: var(--f-serif-en); font-style: italic; }
+
+/* 布局 */
+.c .abs { position: absolute; }
+.c .flex { display: flex; } .c .col { display: flex; flex-direction: column; }
+.c .gap16 { gap: 16px; } .c .gap24 { gap: 24px; } .c .gap32 { gap: 32px; } .c .gap48 { gap: 48px; }
+.c .grow { flex: 1; } .c .center { align-items: center; } .c .between { justify-content: space-between; }
+
+/* 图片 */
+.c figure { margin: 0; position: relative; }
+.c figure img { display: block; width: 100%; height: 100%; object-fit: cover; border: 1px solid var(--rule); background: #fff; }
+.c figure.contain img { object-fit: contain; }
+.c figcaption { margin-top: 10px; font: 400 18px/1.4 var(--f-mono); color: var(--ink-3); }
+
+/* 卡片 */
+.c .card { background: #fff; border: 1px solid var(--rule); border-top: 4px solid var(--ink); padding: 28px 30px; }
+.c .card.b { border-top-color: var(--blue); } .c .card.t { border-top-color: var(--teal); } .c .card.o { border-top-color: var(--ochre); } .c .card.g { border-top-color: var(--ink-3); }
+.c .card h3 { font-size: 34px; margin-bottom: 12px; }
+.c .card p { font-size: 27px; line-height: 1.6; }
+.c .card .n { font: 500 20px/1 var(--f-mono); letter-spacing: .14em; color: var(--ink-3); margin-bottom: 14px; }
+
+/* 大数字 */
+.c .stat .v { font: 900 120px/1 var(--f-serif-en); color: var(--blue); letter-spacing: -.02em; }
+.c .stat .v small { font-size: 52px; font-weight: 700; margin-left: 4px; }
+.c .stat .l { font: 400 26px/1.45 var(--f-sans); color: var(--ink-2); margin-top: 10px; }
+
+/* 引用 */
+.c .quote { font: 700 56px/1.4 var(--f-serif-cn); color: var(--ink); }
+.c .quote .en { display: block; margin-top: 22px; font: 400 italic 34px/1.5 var(--f-serif-en); color: var(--ink-2); }
+.c .quote-mark { font: 900 200px/0.6 var(--f-serif-en); color: var(--blue); opacity: .18; }
+
+/* 表格 */
+.c table { border-collapse: collapse; width: 100%; }
+.c th { font: 500 20px/1 var(--f-mono); letter-spacing: .12em; text-align: left; color: var(--ink-3); padding: 0 20px 14px 0; border-bottom: 2px solid var(--ink); text-transform: uppercase; }
+.c td { font: 400 27px/1.5 var(--f-sans); color: var(--ink-2); padding: 18px 20px 18px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.c td:first-child { font-weight: 700; color: var(--ink); white-space: nowrap; }
+
+/* 标签/药丸 */
+.c .pill { display: inline-block; font: 500 20px/1 var(--f-mono); letter-spacing: .08em; padding: 8px 14px; border: 1.5px solid currentColor; border-radius: 99px; }
+.c .pill.fill { color: #fff; background: var(--blue); border-color: var(--blue); }
+
+/* 章节页 */
+.chapter .big { position: absolute; left: 96px; top: 150px; font: 900 420px/1 var(--f-serif-en); color: var(--blue); opacity: .10; letter-spacing: -.04em; }
+.chapter .ttl { position: absolute; left: 96px; top: 420px; }
+.chapter .ttl .k { font: 500 24px/1 var(--f-mono); letter-spacing: .2em; color: var(--blue); margin-bottom: 26px; }
+.chapter .ttl h2 { font-size: 150px; line-height: 1.1; }
+.chapter .ttl .s { margin-top: 28px; font: 400 40px/1.5 var(--f-sans); color: var(--ink-2); }
+.chapter .subs { position: absolute; left: 96px; right: 96px; bottom: 100px; display: flex; gap: 0; border-top: 1px solid var(--rule); }
+.chapter .subs div { flex: 1; padding-top: 20px; font: 400 26px/1.4 var(--f-sans); color: var(--ink-2); }
+.chapter .subs div b { display: block; font: 500 20px/1 var(--f-mono); letter-spacing: .14em; color: var(--blue); margin-bottom: 10px; }
+
+/* 逐项浮现 */
+.st > * { opacity: 0; transform: translateY(22px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
+.slide.visible .st > * { opacity: 1; transform: none; }
+.st > *:nth-child(1) { transition-delay: .15s; } .st > *:nth-child(2) { transition-delay: .3s; } .st > *:nth-child(3) { transition-delay: .45s; }
+.st > *:nth-child(4) { transition-delay: .6s; } .st > *:nth-child(5) { transition-delay: .75s; } .st > *:nth-child(6) { transition-delay: .9s; }
+.st > *:nth-child(7) { transition-delay: 1.05s; } .st > *:nth-child(8) { transition-delay: 1.2s; }
+
+/* 交互控件 */
+.c .tabs { display: flex; gap: 12px; }
+.c .tab { font: 500 22px/1 var(--f-mono); letter-spacing: .06em; padding: 16px 24px; border: 1.5px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; transition: all .2s; }
+.c .tab:hover { background: var(--paper-2); }
+.c .tab.on { background: var(--ink); color: #fff; }
+.c .tab.b.on { background: var(--blue); border-color: var(--blue); }
+.c .hint { font: 400 20px/1 var(--f-mono); color: var(--ink-3); letter-spacing: .06em; }
+
+/* outline 浮层 */
+#outline { position: fixed; inset: 0; z-index: 2000; background: rgba(250,248,244,.97); display: none; overflow: auto; padding: 5vh 6vw; font-family: var(--f-sans); color: var(--ink); }
+#outline.open { display: block; }
+#outline h1 { font: 900 clamp(28px,3.4vw,52px)/1.2 var(--f-serif-cn); margin-bottom: 3vh; }
+#outline h1 span { color: var(--blue); }
+#outline .sec { margin-bottom: 3vh; }
+#outline .sec h4 { font: 500 clamp(12px,1vw,16px)/1 var(--f-mono); letter-spacing: .16em; color: var(--blue); border-bottom: 1px solid var(--rule); padding-bottom: 1vh; margin-bottom: 1.4vh; }
+#outline .items { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(220px,22vw,360px), 1fr)); gap: .6vh 2vw; }
+#outline a { display: flex; gap: 12px; padding: .8vh 0; color: var(--ink); text-decoration: none; font-size: clamp(14px,1.2vw,20px); line-height: 1.4; cursor: pointer; border-bottom: 1px dotted var(--rule); }
+#outline a i { font: normal 500 clamp(11px,.9vw,14px)/1.8 var(--f-mono); color: var(--ink-3); min-width: 2.2em; }
+#outline a:hover { color: var(--blue); }
+#outline a.cur { color: var(--blue); font-weight: 700; }
+#outline .close { position: fixed; right: 3vw; top: 3vh; font: 500 14px var(--f-mono); letter-spacing: .1em; color: var(--ink-3); cursor: pointer; }
+.deck-controls { display: flex; gap: 22px; align-items: center; background: rgba(250,248,244,.85); padding: 6px 16px; border-radius: 99px; }
+.deck-controls button { all: unset; cursor: pointer; color: var(--ink-2); font: 500 14px var(--f-mono); letter-spacing: .1em; }
+.deck-controls button:hover { color: var(--blue); }
+
+/* 侧边导航栏 */
+#sbTab { position: fixed; left: 0; top: 50%; transform: translateY(-50%); z-index: 1500; width: 26px; height: 96px; background: rgba(250,248,244,.9); border: 1px solid var(--rule); border-left: none; border-radius: 0 8px 8px 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font: 500 13px var(--f-mono); color: var(--ink-3); writing-mode: vertical-rl; letter-spacing: .2em; transition: opacity .25s, color .2s; opacity: .55; }
+#sbTab:hover { opacity: 1; color: var(--blue); }
+#sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 340px; z-index: 1800; background: rgba(250,248,244,.98); border-right: 1px solid var(--rule); box-shadow: 6px 0 24px rgba(29,36,51,.08); transform: translateX(-102%); transition: transform .3s cubic-bezier(.16,1,.3,1); display: flex; flex-direction: column; font-family: var(--f-sans); color: var(--ink); }
+#sidebar.open { transform: none; }
+#sidebar .sbh { padding: 18px 20px 12px; border-bottom: 1px solid var(--rule); display: flex; align-items: center; justify-content: space-between; }
+#sidebar .sbh b { font: 900 17px var(--f-serif-cn); } #sidebar .sbh b span { color: var(--blue); }
+#sidebar .sbh button { all: unset; cursor: pointer; font: 500 12px var(--f-mono); color: var(--ink-3); letter-spacing: .1em; }
+#sidebar .sbh button:hover { color: var(--blue); }
+#sidebar .sbl { overflow-y: auto; flex: 1; padding: 6px 0 24px; }
+#sidebar .sbs > .sbt { display: flex; align-items: center; gap: 8px; padding: 11px 20px; cursor: pointer; font: 500 12px var(--f-mono); letter-spacing: .1em; color: var(--blue); border-top: 1px solid var(--rule); user-select: none; }
+#sidebar .sbs:first-child > .sbt { border-top: none; }
+#sidebar .sbt:before { content: '▸'; font-size: 11px; transition: transform .2s; }
+#sidebar .sbs.open > .sbt:before { transform: rotate(90deg); }
+#sidebar .sbt em { margin-left: auto; font-style: normal; color: var(--ink-3); }
+#sidebar .sbi { display: none; }
+#sidebar .sbs.open .sbi { display: block; }
+#sidebar .sbi a { display: flex; gap: 10px; padding: 7px 20px 7px 34px; font-size: 14px; line-height: 1.4; color: var(--ink-2); cursor: pointer; text-decoration: none; border-left: 3px solid transparent; }
+#sidebar .sbi a i { font: normal 500 11px/1.9 var(--f-mono); color: var(--ink-3); min-width: 1.9em; }
+#sidebar .sbi a:hover { background: #f0ece3; color: var(--ink); }
+#sidebar .sbi a.cur { color: var(--blue); font-weight: 700; border-left-color: var(--blue); background: #eef2fa; }
+@media print { #sbTab, #sidebar { display: none !important; } }
+
+/* === L2 扩展组件 === */
+.c .chip { display: inline-block; font: 500 24px/1 var(--f-sans); padding: 14px 20px; background: #fff; border: 1px solid var(--rule); border-left: 4px solid var(--blue); color: var(--ink); }
+.c .chips { display: flex; flex-wrap: wrap; gap: 14px; }
+.c .tl { position: relative; display: flex; gap: 0; border-top: 3px solid var(--ink); }
+.c .tl button { all: unset; cursor: pointer; flex: 1; padding: 22px 6px 0; text-align: left; position: relative; font: 500 24px/1.2 var(--f-mono); color: var(--ink-3); transition: color .2s; }
+.c .tl button:before { content: ''; position: absolute; left: 0; top: -12px; width: 20px; height: 20px; border-radius: 50%; background: var(--paper); border: 3px solid var(--ink-3); transition: all .2s; }
+.c .tl button small { display: block; margin-top: 8px; font: 400 19px/1.35 var(--f-sans); color: var(--ink-3); padding-right: 10px; }
+.c .tl button:hover { color: var(--blue); }
+.c .tl button.on { color: var(--blue); }
+.c .tl button.on:before { background: var(--blue); border-color: var(--blue); transform: scale(1.3); }
+.c .tl button.on small { color: var(--ink); font-weight: 700; }
+.c .bignum { font: 900 150px/1 var(--f-serif-en); color: var(--blue); letter-spacing: -.03em; }
+.c .bignum small { font-size: 58px; margin-left: 6px; }
+.c .arrow { font: 500 56px/1 var(--f-mono); color: var(--ink-3); align-self: center; }
+.c input[type=range] { width: 100%; accent-color: var(--blue); height: 6px; }
+.c .kv { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--rule); font: 400 26px/1.3 var(--f-sans); color: var(--ink-2); }
+.c .kv b { font: 700 40px/1 var(--f-serif-en); color: var(--ink); }
+.c .kv b.pos { color: var(--teal); } .c .kv b.neg { color: #b4402d; }
+.c figure.crop img { object-fit: cover; }
+.c .bar { height: 26px; background: var(--paper-2); position: relative; }
+.c .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--blue); transition: width .3s; }
+
+/* === 版式统一：内容在正文区垂直居中，避免“上重下空” === */
+.c .body.flex { align-items: center; }
+.c .body:not(.flex) { display: flex; flex-direction: column; justify-content: center; }
+.c .body:not(.flex) > .flex, .c .body:not(.flex) > .col { flex: 0 0 auto; }
+</style>
+</head>
+<body>
+
+<div class="deck-viewport">
+  <div class="deck-stage" id="stage">
+<script>
+/* 页内分步：时间线等；翻页键先走完步进再换页 */
+window.registerSlideSteps = function (slide, max, onGo) {
+  let idx = 0;
+  slide._stepNav = {
+    max,
+    get idx() { return idx; },
+    go(i) {
+      idx = Math.max(0, Math.min(max - 1, i));
+      onGo(idx);
+    },
+    reset() { this.go(0); }
+  };
+  slide._stepNav.go(0);
+};
+window.slideStepNext = function (slide) {
+  const n = slide._stepNav;
+  if (!n || n.idx >= n.max - 1) return false;
+  n.go(n.idx + 1);
+  return true;
+};
+window.slideStepPrev = function (slide) {
+  const n = slide._stepNav;
+  if (!n || n.idx <= 0) return false;
+  n.go(n.idx - 1);
+  return true;
+};
+window.TL = function (id, did, data, def) {
+  if (def === undefined) def = 0;
+  const box = document.getElementById(id);
+  const det = document.getElementById(did);
+  const slide = box.closest('.slide');
+  const pick = (i) => {
+    [...box.children].forEach((b, j) => b.classList.toggle('on', j === i));
+    const d = data[i];
+    det.innerHTML = '<div class="n">' + d[0] + '</div><h3 style="font-size:44px">' + d[2] + '</h3><p style="font-size:28px;margin-top:12px">' + d[3] + '</p>';
+  };
+  data.forEach((d, i) => {
+    const b = document.createElement('button');
+    b.innerHTML = d[0] + '<small>' + d[1] + '</small>';
+    b.onclick = () => slide._stepNav.go(i);
+    box.appendChild(b);
+  });
+  registerSlideSteps(slide, data.length, pick);
+  slide._stepNav.go(def);
+};
+</script>
+    <!-- === SLIDE 1 · 封面 === -->
+    <section class="slide cover" data-sec="开场" data-title="封面">
+      <div class="toprule"></div>
+      <div class="kicker reveal d1"><b>Lecture 2</b> &nbsp;·&nbsp; 人工智能产业实践 &nbsp;·&nbsp; MBA / EMBA</div>
+      <div class="title">
+        <h1 class="reveal d2">数据价值<span>初探</span></h1>
+        <p class="sub reveal d3">从大数据到人工智能：<br>数据，如何变成商业价值</p>
+      </div>
+      <div class="outline reveal d4">
+        <div class="hd">IN THIS LECTURE</div>
+        <div class="row"><span class="no">PART 1</span><span class="en">The Big Data Era</span><span class="cn">大数据时代</span></div>
+        <div class="row"><span class="no">PART 2</span><span class="en">The AI Era</span><span class="cn">人工智能时代</span></div>
+        <div class="row"><span class="no">PART 3</span><span class="en">Data Value</span><span class="cn">数据价值</span></div>
+      </div>
+      <div class="who reveal d5">
+        <img src="assets/logo-xjtu-red.png" alt="西安交通大学校徽">
+        <div>
+          <div class="name">常象宇 <span style="font-family:var(--f-serif-en);font-weight:600;font-size:28px;color:var(--ink-2)">Xiangyu Chang</span></div>
+          <div class="org">西安交通大学 管理学院</div>
+          <div class="meta">xiangyuchang@xjtu.edu.cn</div>
+        </div>
+      </div>
+      <div class="fig reveal d3">
+        <svg viewBox="0 0 704 760" aria-label="数据 到 AI 到 价值">
+          <line x1="20" y1="610" x2="684" y2="610" stroke="#1d2433" stroke-width="3"/>
+          <path class="curve" d="M 80 560 C 220 560, 240 390, 360 370 S 540 150, 620 100" fill="none" stroke="#24509e" stroke-width="5" stroke-linecap="round"/>
+          <g class="node n1"><circle cx="80" cy="560" r="22" fill="#8a90a0"/></g>
+          <g class="node n2"><circle cx="360" cy="370" r="30" fill="#1f7a72"/></g>
+          <g class="node n3"><circle cx="620" cy="100" r="44" fill="#24509e"/><circle cx="620" cy="100" r="44" fill="none" stroke="#24509e" stroke-opacity=".25" stroke-width="14"/></g>
+          <g class="lab l1"><text class="ver" x="80" y="652" text-anchor="middle" font-size="24" fill="#8a90a0">DATA</text><text x="80" y="686" text-anchor="middle" font-size="24" fill="#4a5263">数据</text></g>
+          <g class="lab l2"><text class="ver" x="360" y="652" text-anchor="middle" font-size="24" fill="#1f7a72">AI</text><text x="360" y="686" text-anchor="middle" font-size="24" fill="#4a5263">智能</text></g>
+          <g class="lab l3"><text class="ver" x="620" y="652" text-anchor="middle" font-size="24" fill="#24509e">VALUE</text><text x="620" y="686" text-anchor="middle" font-size="24" fill="#4a5263">商业价值</text></g>
+          <text class="cap" x="352" y="745" text-anchor="middle" font-size="28" fill="#1d2433">data ⇢ intelligence ⇢ value</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- === SLIDE 2 · 三个问题 === -->
+    <section class="slide c" data-sec="开场" data-title="本讲要回答三个问题">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 2</b> · 开场</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:68px">本讲要回答<em>三个问题</em></h2>
+        <div class="flex gap32 st" style="margin-top:56px">
+          <div class="card b grow" style="min-height:430px"><div class="n">PART 1 · 大数据时代</div><h3 style="font-size:46px;margin-bottom:22px">数据<br>从哪里来？</h3><p>数字、图像、声音；互联网、基因、天文、工业、政务。</p></div>
+          <div class="card t grow" style="min-height:430px"><div class="n">PART 2 · 人工智能时代</div><h3 style="font-size:46px;margin-bottom:22px">国家为什么<br>押注数据与 AI？</h3><p>从“大数据战略”到“人工智能+”，数据成为 AI 的燃料。</p></div>
+          <div class="card o grow" style="min-height:430px"><div class="n">PART 3 · 数据价值</div><h3 style="font-size:46px;margin-bottom:22px">价值<br>怎么衡量？</h3><p>收入、支出、风险——以及如何给“效果”一个可量化的参考系。</p></div>
+        </div>
+        <div class="flex center gap24 reveal d5" style="margin-top:50px;font:500 30px var(--f-mono);color:var(--ink-2)">
+          <span class="pill">DATA</span><span class="muted">→</span><span class="pill">AI</span><span class="muted">→</span><span class="pill fill">BUSINESS VALUE</span>
+          <span style="margin-left:24px;font:400 26px var(--f-sans);color:var(--ink-3)">课程主线：本讲站在第一段与第三段之间</span>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P2、P37（课程主线 Data → AI → Business Value）</div>
+    </section>
+
+    <!-- === SLIDE 3 · 章节 Part 1 === -->
+    <section class="slide c chapter" data-sec="1 · 大数据时代" data-title="Part 1 · 大数据时代">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 2</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">01</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 1</div>
+        <h2 class="reveal d2">大数据<em>时代</em></h2>
+        <div class="s reveal d3">数据是什么，从哪里来，为什么成为“生产要素”</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>1.1</b>数据的三种形态</div>
+        <div><b>1.2</b>大数据从哪里来</div>
+        <div><b>1.3</b>数字经济与数据要素</div>
+        <div><b>1.4</b>数据进入决策与战略</div>
+      </div>
+    </section>
+
+    <!-- === SLIDE 4 · 什么是数据（互动）=== -->
+    <section class="slide c" data-sec="1 · 大数据时代" data-title="什么是数据？" id="s-what-data">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.1 数据的三种形态</div><div class="pg"></div>
+      <div class="body flex gap48 center what-data-hit" style="cursor:pointer;align-items:center">
+        <div class="col grow gap32" style="justify-content:center;align-items:center;text-align:center;min-height:520px">
+          <h2 class="reveal d1" style="font-size:108px;line-height:1.15">什么是<em>数据</em>？</h2>
+          <p id="whatDataA" style="font-family:var(--f-serif-en);font-size:64px;font-weight:600;color:var(--blue);letter-spacing:.02em;opacity:0;transform:translateY(24px);transition:opacity .45s cubic-bezier(.16,1,.3,1),transform .45s cubic-bezier(.16,1,.3,1)">Anything can be recalled.</p>
+          <p id="whatDataHint" class="mono muted reveal d3" style="font-size:24px;letter-spacing:.12em;margin-top:8px">点击画面，或按 → 显示</p>
+        </div>
+        <div style="width:520px" class="reveal d2">
+          <figure class="contain" style="height:560px"><img src="assets/p04_2.jpg" alt="日常终端留下的数字痕迹"></figure>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 课堂引入；英文定义 Anything can be recalled.（强调可记录、可回溯）；原 PPT P4 前铺垫</div>
+      <script>(function(){const slide=document.getElementById('s-what-data');const ans=document.getElementById('whatDataA');const hint=document.getElementById('whatDataHint');
+        registerSlideSteps(slide,2,i=>{const on=i>=1;ans.style.opacity=on?'1':'0';ans.style.transform=on?'translateY(0)':'translateY(24px)';hint.style.visibility=on?'hidden':'visible';});
+        slide.querySelector('.what-data-hit').addEventListener('click',()=>slideStepNext(slide));})();</script>
+    </section>
+
+    <!-- === SLIDE 4 · DATA? 你的一天（交互）=== -->
+    <section class="slide c" data-sec="1 · 大数据时代" data-title="DATA？你的一天留下了什么（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.1 数据的三种形态</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">DATA ?</div>
+          <h2 class="reveal d2" style="font-size:72px">你的一天，<br>留下了<em>什么数据</em>？</h2>
+          <p class="reveal d3" style="font-size:30px">点击一个日常动作，看它产生哪些数据。</p>
+          <div class="chips reveal d4" id="dayChips" style="margin-top:8px"></div>
+        </div>
+        <div style="width:640px" class="col gap24">
+          <figure class="reveal d3" style="height:300px"><img src="assets/p04_2.jpg" alt=""></figure>
+          <div class="card b grow reveal d4" id="dayCard"><div class="n" id="dayN">点击左侧动作</div><h3 id="dayH" style="font-size:40px"></h3><div class="chips" id="dayT" style="margin-top:10px"></div><p id="dayP" style="font-size:26px;margin-top:14px"></p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P4（DATA?）</div>
+      <script>(function(){const A=[['刷手机','点击、停留时长、浏览内容','数字,位置'],['手机支付','金额、商户、时间','数字,位置'],['打车出行','上下车地点、轨迹、评价','数字,位置,声音'],['拍照上传','图片本身、拍摄地点与时间','图像,位置'],['语音输入','声音波形，转写后的文字','声音,数字'],['网购下单','搜索词、浏览、购买、评价','数字'],['戴手表运动','心率、步数、睡眠','数字'],['进出门禁/人脸','人脸图像、通行记录','图像,数字']];
+        const box=document.getElementById('dayChips');A.forEach((a,i)=>{const b=document.createElement('button');b.className='tab';b.style.cssText='font-size:26px;padding:16px 22px';b.textContent=a[0];b.onclick=()=>{box.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));dayN.textContent='动作';dayH.textContent=a[0];dayP.textContent='产生：'+a[1];dayT.innerHTML=a[2].split(',').map(t=>'<span class="pill'+(t==='位置'?'':' fill')+'">'+t+'</span>').join('');};box.appendChild(b);if(i===0)b.click();});})();</script>
+    </section>
+
+    <!-- === SLIDE 5 · 三种形态（交互）=== -->
+    <section class="slide c" data-sec="1 · 大数据时代" data-title="数字、图像、声音：数据的三种形态（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.1 数据的三种形态</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:62px">数据不只是表格：<em>数字 · 图像 · 声音</em></h2><div class="tabs reveal d2" id="fmTabs"><button class="tab b on" data-k="0">数字</button><button class="tab b" data-k="1">图像</button><button class="tab b" data-k="2">声音</button></div></div>
+        <div id="fmPanels" style="margin-top:28px">
+          <div class="fm flex gap32" data-k="0">
+            <div class="col" style="width:540px"><figure class="contain" style="height:560px"><img src="assets/p05_1.png"></figure><figcaption>金融投资</figcaption></div>
+            <div class="col" style="width:480px"><figure class="contain" style="height:560px"><img src="assets/p05_2.png"></figure><figcaption>运动健康</figcaption></div>
+            <div class="col" style="width:320px"><figure class="contain" style="height:560px"><img src="assets/p05_3.png"></figure><figcaption>天气预报</figcaption></div>
+            <div class="col grow" style="justify-content:center"><div class="card b"><div class="n">特点</div><p style="font-size:27px">结构化，<b>天然可计算</b>：价格、指标、时间序列。</p></div></div>
+          </div>
+          <div class="fm flex gap32" data-k="1" style="display:none">
+            <div class="col" style="width:420px"><figure class="contain" style="height:560px"><img src="assets/p06_1.png"></figure><figcaption>医学成像</figcaption></div>
+            <div class="col" style="width:480px"><figure class="contain" style="height:560px"><img src="assets/p06_2.jpg"></figure><figcaption>指纹识别</figcaption></div>
+            <div class="col" style="width:420px"><figure class="contain" style="height:560px"><img src="assets/p06_3.png"></figure><figcaption>人脸识别</figcaption></div>
+            <div class="col grow" style="justify-content:center"><div class="card t"><div class="n">特点</div><p style="font-size:27px">非结构化，需要算法先“看懂”，才能变成可用特征。</p></div></div>
+          </div>
+          <div class="fm flex gap32" data-k="2" style="display:none">
+            <div class="col" style="width:480px"><figure class="contain" style="height:560px"><img src="assets/p07_1.jpg"></figure><figcaption>Siri</figcaption></div>
+            <div class="col" style="width:420px"><figure class="contain" style="height:560px"><img src="assets/p07_2.png"></figure><figcaption>搜狗语音输入</figcaption></div>
+            <div class="col" style="width:420px"><figure class="contain" style="height:560px"><img src="assets/p07_3.png"></figure><figcaption>微信语音转文字</figcaption></div>
+            <div class="col grow" style="justify-content:center"><div class="card o"><div class="n">特点</div><p style="font-size:27px">连续信号，“听写 → 理解”是 AI 最早走进日常的能力之一。</p></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P5–P7</div>
+      <script>document.querySelectorAll('#fmTabs .tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('#fmTabs .tab').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('#fmPanels .fm').forEach(p=>p.style.display=p.dataset.k===b.dataset.k?'flex':'none');});</script>
+    </section>
+
+    <!-- === SLIDE 6 · 终端 === -->
+    <section class="slide c" data-sec="1 · 大数据时代" data-title="每个终端都是传感器">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.1 数据的三种形态</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:66px">数据时代的特征：<em>每个终端都是传感器</em></h2>
+        <div class="flex gap32 st" style="margin-top:44px">
+          <div class="col grow gap16"><figure style="height:470px"><img src="assets/p08_1.jpg"></figure><h3>手机</h3><p style="font-size:26px">App、位置、摄像头、麦克风</p></div>
+          <div class="col grow gap16"><figure style="height:470px"><img src="assets/p08_2.jpg"></figure><h3>可穿戴设备</h3><p style="font-size:26px">心率、睡眠、运动轨迹</p></div>
+          <div class="col grow gap16"><figure style="height:470px"><img src="assets/p08_3.jpg"></figure><h3>车联网</h3><p style="font-size:26px">车辆状态、路况、驾驶行为</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P8</div>
+    </section>
+
+    <!-- === SLIDE 7 · 两个条件 === -->
+    <section class="slide c" data-sec="1 · 大数据时代" data-title="大数据时代 = 有数据 + 有能力处理数据">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.1 数据的三种形态</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:64px">大数据时代 = <em>有数据 + 有能力处理数据</em></h2>
+        <div class="flex gap48 reveal d3" style="margin-top:36px">
+          <div class="col grow gap16"><div class="mono blue" style="font-size:22px;letter-spacing:.14em">DATASET · 数据：越来越多</div><figure class="contain" style="height:520px"><img src="assets/p09_6.png"></figure><figcaption>全球数据量（ZB），2018 起为预测。Statista</figcaption></div>
+          <div class="col grow gap16"><div class="mono teal" style="font-size:22px;letter-spacing:.14em">COMPUTE · 算力：越来越强</div><figure class="contain" style="height:520px"><img src="assets/p09_1.png"></figure><figcaption>摩尔定律：芯片晶体管数量随时间指数增长</figcaption></div>
+        </div>
+        <p class="reveal d5" style="margin-top:22px;font-size:30px">两条指数曲线交汇——<b>数据 × 算力</b>，是机器学习得以大规模落地的前提。</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P9（Dataset / Data Manipulation Capacity）</div>
+    </section>
+
+    <!-- === SLIDE 8 · 互联网大数据 === -->
+    <section class="slide c" data-sec="1 · 大数据时代" data-title="大数据产生①：互联网大数据（主动产生）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 大数据从哪里来</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:560px"><figure class="contain reveal d3" style="height:760px"><img src="assets/p10_1.jpg"></figure></div>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">主动产生 · 用户在使用中留下</div>
+          <h2 class="reveal d2" style="font-size:64px">互联网：<em>每一次点击</em><br>都是一条数据</h2>
+          <div class="chips st" style="gap:12px">
+            <span class="chip">网页</span><span class="chip">点击</span><span class="chip">用户</span><span class="chip">邮件</span><span class="chip">照片/视频</span><span class="chip">Cookies</span><span class="chip">App</span><span class="chip">位置</span><span class="chip">用户生成内容</span><span class="chip">广告</span><span class="chip">评论</span><span class="chip">评价</span><span class="chip">社交关系</span><span class="chip">购买决策</span><span class="chip">即时消息</span><span class="chip">搜索词</span><span class="chip">新闻</span>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P10</div>
+    </section>
+
+    <!-- === SLIDE 9 · 基因 + 天文 === -->
+    <section class="slide c" data-sec="1 · 大数据时代" data-title="大数据产生②：基因与天文（主动采集）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 大数据从哪里来</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">主动采集 · 科学家为了研究而测量</div>
+        <h2 class="reveal d2" style="font-size:64px;margin-top:10px">科学也在<em>制造大数据</em></h2>
+        <div class="flex gap32 st" style="margin-top:34px">
+          <div class="card b grow" style="width:840px"><div class="n">基因</div><figure class="contain" style="height:330px"><img src="assets/p11_1.png"></figure><p style="font-size:26px;margin-top:14px">一个人的全基因组测序（约 30×），原始数据在 <b>百 GB</b> 量级⚠。</p></div>
+          <div class="card o grow" style="width:840px"><div class="n">天文</div><div class="flex gap16"><figure style="height:330px;width:50%"><img src="assets/p12_1.png"></figure><figure style="height:330px;width:50%"><img src="assets/p12_2.png"></figure></div><p style="font-size:26px;margin-top:14px">巡天望远镜每晚产出 <b>TB 级</b>数据；Rubin 天文台设计约 20 TB / 夜⚠。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P11–P12（原稿“One person 60 ZB”量级明显偏大，已改为百 GB 量级；⚠ 为约数，非精确值）</div>
+    </section>
+
+    <!-- === SLIDE 10 · 工业 + 政务 === -->
+    <section class="slide c" data-sec="1 · 大数据时代" data-title="大数据产生③：工业与政务（被动产生）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 大数据从哪里来</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">被动产生 · 系统运行的“副产品”</div>
+        <h2 class="reveal d2" style="font-size:64px;margin-top:10px">业务运转，<em>数据自然沉淀</em></h2>
+        <div class="flex gap24 st" style="margin-top:34px">
+          <div class="col grow gap16"><figure style="height:400px"><img src="assets/p13_1.png"></figure><h3>智能电网</h3><p style="font-size:25px">用电、负荷、故障</p></div>
+          <div class="col grow gap16"><figure style="height:400px"><img src="assets/p13_2.png"></figure><h3>数字油田</h3><p style="font-size:25px">井况、产量、设备传感</p></div>
+          <div class="col grow gap16"><figure style="height:400px"><img src="assets/p14_1.png"></figure><h3>政务大厅</h3><p style="font-size:25px">办件、证照、人口、企业</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P13–P14</div>
+    </section>
+
+    <!-- === SLIDE 11 · 三类产生方式 === -->
+    <section class="slide c" data-sec="1 · 大数据时代" data-title="大数据的三种产生方式">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 大数据从哪里来</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:66px">数据从哪里来？<em>三种方式</em></h2>
+        <table class="reveal d3" style="margin-top:40px"><thead><tr><th>方式</th><th>典型</th><th>谁在“生产”</th><th>管理视角</th></tr></thead><tbody>
+          <tr><td class="blue">主动产生</td><td>互联网大数据</td><td>海量用户</td><td>平台掌握，数据即资产</td></tr>
+          <tr><td class="teal">主动采集</td><td>天文、基因</td><td>研究机构</td><td>采集成本高，共享价值大</td></tr>
+          <tr><td class="ochre">被动产生</td><td>数字油田、智能电网、政务大厅</td><td>业务系统</td><td>数据沉睡，需要“唤醒”</td></tr></tbody></table>
+        <p class="reveal d5" style="margin-top:34px;font-size:30px">管理者的第一个问题：<b>我的组织里，有哪些数据正在“被动产生”却无人使用？</b></p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P15</div>
+    </section>
+
+    <!-- === SLIDE 12 · ZB 有多大（交互）=== -->
+    <section class="slide c" data-sec="1 · 大数据时代" data-title="1 ZB 有多大（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.3 数字经济与数据要素</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:62px">数据的量级：从 KB 到 <em>ZB</em></h2><div class="hint">拖动滑块</div></div>
+        <div class="flex gap48 reveal d3" style="margin-top:40px;align-items:center">
+          <div class="col grow gap24">
+            <div class="bignum" id="zbV">1<small>ZB</small></div>
+            <div style="font:400 32px/1.6 var(--f-sans);color:var(--ink-2)" id="zbT"></div>
+            <input type="range" id="zbR" min="0" max="6" step="1" value="6">
+            <div class="flex between mono muted" style="font-size:22px"><span>KB</span><span>MB</span><span>GB</span><span>TB</span><span>PB</span><span>EB</span><span>ZB</span></div>
+          </div>
+          <div class="card b" style="width:620px"><div class="n">换算</div>
+            <div class="kv"><span>1 ZB</span><b>10<sup style="font-size:22px">3</sup> EB</b></div><div class="kv"><span>1 ZB</span><b>10<sup style="font-size:22px">12</sup> GB</b></div><div class="kv"><span>相当于 1 TB 硬盘</span><b>10 亿块</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P29（1 ZB = 1 万亿 GB，约 10 亿块 1 TB 硬盘）</div>
+      <script>(function(){const U=['KB','MB','GB','TB','PB','EB','ZB'];const T=['一页文字约几 KB。','一张照片约几 MB。','一部高清电影约几 GB。','一块硬盘 TB 级；可存数百部电影。','PB：= 1000 TB；大型互联网公司的数据仓库量级。','EB：= 1000 PB。','ZB：= 1000 EB。全球每年新产生的数据已达数百 ZB 量级（见下一页）。'];
+        const r=document.getElementById('zbR');function up(){const i=+r.value;zbV.innerHTML='1<small>'+U[i]+'</small>';zbT.textContent=T[i];}r.oninput=up;up();})();</script>
+    </section>
+
+    <!-- === SLIDE 13 · 全球数据量 === -->
+    <section class="slide c" data-sec="1 · 大数据时代" data-title="全球数据量：预测被现实超越">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.3 数字经济与数据要素</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">IDC GLOBAL DATASPHERE</div>
+          <h2 class="reveal d2" style="font-size:62px">数据量：<br>2018 年的预测，<em>偏保守了</em></h2>
+          <p class="reveal d3" style="font-size:28px">2018 年报告预测 2025 年为 <b>175 ZB</b>；2026 年 6 月的最新口径，2025 年约 <b>218 ZB</b>，2030 年约 <b>719 ZB</b>。</p>
+          <div class="card o reveal d4"><div class="n">⚠ 口径提醒</div><p style="font-size:24px">DataSphere 统计“创建、采集、复制、消费”的总量，其中约 90% 是复制与消费——<b>不等于“有价值的新数据”</b>。</p></div>
+        </div>
+        <div style="width:900px" class="reveal d3">
+          <svg viewBox="0 0 900 700" style="width:900px;height:700px;max-width:none;max-height:none" id="idcSvg"></svg>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R11 IDC Global DataSphere（2018 年版 / 2026 年 6 月版）；原 PPT P16</div>
+      <script>(function(){const D=[['2018','(2018 版)','#8a90a0',33],['2025 预测','(2018 版)','#c27a1a',175],['2025','(2026 版)','#24509e',218.4],['2026','','#24509e',274.4],['2030 预测','','#1f7a72',718.5]];
+        const s=document.getElementById('idcSvg');let h='<line x1="40" y1="610" x2="880" y2="610" stroke="#1d2433" stroke-width="3"/>';
+        D.forEach((d,i)=>{const x=70+i*165,H=d[3]/718.5*520;h+=`<rect class="idcb" x="${x}" y="${610-H}" width="110" height="${H}" fill="${d[2]}" style="transform-box:fill-box;transform-origin:bottom;transform:scaleY(0);transition:transform 1s ${.3+i*.18}s cubic-bezier(.16,1,.3,1)"/><text x="${x+55}" y="${600-H}" text-anchor="middle" font-family="Source Serif 4" font-weight="700" font-size="32" fill="#1d2433">${d[3]}</text><text x="${x+55}" y="648" text-anchor="middle" font-size="22" fill="#4a5263" font-family="IBM Plex Mono">${d[0]}</text><text x="${x+55}" y="674" text-anchor="middle" font-size="19" fill="#8a90a0" font-family="IBM Plex Mono">${d[1]}</text>`;});
+        h+='<text x="40" y="30" font-size="22" fill="#8a90a0" font-family="IBM Plex Mono">ZETTABYTES / 年</text>';s.innerHTML=h;
+        new MutationObserver(()=>{const on=s.closest('.slide').classList.contains('visible');s.querySelectorAll('.idcb').forEach(r=>r.style.transform=on?'none':'scaleY(0)');}).observe(s.closest('.slide'),{attributes:true,attributeFilter:['class']});})();</script>
+    </section>
+
+    <!-- === SLIDE 14 · 中国数据 2025 === -->
+    <section class="slide c" data-sec="1 · 大数据时代" data-title="中国 2025：年度数据生产 52.26 ZB">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.3 数字经济与数据要素</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">全国数据资源调查报告（2025 年）· 国家数据局 · 2026.04</div>
+        <h2 class="reveal d2" style="font-size:64px;margin-top:10px">中国的数据：<em>规模领先，价值待释放</em></h2>
+        <div class="flex gap32 st" style="margin-top:44px">
+          <div class="card b grow stat"><div class="v">52.26<small>ZB</small></div><div class="l">2025 年全国数据生产总量<br>同比 <b>+27.28%</b>，约占全球 27.44%</div></div>
+          <div class="card t grow stat"><div class="v">2.53<small>ZB</small></div><div class="l">全国数据存储总量<br>同比 +21.05%；结构化数据占 22.13%</div></div>
+          <div class="card o grow stat"><div class="v">≈90<small>%</small></div><div class="l">数据生产增量来自<b>企业数据</b><br>具身智能数据同比 +477.78%</div></div>
+        </div>
+        <p class="reveal d5" style="margin-top:44px;font-size:30px">年度“生产”52 ZB，累计存储 2.5 ZB，结构化数据仅占其中约 22%——<b>数据多 ≠ 数据有价值</b>。</p>
+      </div>
+      <div class="src"><b>参考</b> R1 国家数据局《全国数据资源调查报告（2025年）》；⚠ 与 IDC 口径不同，不宜直接相除</div>
+    </section>
+
+    <!-- === SLIDE 16 · 数字经济定义 === -->
+    <section class="slide c" data-sec="1 · 大数据时代" data-title="数字经济的严格定义（十四五规划）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.3 数字经济与数据要素</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">《“十四五”数字经济发展规划》· 定义条款</div>
+        <h2 class="reveal d2" style="font-size:58px;margin-top:12px">数字经济：<em>继农业、工业之后</em>的主要经济形态</h2>
+        <div class="card b reveal d3" style="margin-top:36px;padding:36px 44px;border-left:6px solid var(--blue)">
+          <p style="font-size:34px;line-height:1.75;color:var(--ink);margin:0"><b>数字经济</b>是以<b>数据资源</b>为关键要素，以<b>现代信息网络</b>为主要载体，以<b>信息通信技术融合应用</b>、<b>全要素数字化转型</b>为重要推动力，促进<b>公平与效率</b>更加统一的新经济形态。</p>
+        </div>
+        <div class="flex gap24 reveal d4" style="margin-top:32px;font-size:26px;color:var(--ink-2)">
+          <span>关键要素 → <b class="blue">数据资源</b></span>
+          <span>载体 → <b class="blue">现代信息网络</b></span>
+          <span>推动力 → <b class="blue">ICT 融合</b> + <b class="blue">全要素数字化</b></span>
+        </div>
+        <div class="flex center reveal d5" style="margin-top:40px;gap:20px">
+          <div class="card g grow" style="text-align:center;padding:20px"><div class="n">农业经济</div><h3 style="font-size:28px">土地 · 劳动</h3></div>
+          <div class="arrow">→</div>
+          <div class="card g grow" style="text-align:center;padding:20px"><div class="n">工业经济</div><h3 style="font-size:28px">资本 · 技术</h3></div>
+          <div class="arrow">→</div>
+          <div class="card b grow" style="text-align:center;padding:20px"><div class="n">数字经济</div><h3 class="blue" style="font-size:28px">数据 · 网络 · 算力</h3></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 国务院《“十四五”数字经济发展规划》（2022.01）；原 PPT P16</div>
+    </section>
+
+    <!-- === SLIDE 16 · 要素演进（交互时间线）=== -->
+    <section class="slide c" data-sec="1 · 大数据时代" data-title="生产要素的演进：数据何时入列（交互）" id="s-factors">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.3 数字经济与数据要素</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:62px">从“按劳分配”到<em>“数据入列”</em></h2><div class="hint">← → 逐步 · 亦可点击节点</div></div>
+        <div class="tl reveal d2" id="tlF" style="margin-top:56px"></div>
+        <div class="card b reveal d3" id="tlFd" style="margin-top:34px;min-height:290px"></div>
+        <div class="flex gap16 reveal d4" style="margin-top:26px;align-items:center"><span class="mono muted" style="font-size:20px;letter-spacing:.12em">要素清单</span><span class="chip">劳动</span><span class="chip">资本</span><span class="chip">技术</span><span class="chip">管理</span><span class="chip">知识</span><span class="chip" style="border-left-color:var(--ochre);font-weight:700">数据</span></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P17（历次党代会 / 全会关于生产要素的表述）</div>
+      <script>TL('tlF','tlFd',[['1992','十四大','按劳分配为主体，多种分配方式并存','兼顾公平与公正。生产要素参与分配的思路尚未展开。'],['1993','十四届三中','个人资本等生产要素参与收益分配','“资本”作为要素参与分配，被正式写入。'],['1997','十五大','重视资本、劳动力、技术等生产要素','“技术”进入要素清单。'],['2002','十六大','劳动、资本、技术与管理按贡献参与分配','确立按生产要素贡献参与分配的原则；“管理”入列。'],['2013','十八届三中','健全资本、技术、管理与知识等由要素市场决定的报酬机制','“知识”入列；强调要素价格由市场决定。'],['2019','十九届四中','增列“数据”：健全劳动、资本、土地、知识、技术、管理与数据等要素由市场评价贡献、按贡献决定报酬','<b class="blue">数据首次被明确为生产要素。</b>'],['2021.12','数据交易所','第二代数据交易所等数字机构陆续设立','数据从“被承认”走向“可交易”。']],0);</script>
+    </section>
+
+    <!-- === SLIDE 17 · 数据二十条 === -->
+    <section class="slide c" data-sec="1 · 大数据时代" data-title="数据二十条：数据基础制度的“四梁八柱”">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.3 数字经济与数据要素</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">2022.12 · 《关于构建数据基础制度更好发挥数据要素作用的意见》</div>
+        <h2 class="reveal d2" style="font-size:64px;margin-top:10px">“数据二十条”：<em>四项基础制度</em></h2>
+        <div class="flex gap24 st" style="margin-top:40px">
+          <div class="card b grow" style="min-height:370px"><div class="n">01</div><h3>数据产权</h3><p style="font-size:25px">保障权益、合规使用</p></div>
+          <div class="card t grow" style="min-height:370px"><div class="n">02</div><h3>流通交易</h3><p style="font-size:25px">合规高效、场内外结合</p></div>
+          <div class="card o grow" style="min-height:370px"><div class="n">03</div><h3>收益分配</h3><p style="font-size:25px">体现效率、促进公平</p></div>
+          <div class="card g grow" style="min-height:370px"><div class="n">04</div><h3>安全治理</h3><p style="font-size:25px">安全可控、弹性包容</p></div>
+        </div>
+        <div class="flex gap32 reveal d5" style="margin-top:34px;font:400 26px/1.5 var(--f-sans);color:var(--ink-2)"><span><b class="blue">2023</b> 国家数据局成立</span><span><b class="blue">2024.01</b> 《“数据要素×”三年行动计划（2024—2026）》</span><span><b class="blue">2026</b> “数据要素价值释放年”</span></div>
+      </div>
+      <div class="src"><b>参考</b> R2–R3 国家数据局 2025 年工作要点；中国政府网《数据要素乘数效应有力释放》</div>
+    </section>
+
+    <!-- === SLIDE 18 · 数据资产入表 === -->
+    <section class="slide c" data-sec="1 · 大数据时代" data-title="数据资产入表：会计上“承认”数据">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.3 数字经济与数据要素</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">2024.01.01 起施行 · 《企业数据资源相关会计处理暂行规定》</div>
+        <h2 class="reveal d2" style="font-size:64px;margin-top:10px">数据进入资产负债表：<em>规模还很小</em></h2>
+        <div class="flex gap32 st" style="margin-top:40px">
+          <div class="card b grow stat"><div class="v">109<small>家</small></div><div class="l">A 股上市公司披露入表<br>（2025 年中；2024 年报为 100 家）</div></div>
+          <div class="card t grow stat"><div class="v">26.4<small>亿元</small></div><div class="l">入表总额，其中电信运营商<br>合计约 16 亿元（60.7%）</div></div>
+          <div class="card o grow stat"><div class="v">375<small>家</small></div><div class="l">非上市公司入表（截至 2025.9）<br>已获融资合计约 19 亿元</div></div>
+        </div>
+        <p class="reveal d5" style="margin-top:38px;font-size:29px">难点不在“有没有数据”，而在<b>确权、估值、审计口径</b>——这正是 MBA 的问题。</p>
+      </div>
+      <div class="src"><b>参考</b> R4 上海高级金融学院《中国企业数据资产入表情况跟踪报告（2025 上半年）》；增速已放缓</div>
+    </section>
+
+    <!-- === SLIDE 19 · 决策树 === -->
+    <section class="slide c" data-sec="1 · 大数据时代" data-title="数据开始改变决策：2008 年的决策树">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 数据进入决策与战略</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:520px"><figure class="contain reveal d3" style="height:830px"><img src="assets/p19_1.png"></figure></div>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">I LIKE BIG DATA · 开端</div>
+          <h2 class="reveal d2" style="font-size:62px">一棵<em>决策树</em>，<br>解释了谁赢下哪里</h2>
+          <div class="col gap16 st">
+            <div class="card b"><p style="font-size:27px">2008 年民主党初选：县一级数据 → 少数几个变量，就能划分出选民结构。</p></div>
+            <div class="card o"><p style="font-size:27px">变量：<b>种族比例、教育水平、地区、贫困率、人口密度……</b></p></div>
+            <div class="card g"><p style="font-size:27px">这就是机器学习里最经典的模型之一：<b>决策树</b>（Lecture 5 再见）。</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P19；The New York Times, Amanda Cox（2008）</div>
+    </section>
+
+    <!-- === SLIDE 20 · 美国 2012 战略 === -->
+    <section class="slide c" data-sec="1 · 大数据时代" data-title="美国：2012 年《大数据研发计划》">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 数据进入决策与战略</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">2012.03.29 · 白宫 OSTP</div>
+          <h2 class="reveal d2" style="font-size:64px">美国率先把大数据<br>上升为<em>国家战略</em></h2>
+          <div class="col gap16 st">
+            <div class="card b"><p style="font-size:27px">《Big Data Research and Development Initiative》</p></div>
+            <div class="card g"><p style="font-size:27px">首批承诺投入 <b>2 亿美元以上</b>，用于大数据的采集、存储、分析技术</p></div>
+          </div>
+        </div>
+        <div style="width:760px" class="col gap16"><figure class="crop reveal d3" style="height:340px"><img src="assets/p21_1.jpg" style="object-position:50% 0"></figure><figure class="crop reveal d4" style="height:340px"><img src="assets/p21_2.jpg"></figure></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P21</div>
+    </section>
+
+    <!-- === SLIDE 22 · Simons 研究所 === -->
+    <section class="slide c" data-sec="1 · 大数据时代" data-title="学界响应：Simons 研究所的大数据项目">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 数据进入决策与战略</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:62px">学界同步行动：<em>“大数据的理论基础”</em></h2>
+        <div class="flex gap32 reveal d3" style="margin-top:34px">
+          <div style="width:900px"><figure class="crop" style="height:470px"><img src="assets/p22_1.png" style="object-position:50% 0"></figure><figcaption>Simons Institute for the Theory of Computing（UC Berkeley，2012 年成立，6000 万美元基金）</figcaption></div>
+          <div style="width:760px"><figure class="crop" style="height:470px"><img src="assets/p24_1.png" style="object-position:50% 100%"></figure><figcaption>2013 秋季项目：Theoretical Foundations of Big Data Analysis</figcaption></div>
+        </div>
+        <p class="reveal d5" style="margin-top:36px;font-size:30px">政府、产业、学界，在 2012–2013 年<b>几乎同时</b>把“大数据”当作一个独立的问题来对待。</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P22–P24</div>
+    </section>
+
+    <!-- === SLIDE 23 · Part 1 小结 === -->
+    <section class="slide c" data-sec="1 · 大数据时代" data-title="Part 1 小结">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 小结</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:66px">Part 1 · <em>三句话</em></h2>
+        <div class="col gap24 st" style="margin-top:48px">
+          <div class="card b"><div class="n">01 · 来源</div><h3 style="font-size:40px">数据来自互联网、科学观测与业务系统——越来越多，也越来越“沉睡”。</h3></div>
+          <div class="card t"><div class="n">02 · 要素</div><h3 style="font-size:40px">2019 年起，数据被明确为生产要素；制度在补课：产权、交易、分配、治理。</h3></div>
+          <div class="card o"><div class="n">03 · 问号</div><h3 style="font-size:40px">数据入表、数据交易刚刚起步——<span class="ochre">数据到底值多少钱？</span>（Part 3）</h3></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- === SLIDE 24 · 章节 Part 2 === -->
+    <section class="slide c chapter" data-sec="2 · 人工智能时代" data-title="Part 2 · 人工智能时代">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 2</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">02</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 2</div>
+        <h2 class="reveal d2">人工智能<em>时代</em></h2>
+        <div class="s reveal d3">从“数据中国”到“人工智能+”：数据成为 AI 的燃料</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>2.1</b>中国的大数据战略</div>
+        <div><b>2.2</b>从大数据到人工智能</div>
+        <div><b>2.3</b>“人工智能+”与“十五五”</div>
+        <div><b>2.4</b>AI 时代的数据商业（五问）</div>
+      </div>
+    </section>
+
+    <!-- === SLIDE 25 · 数据中国 2015 === -->
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="“数据中国”成为国家战略（2015）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.1 中国的大数据战略</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:760px" class="col gap16"><figure class="reveal d3" style="height:500px"><img src="assets/p26_1.png"></figure><figcaption>2015.06.17 贵阳大数据应用展示中心</figcaption></div>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">2015 · 数据中国</div>
+          <h2 class="reveal d2" style="font-size:62px">首次提出<em>国家大数据战略</em></h2>
+          <div class="col gap16 st">
+            <div class="card b"><div class="n">2015.06 · 贵州</div><p style="font-size:26px">考察贵阳大数据广场，听取大数据产业发展汇报。</p></div>
+            <div class="card o"><div class="n">2015.11 · “十三五”建议</div><p style="font-size:26px">拓展网络经济空间，推进数据资源开放共享，<b>实施国家大数据战略</b>，超前布局下一代互联网。</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P26–P27</div>
+    </section>
+
+    <!-- === SLIDE 26 · 大数据纲要 十大工程 === -->
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="国家大数据纲要：十大工程">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.1 中国的大数据战略</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">《促进大数据发展行动纲要》· 5–10 年目标</div>
+        <h2 class="reveal d2" style="font-size:64px;margin-top:10px">十项工程：从<em>数据开放</em>到<em>安全保障</em></h2>
+        <div class="chips st" style="margin-top:40px;gap:16px">
+          <span class="chip" style="font-size:28px;padding:20px 26px">政府数据资源共享开放</span><span class="chip" style="font-size:28px;padding:20px 26px">国家大数据资源统筹发展</span><span class="chip" style="font-size:28px;padding:20px 26px">政府治理大数据</span><span class="chip" style="font-size:28px;padding:20px 26px">公共服务大数据</span><span class="chip" style="font-size:28px;padding:20px 26px">工业和新兴产业大数据</span><span class="chip" style="font-size:28px;padding:20px 26px">现代农业大数据</span><span class="chip" style="font-size:28px;padding:20px 26px">万众创新大数据</span><span class="chip" style="font-size:28px;padding:20px 26px">关键技术及产品研发与产业化</span><span class="chip" style="font-size:28px;padding:20px 26px">产业支撑能力提升</span><span class="chip" style="font-size:28px;padding:20px 26px">网络和大数据安全保障</span>
+        </div>
+        <p class="reveal d5" style="margin-top:46px;font-size:30px">一个共同点：<b>先让数据“流”起来</b>（共享、开放、统筹），再谈数据“用”起来。</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P28</div>
+    </section>
+
+    <!-- === SLIDE 27 · 世界第一数据大国 === -->
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="预测与现实：“2025 年成为世界第一数据大国”">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.1 中国的大数据战略</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:880px"><figure class="contain reveal d3" style="height:640px"><img src="assets/p29_1.jpg"></figure><figcaption>大数据发展阶段及预测，赛迪顾问，2012.11</figcaption></div>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">预测 → 回访</div>
+          <h2 class="reveal d2" style="font-size:60px">十多年前的预测，<br><em>回访</em>一下</h2>
+          <div class="col gap16 st">
+            <div class="card g"><div class="n">当年</div><p style="font-size:26px">预测 2020 年全球数据量 35 ZB；中国 2025 年将成为数据第一大国。</p></div>
+            <div class="card b"><div class="n">现在</div><p style="font-size:26px">2025 年中国年度数据生产 <b>52.26 ZB</b>，约占全球 27.44%——<b>全球数据量远超当年预测</b>。</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P29；R1 国家数据局（2026.04）；⚠ “第一大国”以何口径衡量，各来源不一</div>
+    </section>
+
+    <!-- === SLIDE 28 · 大数据 → AI 时间线（交互）=== -->
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="从“大数据”到“人工智能”：政策时间线（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.2 从大数据到人工智能</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:62px">从“大数据”到<em>“人工智能+”</em></h2><div class="hint">← → 逐步 · 亦可点击节点</div></div>
+        <div class="tl reveal d2" id="tlA" style="margin-top:56px"></div>
+        <div class="card b reveal d3" id="tlAd" style="margin-top:36px;min-height:330px"></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P30；R5 国务院《人工智能+意见》；R6 十五五规划纲要；R7 2026 政府工作报告（发改委解读）</div>
+      <script>TL('tlA','tlAd',[['2015.07','互联网+','《关于积极推进“互联网+”行动的指导意见》','把“互联网+人工智能”列为 11 项重点行动之一。'],['2016.03','十三五纲要','“人工智能”写入国家“十三五”规划纲要','“人工智能”一词首次进入国家五年规划。'],['2016.05','三年行动','四部委联合发布《“互联网+”人工智能三年行动实施方案》','发改委、科技部、工信部、中央网信办。'],['2017.03','两会','“人工智能”首次出现在政府工作报告','随后 2017.07 国务院印发《新一代人工智能发展规划》。'],['2024.03','AI+','“人工智能+”首次写入政府工作报告','从“互联网+”到“人工智能+”。'],['2025.08','AI+ 意见','国发〔2025〕11 号《关于深入实施“人工智能+”行动的意见》','设定 2027 / 2030 / 2035 三阶段目标，六大重点领域。'],['2026.03','十五五','“十五五”规划纲要：全面实施“人工智能+”；政府工作报告首提“智能经济”','并将“算力、算法、数据”作为数智化发展的三项底座。']],0);</script>
+    </section>
+
+    <!-- === SLIDE 29 · 2018–2020 AI 产品 === -->
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="人工智能 2018–2020：七类重点产品">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.2 从大数据到人工智能</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">2018–2020 · 人工智能国家战略</div>
+        <h2 class="reveal d2" style="font-size:64px;margin-top:10px">战略的落点：<em>具体的产品</em></h2>
+        <div class="flex gap16 st" style="margin-top:40px;flex-wrap:wrap">
+          <div class="card b" style="width:405px"><div class="n">01</div><h3>智能网联汽车</h3></div>
+          <div class="card t" style="width:405px"><div class="n">02</div><h3>智能服务机器人</h3></div>
+          <div class="card o" style="width:405px"><div class="n">03</div><h3>智能无人机</h3></div>
+          <div class="card g" style="width:405px"><div class="n">04</div><h3>医疗影像辅助系统</h3></div>
+          <div class="card b" style="width:405px"><div class="n">05</div><h3>视频图像身份识别</h3></div>
+          <div class="card t" style="width:405px"><div class="n">06</div><h3>智能翻译系统</h3></div>
+          <div class="card o" style="width:405px"><div class="n">07</div><h3>智能家居产品</h3></div>
+        </div>
+        <p class="reveal d5" style="margin-top:30px;font-size:28px">共同特征：<b>数据密集 + 场景明确 + 能被客户“看见”的产品</b>。</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P31</div>
+    </section>
+
+    <!-- === SLIDE 30 · 美国 AI 战略 === -->
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="美国的 AI 战略：2019 → 2021 → 2025">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.2 从大数据到人工智能</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:62px">同一时期，<em>美国在做什么</em></h2>
+        <div class="flex gap32 st" style="margin-top:34px">
+          <div class="col gap16" style="width:420px"><figure class="contain" style="height:520px"><img src="assets/p32_1.jpg"></figure><figcaption>2019.06 国家 AI 研发战略计划（更新版）</figcaption></div>
+          <div class="col gap16" style="width:400px"><figure class="contain" style="height:520px"><img src="assets/p33_1.png"></figure><figcaption>2021 国家安全委员会 AI 最终报告</figcaption></div>
+          <div class="card b grow" style="min-height:520px"><div class="n">2025.07 · 白宫</div><h3 style="font-size:40px">America’s AI Action Plan</h3><p style="font-size:27px;margin-top:14px">三大支柱：<b>加速创新</b>、<b>建设 AI 基础设施</b>、<b>主导国际外交与安全</b>。</p><p style="font-size:24px;margin-top:20px;color:var(--ink-3)">AI 被视为国家竞争力与安全问题；算力、数据、人才是关键资源。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P32–P33；2025 行动计划为课堂补充（建议核对白宫原文）</div>
+    </section>
+
+    <!-- === SLIDE 31 · AI+ 三阶段 === -->
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="“人工智能+”意见：三阶段目标">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 “人工智能+”与“十五五”</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:760px"><figure class="crop reveal d3" style="height:610px"><img src="assets/p34_1.png" style="object-position:50% 0"></figure><figcaption>国发〔2025〕11 号 · 2025.08.26 发布</figcaption></div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">国务院 · 2025.08</div>
+          <h2 class="reveal d2" style="font-size:60px">三个时间点：<em>2027 · 2030 · 2035</em></h2>
+          <div class="col gap16 st">
+            <div class="card b flex center gap24" style="padding:20px 28px"><div class="bignum" style="font-size:80px;min-width:200px">70<small style="font-size:36px">%+</small></div><p style="font-size:25px"><b>2027</b>：智能终端、智能体等应用普及率超 70%</p></div>
+            <div class="card t flex center gap24" style="padding:20px 28px"><div class="bignum" style="font-size:80px;min-width:200px;color:var(--teal)">90<small style="font-size:36px">%+</small></div><p style="font-size:25px"><b>2030</b>：普及率超 90%，智能经济成为重要增长极</p></div>
+            <div class="card o flex center gap24" style="padding:20px 28px"><div class="bignum" style="font-size:60px;min-width:200px;color:var(--ochre)">2035</div><p style="font-size:25px">全面步入智能经济和智能社会新阶段</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R5 国务院《关于深入实施“人工智能+”行动的意见》（中国政府网）</div>
+    </section>
+
+    <!-- === SLIDE 32 · 六大行动（交互）=== -->
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="“人工智能+”六大行动（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 “人工智能+”与“十五五”</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:62px">“人工智能+”：<em>六大行动</em></h2><div class="hint">点击领域</div></div>
+        <div class="flex gap32 reveal d3" style="margin-top:34px">
+          <div class="col gap16" style="width:620px" id="aiL"></div>
+          <div class="card b grow" style="min-height:600px"><div class="n" id="aiN">点击左侧领域</div><h3 id="aiH" style="font-size:44px"></h3><div class="col gap16" id="aiP" style="margin-top:18px"></div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R5 原文（各条款摘要，非全文）；原 PPT P35</div>
+      <script>(function(){const A=[['人工智能 + 科学技术','加速科学发现进程','加快科学大模型建设应用|打造开放共享的高质量科学数据集|推动技术研发模式创新、“从 1 到 N”落地'],['人工智能 + 产业发展','培育智能原生新业态','把 AI 融入战略规划、组织架构、业务流程|推进工业全要素智能化|农业、服务业数智化转型'],['人工智能 + 消费提质','拓展服务消费新场景','智能助理等服务新入口|智能网联汽车、AI 手机和电脑、机器人、穿戴设备|“万物智联”的智能终端生态'],['人工智能 + 民生福祉','创造新岗位，赋能传统岗位','探索人机协同的新型组织与管理模式|培育智能代理等新型工作形态|加强 AI 技能培训与就业风险评估'],['人工智能 + 治理能力','人机共生的治理新图景','政务服务：主动规划、全程智能办理|安全生产、防灾减灾、公共安全预警|生态环境监测与精准治理'],['人工智能 + 全球合作','普惠共享与全球治理','把 AI 作为造福人类的国际公共产品|帮助全球南方国家加强能力建设|共建人工智能全球治理体系']];
+        const L=document.getElementById('aiL');A.forEach((a,i)=>{const b=document.createElement('button');b.className='tab b';b.style.cssText='font-size:28px;padding:22px 26px;text-align:left;font-family:var(--f-sans)';b.textContent=a[0];b.onclick=()=>{L.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));aiN.textContent='0'+(i+1);aiH.textContent=a[1];aiP.innerHTML=a[2].split('|').map(t=>'<p style="font-size:28px;border-left:4px solid var(--blue);padding-left:18px">'+t+'</p>').join('');};L.appendChild(b);if(!i)b.click();});})();</script>
+    </section>
+
+    <!-- === SLIDE 33 · 十五五：算力 算法 数据 === -->
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="“十五五”：算力、算法、数据三项底座">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 “人工智能+”与“十五五”</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">“十五五”规划纲要（2026–2030）· 第十二章</div>
+        <h2 class="reveal d2" style="font-size:64px;margin-top:10px">强化<em>算力 · 算法 · 数据</em>高效供给</h2>
+        <div class="flex gap24 st" style="margin-top:40px">
+          <div class="card t grow" style="min-height:420px"><div class="n">算力</div><h3>全国一体化算力网</h3><p style="font-size:25px">东数西算；2025 年底全国智能算力 159 万 PFLOPS（FP16）</p></div>
+          <div class="card g grow" style="min-height:420px"><div class="n">算法</div><h3>模型算法迭代</h3><p style="font-size:25px">通用大模型与行业专用模型并行；多模态、智能体、具身智能</p></div>
+          <div class="card b grow" style="min-height:420px"><div class="n">数据</div><h3>高质量数据资源</h3><p style="font-size:25px">建设人工智能语料库、行业高质量数据集，建立训练数据合理使用制度</p></div>
+        </div>
+        <p class="reveal d5" style="margin-top:34px;font-size:28px">2026 年政府工作报告首次提出<b>“智能经济”</b>；2026 年被称为“数据要素价值释放年”。</p>
+      </div>
+      <div class="src"><b>参考</b> R6 “十五五”规划纲要；R7 国家发改委解读；R1 国家数据局（智能算力数据）</div>
+    </section>
+
+    <!-- === SLIDE 34 · AI 数据新角色 === -->
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="AI 时代：从“有没有数据”到“有没有对的数据”">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 AI 时代的数据商业</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">国家数据局 · 2026.11.14</div>
+          <h2 class="reveal d2" style="font-size:60px">模型企业的需求变了：<br>从“<span class="muted">有没有</span>数据”，<br>到“有没有<em>对的</em>数据”</h2>
+          <div class="card b reveal d4"><p style="font-size:27px">“把真实场景优势变成数据优势，再转化为模型能力和产业竞争力。”</p></div>
+        </div>
+        <div style="width:760px" class="col gap24 st">
+          <div class="card g"><div class="n">2025 · AI 训练 + 推理数据</div><div class="bignum" style="font-size:96px">199.5<small style="font-size:40px">EB</small></div><p style="font-size:24px">同比 +42.86%</p><div class="kv" style="margin-top:8px"><span>推理数据</span><b>101.3 EB</b></div><div class="bar"><i style="width:50.8%"></i></div><div class="kv"><span>训练数据</span><b>98.1 EB</b></div><div class="bar"><i style="width:49.2%;background:var(--teal)"></i></div><p style="font-size:24px;margin-top:10px"><b>推理数据首次超过训练数据</b></p></div>
+          <div class="flex gap16"><div class="card b grow stat" style="padding:20px 24px"><div class="v" style="font-size:72px">11万<small style="font-size:30px">+</small></div><div class="l" style="font-size:22px">高质量数据集（+61%）</div></div><div class="card o grow stat" style="padding:20px 24px"><div class="v" style="font-size:72px">2.1<small style="font-size:30px">×10¹⁶</small></div><div class="l" style="font-size:22px">全年词元（Token）调用量</div></div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R1 国家数据局《全国数据资源调查报告（2025年）》；R8 高质量数据集和数据标注先行先试现场会（2026.11.14）；训练数据 = 总量 − 推理数据，为推算值</div>
+    </section>
+
+    <!-- ===================== 2.4 AI 时代的数据商业（五问）===================== -->
+
+    <!-- === 五问总览 === -->
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="AI 时代的数据商业：五个问题">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 AI 时代的数据商业</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">数据 → 模型能力 → 商业价值</div>
+        <h2 class="reveal d2" style="font-size:64px;margin-top:10px">把<em>数据商业</em>讲清楚：五个问题</h2>
+        <div class="flex gap16 st" style="margin-top:46px">
+          <div class="card b grow" style="min-height:520px"><div class="n">Q1</div><h3>需要什么数据？</h3><p style="font-size:25px">大模型吃什么：规模、质量、数据墙</p></div>
+          <div class="card t grow" style="min-height:520px"><div class="n">Q2</div><h3>怎么建设？</h3><p style="font-size:25px">数据飞轮、高质量数据集、数采工厂</p></div>
+          <div class="card o grow" style="min-height:520px"><div class="n">Q3</div><h3>怎么交易？</h3><p style="font-size:25px">交易所、数据商，从“卖数据包”到“卖 Token”</p></div>
+          <div class="card g grow" style="min-height:520px"><div class="n">Q4</div><h3>多贵？</h3><p style="font-size:25px">授权费、侵权赔偿、标注公司估值、每小时数据价</p></div>
+          <div class="card b grow" style="min-height:520px"><div class="n">Q5</div><h3>为何=能力？</h3><p style="font-size:25px">物理 AI 的数采，AI4S 的自动化实验室</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 课程自拟框架；各问的证据见后续页</div>
+    </section>
+
+    <!-- ============ Q1 需要什么数据 ============ -->
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="Q1 大模型吃多少数据：万亿 Token">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · Q1 大模型需要什么数据</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">Q1 · 预训练数据规模（Token）</div>
+          <h2 class="reveal d2" style="font-size:58px">五年增长<em>约 120 倍</em></h2>
+          <div class="col gap16 st" style="margin-top:6px">
+            <div><div class="kv"><span>GPT-3 · 2020</span><b>0.3 T</b></div><div class="bar"><i style="width:.8%"></i></div></div>
+            <div><div class="kv"><span>Llama 2 · 2023</span><b>2 T</b></div><div class="bar"><i style="width:5.6%"></i></div></div>
+            <div><div class="kv"><span>Llama 3 · 2024</span><b>15 T</b></div><div class="bar"><i style="width:41.7%"></i></div></div>
+            <div><div class="kv"><span>Qwen3 · 2025</span><b>36 T</b></div><div class="bar"><i style="width:100%;background:var(--teal)"></i></div></div>
+          </div>
+          <p class="reveal d5" style="font-size:26px">1 T = 1 万亿 Token；<b>5 年间，训练数据量增长两个数量级</b>。</p>
+        </div>
+        <div style="width:860px"><figure class="contain reveal d3" style="height:620px"><img src="assets/dat-hf-fineweb.jpg"></figure><figcaption>FineWeb：15 T Token 的开源网页语料（Hugging Face）</figcaption></div>
+      </div>
+      <div class="src"><b>参考</b> R12 GPT-3 / Llama 2 / Llama 3 / Qwen3 技术报告；R13 Hugging Face FineWeb；⚠ 为官方披露的预训练量，口径（是否含多轮训练）不完全一致</div>
+    </section>
+
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="Q1 数据墙：公开文本快用完了">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · Q1 大模型需要什么数据</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:960px"><figure class="contain reveal d3" style="height:640px"><img src="assets/dat-epoch-datawall.jpg"></figure><figcaption>Epoch AI：公开文本存量与训练数据用量预测</figcaption></div>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">Data wall · 数据墙</div>
+          <h2 class="reveal d2" style="font-size:58px">人类写的公开文本，<br><em>快不够吃了</em></h2>
+          <div class="col gap16 st">
+            <div class="card b"><div class="n">预测</div><p style="font-size:26px">公开文本有效存量约 <b>300 T Token</b>；<b>2026–2032</b> 年间被训练用量追平。</p></div>
+            <div class="card t"><div class="n">出路 ①②③</div><p style="font-size:26px"><b>合成数据</b> · <b>多模态</b> · <b>私域 / 授权数据</b></p></div>
+            <div class="card o"><div class="n">出路 ④</div><p style="font-size:26px"><b>真实世界数据</b>：机器人、实验室——互联网上没有，只能自己造</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R14 Epoch AI《Will we run out of data?》；预测区间依赖假设</div>
+    </section>
+
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="Q1 三类数据：预训练 · 后训练 · 强化学习环境">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · Q1 大模型需要什么数据</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:60px">大模型要的<em>不是一种数据</em></h2><div class="hint">规模 → 质量 → 可验证</div></div>
+        <div class="flex gap32" style="margin-top:34px">
+          <div class="flex gap24 st" style="width:980px;flex-direction:column">
+            <div class="card b"><div class="n">① 预训练 · 要“量”</div><p style="font-size:26px">网页、书籍、代码、论文 → <b>去重、过滤、配比</b>（FineWeb 即清洗流水线）</p></div>
+            <div class="card t"><div class="n">② 后训练 · 要“质”</div><p style="font-size:26px">指令示范、偏好对比（RLHF）→ <b>领域专家</b>写答案、打分</p></div>
+            <div class="card o"><div class="n">③ 强化学习 · 要“可验证”</div><p style="font-size:26px">数学题、代码测试、软件环境 → 对错能<b>自动判定</b></p></div>
+          </div>
+          <div style="width:700px" class="reveal d3"><figure class="contain" style="height:540px"><img src="assets/dat-fineweb-blog.jpg"></figure><figcaption>FineWeb 技术博客：把网页“蒸馏”成高质量文本</figcaption></div>
+        </div>
+        <p class="reveal d5" style="margin-top:26px;font-size:28px">趋势：<b>越往后，数据越少、越贵、越专业</b>——这正是下一页“数据商业”的起点。</p>
+      </div>
+      <div class="src"><b>参考</b> R13 Hugging Face FineWeb 博客；三段式为通用做法的课堂归纳</div>
+    </section>
+
+    <!-- ============ Q2 怎么建设 ============ -->
+    <!-- === SLIDE 35 · 数据飞轮（交互）=== -->
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="数据飞轮：场景 → 数据 → 模型 → 应用 → 价值（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · Q2 怎么构建数据建设</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:760px" class="reveal d2"><svg viewBox="0 0 760 740" style="width:760px;height:740px;max-width:none;max-height:none" id="fly"></svg></div>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">一条主线 · 四个环节 · 一个闭环</div>
+          <h2 class="reveal d2" style="font-size:60px">高质量数据集：<br>建设的<em>数据飞轮</em></h2>
+          <div class="card b reveal d3" id="flyCard" style="min-height:260px"><div class="n">点击圆环上的环节</div><h3 id="flyH" style="font-size:40px"></h3><p id="flyP" style="font-size:27px;margin-top:10px"></p></div>
+          <div class="hint">场景牵引数据 → 数据驱动模型 → 模型赋能应用 → 应用创造价值</div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R9 国家数据局专家解读《关于推进行业高质量数据集建设行动的实施方案》（2026.06）</div>
+      <script>(function(){const S=[['需求定义','场景牵引：先问“要解决什么业务问题”，再决定要什么数据。'],['数据治理','清洗、对齐、补全：把“原矿”变成可用数据。'],['专业标注','从“以人为主”转向人机协同、专家深度参与的标注。'],['质量测评','数据质量验证 + 模型应用反馈：从“合格”到“好用”。']];
+        const svg=document.getElementById('fly'),cx=380,cy=370,R=250;let h='<circle cx="'+cx+'" cy="'+cy+'" r="'+R+'" fill="none" stroke="#cfcac0" stroke-width="3" stroke-dasharray="6 10"/><g id="flyRot" style="transform-origin:380px 370px;animation:flyspin 24s linear infinite"><path d="M '+(cx+R)+' '+cy+' A '+R+' '+R+' 0 0 1 '+cx+' '+(cy+R)+'" fill="none" stroke="#24509e" stroke-width="5"/><polygon points="'+cx+','+(cy+R-14)+' '+(cx-26)+','+(cy+R)+' '+cx+','+(cy+R+14)+'" fill="#24509e"/></g><text x="380" y="360" text-anchor="middle" font-family="Noto Serif SC" font-weight="900" font-size="44" fill="#1d2433">数据飞轮</text><text x="380" y="405" text-anchor="middle" font-family="IBM Plex Mono" font-size="20" fill="#8a90a0">DATA FLYWHEEL</text>';
+        S.forEach((s,i)=>{const a=-Math.PI/2+i*Math.PI/2,x=cx+R*Math.cos(a),y=cy+R*Math.sin(a);h+='<g class="fn" data-i="'+i+'" style="cursor:pointer"><circle cx="'+x+'" cy="'+y+'" r="70" fill="#faf8f4" stroke="#24509e" stroke-width="4"/><text x="'+x+'" y="'+(y+10)+'" text-anchor="middle" font-family="Noto Sans SC" font-weight="700" font-size="28" fill="#1d2433">'+s[0]+'</text></g>';});
+        svg.innerHTML='<style>@keyframes flyspin{to{transform:rotate(360deg)}}</style>'+h;
+        svg.querySelectorAll('.fn').forEach(g=>g.onclick=()=>{const i=+g.dataset.i;svg.querySelectorAll('.fn circle').forEach((c,k)=>{c.setAttribute('fill',k===i?'#24509e':'#faf8f4');});svg.querySelectorAll('.fn text').forEach((t,k)=>t.setAttribute('fill',k===i?'#fff':'#1d2433'));flyH.textContent=S[i][0];flyP.textContent=S[i][1];flyCard.querySelector('.n').textContent='环节 0'+(i+1);});svg.querySelector('.fn').onclick();})();</script>
+    </section>
+
+
+
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="Q2 国家队在建什么：高质量数据集">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · Q2 怎么构建数据建设</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:900px"><figure class="reveal d3"><img src="assets/dat-doc-nda2.jpg" style="height:auto"></figure><figcaption>国家数据局专家解读（2026.03.12）</figcaption></div>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">Q2 · 国家牵头 · 链主承接</div>
+          <h2 class="reveal d2" style="font-size:56px">数据建设成了<em>“工程”</em></h2>
+          <div class="flex gap16 st" style="flex-wrap:wrap">
+            <div class="card b stat" style="width:calc(50% - 8px);padding:20px 24px"><div class="v" style="font-size:72px">72</div><div class="l" style="font-size:22px">链主单位（26 部委遴选）</div></div>
+            <div class="card t stat" style="width:calc(50% - 8px);padding:20px 24px"><div class="v" style="font-size:72px">140</div><div class="l" style="font-size:22px">项高质量数据集建设任务</div></div>
+            <div class="card o stat" style="width:calc(50% - 8px);padding:20px 24px"><div class="v" style="font-size:72px">85<small style="font-size:30px">PB</small></div><div class="l" style="font-size:22px">7 城标注试点，服务 260 个模型</div></div>
+            <div class="card g stat" style="width:calc(50% - 8px);padding:20px 24px"><div class="v" style="font-size:72px">11万<small style="font-size:30px">+</small></div><div class="l" style="font-size:22px">全国高质量数据集（2025，+61%）</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R15 国家数据局《专家话两会》（2026.03）；R1 全国数据资源调查报告（2025）；链主 / 任务数为 2025 年口径</div>
+    </section>
+
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="Q2 物理世界的数采工厂：训练场">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · Q2 怎么构建数据建设</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:900px" class="col gap16 reveal d3">
+          <figure class="crop" style="height:470px"><img src="assets/dat-emb-factory.jpg"></figure>
+          <div class="flex gap16"><figure class="crop grow" style="height:190px"><img src="assets/dat-emb-devices.jpg"></figure><figure class="crop grow" style="height:190px"><img src="assets/dat-emb-multiview.jpg"></figure></div>
+          <figcaption>具身智能数据采集：头戴 / 手持 / 多视角设备（澎湃新闻）</figcaption>
+        </div>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">互联网上没有的数据，只能自己造</div>
+          <h2 class="reveal d2" style="font-size:54px">机器人的数据，要建<em>“工厂”</em></h2>
+          <div class="col gap16 st">
+            <div class="card b"><div class="n">规模</div><p style="font-size:25px">全国具身训练场 <b>70+</b> 座，在建 46 座；地方投入上百亿</p></div>
+            <div class="card t"><div class="n">产能（北京基地）</div><p style="font-size:25px">日产能 <b>&gt;500 小时</b>；已交付近 <b>2 万小时</b>；目标 100 万小时</p></div>
+            <div class="card o"><div class="n">⚠ 退潮</div><p style="font-size:25px">国资参与率 88%→54%；多地数采厂闲置——<b>先建产能、再找订单</b>是坑</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R16 总台 / 北京日报（北京基地）；R17 创业邦、澎湃新闻美数课（数采中心）；⚠ 国资参与率为 Interact Analysis 经媒体转引，口径待核</div>
+    </section>
+
+    <!-- ============ Q3 怎么交易 ============ -->
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="Q3 数据怎么交易：三类机构 + 两个市场">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · Q3 怎么构建数据的交易</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:900px"><figure class="reveal d3"><img src="assets/dat-doc-nda.jpg" style="height:auto"></figure><figcaption>国家数据局专家解读：数据流通交易加速价值释放（2026.05）</figcaption></div>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">国数政策〔2026〕6 号 · 2026.02.03</div>
+          <h2 class="reveal d2" style="font-size:54px">三类流通服务机构，<br>各有分工</h2>
+          <div class="col gap16 st">
+            <div class="card b"><div class="n">数据交易所（中心）</div><p style="font-size:25px">规则、合规、<b>价格发现</b>——综合服务</p></div>
+            <div class="card t"><div class="n">数据流通服务平台企业</div><p style="font-size:25px">围绕产业链：<b>专业化</b>流通</p></div>
+            <div class="card o"><div class="n">数据商</div><p style="font-size:25px">采集、加工、<b>开发数据产品</b></p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R18 国家数据局等《关于培育数据流通服务机构……的意见》（2026.02）；R19 国家数据局专家解读（2026.05）</div>
+    </section>
+
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="Q3 现实：场内只占约 5%，大量挂牌零成交（⚠）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · Q3 怎么构建数据的交易</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">交易所很热闹，市场还很冷</div>
+        <h2 class="reveal d2" style="font-size:60px;margin-top:10px">“有场无市”：<em>数据交易的现实</em></h2>
+        <div class="flex gap24 st" style="margin-top:44px">
+          <div class="card b grow stat"><div class="v">1600<small>亿+</small></div><div class="l">2024 年全国数据市场交易规模</div></div>
+          <div class="card t grow stat"><div class="v">80<small>%+</small></div><div class="l">仍是场外交易（点对点、数据商、订阅）</div></div>
+          <div class="card o grow stat"><div class="v">46</div><div class="l">家数据交易所；⚠ 约 90% 挂牌产品零成交</div></div>
+          <div class="card g grow stat"><div class="v">+39.8<small>%</small></div><div class="l">2025 企业数据产品和服务交易额同比</div></div>
+        </div>
+        <div class="card b reveal d4" style="margin-top:32px"><p style="font-size:28px">为什么难？同一份数据对不同买家价值差异极大 → <b>怎么定价、怎么计量</b>是核心瓶颈。下一页看新答案。</p></div>
+      </div>
+      <div class="src"><b>参考</b> R20 国家信息中心（2026.06）；R21 国家数据局 / 央视（2026.06）；⚠ “90% 零成交、场内约 5%”来自媒体对官方统计的转述，口径待核</div>
+    </section>
+
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="Q3 新答案：从“卖数据包”到“卖 Token”">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · Q3 怎么构建数据的交易</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:960px" class="col gap16 reveal d3">
+          <figure><img src="assets/dat-doc-qingdao.jpg" style="height:auto"></figure>
+          <figcaption style="margin-top:-6px">青岛大数据交易中心：全国首例词元计价“数据+模型”交易备案（2026）</figcaption>
+          <figure><img src="assets/dat-doc-chongqing.jpg" style="height:auto"></figure>
+          <figcaption style="margin-top:-6px">重庆：探索制定词元交易标准和词元结算规则（2026.11.12）</figcaption>
+        </div>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">2026 · 青岛首例 · 重庆行动计划</div>
+          <h2 class="reveal d2" style="font-size:56px">从“卖数据”<br>到<em>“卖词元”</em></h2>
+          <div class="col gap16 st">
+            <div class="card b"><div class="n">计量</div><p style="font-size:24px"><b>数据词元</b>按智能体调用的输入量；<b>算力词元</b>按模型输入 / 输出量</p></div>
+            <div class="card t"><div class="n">闭环</div><p style="font-size:24px">数据词元化 → 智能体调用 → <b>按量结算</b>，像水电表</p></div>
+            <div class="card o"><div class="n">意义</div><p style="font-size:24px">收入从“卖一次”变<b>持续订阅</b>；价值看“被用了多少”</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R22 大众网 / 数据要素 × 项目办（青岛）；R23 每日经济新闻（重庆）；R24 数据星球（2026.10，二手汇总）；⚠ 词元计价为试点，尚无统一标准</div>
+    </section>
+
+    <!-- ============ Q4 多贵 ============ -->
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="Q4 内容授权：文本数据卖多少钱">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · Q4 交易数据有多贵</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">授权给 AI 训练 · 每年约（百万美元）</div>
+        <h2 class="reveal d2" style="font-size:58px;margin-top:10px">一座内容库，<em>每年数千万美元</em></h2>
+        <div class="flex gap48" style="margin-top:36px">
+          <div class="col gap16 st" style="width:1100px">
+            <div><div class="kv"><span>Reddit → Google</span><b>≈ 60</b></div><div class="bar"><i style="width:100%"></i></div></div>
+            <div><div class="kv"><span>News Corp → OpenAI（5 年 &gt;$250M）</span><b>≈ 50</b></div><div class="bar"><i style="width:83%"></i></div></div>
+            <div><div class="kv"><span>纽约时报 → Amazon</span><b>20–25</b></div><div class="bar"><i style="width:42%;background:var(--teal)"></i></div></div>
+            <div><div class="kv"><span>Axel Springer → OpenAI</span><b>≈ 13</b></div><div class="bar"><i style="width:22%;background:var(--teal)"></i></div></div>
+            <div><div class="kv"><span>Financial Times → OpenAI</span><b>5–10</b></div><div class="bar"><i style="width:13%;background:var(--ochre)"></i></div></div>
+          </div>
+          <div class="col grow gap16 reveal d4" style="justify-content:center">
+            <div class="card o"><div class="n">定价逻辑</div><p style="font-size:25px">内容<b>独特性</b> × 买家<b>支付意愿</b>；差距可达数量级</p></div>
+            <div class="card b"><div class="n">新趋势</div><p style="font-size:25px">从一次性买断 → <b>按调用 / 引用计价</b>（与 Token 交易同向）</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R25 Quartz《The price of AI training data》；R26 Reuters / WSJ / CB Insights；⚠ 金额均为媒体报道，合同多保密</div>
+    </section>
+
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="Q4 盗版的价格：Anthropic 15 亿美元和解">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · Q4 交易数据有多贵</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:900px"><figure class="reveal d3"><img src="assets/dat-anthropic-settlement.jpg" style="height:auto"></figure><figcaption>Anthropic 版权集体诉讼和解网站</figcaption></div>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">不买数据的代价</div>
+          <div class="bignum reveal d2" style="font-size:130px">$1.5<small>B</small></div>
+          <div class="col gap16 st">
+            <div class="card o"><div class="n">每部作品</div><p style="font-size:26px">约 <b>$3,000</b>，涉及约 <b>48–50 万</b>本书（LibGen 等盗版库）</p></div>
+            <div class="card b"><div class="n">对照：正规授权</div><p style="font-size:26px">HarperCollins 书籍授权：约 <b>$5,000 / 本</b>（作者出版社分成）</p></div>
+            <div class="card g"><div class="n">结论</div><p style="font-size:26px"><b>合规的数据，才有价格</b>；“免费”的数据，账单会在后面</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R27 Publishers Weekly（2025.09）；R28 Authors Guild / 法院文件（2026.07 终审）；仅涵盖过往行为，不是未来训练许可</div>
+    </section>
+
+    <!-- === SLIDE 36 · Scale AI === -->
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="Q4 数据服务商值多少钱：Scale AI 等">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · Q4 交易数据有多贵</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:900px"><figure class="reveal d3" style="height:600px"><img src="assets/p18_1.png"></figure><figcaption>Scale AI：“Power Generative AI With Your Data”</figcaption></div>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">数据 = 一门生意</div>
+          <h2 class="reveal d2" style="font-size:58px">卖“数据”的公司，<br>估值 <em>290 亿美元</em></h2>
+          <div class="col gap16 st">
+            <div class="card b"><div class="n">2025.06</div><p style="font-size:26px">Meta 投资约 <b>143 亿美元</b>，获约 49% 股权；创始人 Alexandr Wang 加入 Meta。</p></div>
+            <div class="card g"><div class="n">同类（⚠ 媒体 / 公司公告）</div><p style="font-size:26px">Mercor 估值 <b>100 亿美元</b>（2025.10，融资 3.5 亿）；Turing <b>22 亿美元</b>（2025.03）</p></div>
+            <div class="card o"><div class="n">趋势</div><p style="font-size:26px">标注从“众包”转向<b>博士级专家</b>参与——数据质量就是模型质量。</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P18；R10 Reuters / TechCrunch（2025.06.13）；R26 aidata.auction 汇总；金额为媒体报道或公司公告</div>
+    </section>
+
+
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="Q4 机器人数据一小时多少钱（⚠）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · Q4 交易数据有多贵</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:60px">具身数据：<em>按“小时”计价</em></h2><div class="hint">2026 年国内报价 · 元 / 小时</div></div>
+        <div class="flex gap48" style="margin-top:34px">
+          <div class="col gap16 st" style="width:1000px">
+            <div><div class="kv"><span>真机遥操作（金标准）</span><b>500–1000</b></div><div class="bar"><i style="width:100%"></i></div></div>
+            <div><div class="kv"><span>无本体 UMI / 头戴 EGO</span><b>30–150</b></div><div class="bar"><i style="width:15%;background:var(--teal)"></i></div></div>
+            <div><div class="kv"><span>低端 / 简单数据（最低报价）</span><b>≈ 20</b></div><div class="bar"><i style="width:2%;background:var(--ochre)"></i></div></div>
+            <div><div class="kv"><span>仿真合成</span><b>边际成本 → 0</b></div><div class="bar"><i style="width:.6%;background:var(--ink-3)"></i></div></div>
+            <p style="font-size:24px;margin-top:6px">质量—规模—成本的“不可能三角”：<b>三条路线并存</b>，各管一段。</p>
+          </div>
+          <div style="flex:1" class="col gap16">
+            <figure class="crop reveal d3" style="height:300px"><img src="assets/dat-emb-home.jpg"></figure>
+            <div class="card b reveal d4"><div class="n">为什么真机贵</div><p style="font-size:24px">一套遥操设备 &gt;20 万；本体 60–70 万；遥操员每天<b>有效仅 2–3 小时</b></p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R17 创业邦（《具身数据发展报告 2026》）；R29 第一财经；⚠ 报价为媒体调研的区间，非成交价；图为家庭场景数据采集（第一财经）</div>
+    </section>
+
+    <!-- ============ Q5 数据 = 模型能力 ============ -->
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="Q5 数据为什么就是模型的能力">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · Q5 数据为什么就是模型的能力</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:940px"><figure class="reveal d3"><img src="assets/dat-nv-datafactory.jpg" style="height:auto"></figure><figcaption>NVIDIA Physical AI Data Factory Blueprint（2026）</figcaption></div>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">能力的边界 = 数据的边界</div>
+          <h2 class="reveal d2" style="font-size:56px">模型<em>会什么</em>，<br>取决于<em>见过什么</em></h2>
+          <div class="chips st" style="gap:10px">
+            <span class="chip" style="font-size:24px">文本：有互联网</span>
+            <span class="chip" style="font-size:24px">图像 / 视频：有海量素材</span>
+            <span class="chip" style="font-size:24px;border-left-color:var(--ochre)"><b>机器人动作：没有</b></span>
+            <span class="chip" style="font-size:24px;border-left-color:var(--ochre)"><b>科学实验：没有</b></span>
+          </div>
+          <div class="card b reveal d4"><p style="font-size:26px">谁拥有<b>别人没有</b>的数据——谁就拥有别人没有的能力。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R30 NVIDIA 新闻稿（2026.03）</div>
+    </section>
+
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="Q5 物理 AI：用仿真放大真实数据">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · Q5 数据为什么就是模型的能力</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:820px" class="col gap16 reveal d3">
+          <figure class="contain" style="height:330px"><img src="assets/dat-nv-cosmos.jpg"></figure>
+          <figure class="crop" style="height:300px"><img src="assets/dat-nv-sim.jpg"></figure>
+          <figcaption>NVIDIA Cosmos：一段真实驾驶 → 多种天气 / 场景合成</figcaption>
+        </div>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">物理 AI · 数据金字塔</div>
+          <h2 class="reveal d2" style="font-size:56px">真实数据<em>少而贵</em>，<br>合成数据<em>多而便宜</em></h2>
+          <div class="col gap16 st">
+            <div class="card b"><div class="n">缺口</div><p style="font-size:25px">行业高质量真机数据约 <b>50 万小时</b>；业界估计需 <b>千万小时</b></p></div>
+            <div class="card t"><div class="n">打法</div><p style="font-size:25px"><b>少量真机 + 大量仿真 / 视频生成</b>：Cosmos、世界模型</p></div>
+            <div class="card o"><div class="n">增速</div><p style="font-size:25px">具身智能数据生产量 2025 年 <b>+478%</b>（国家数据局）</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R16 智元 / 一财；R19 国家数据局；R31 NVIDIA 开发者博客（Cosmos）；R32 NVIDIA CoRL 博客；“50 万小时”为智元合伙人发言</div>
+    </section>
+
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="Q5 案例：智元的数据采集厂与开源数据集">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · Q5 数据为什么就是模型的能力</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:820px" class="col gap16 reveal d3">
+          <figure class="crop" style="height:430px"><img src="assets/dat-emb-multiview.jpg"></figure>
+          <figure class="contain" style="height:150px"><img src="assets/dat-hf-agibot.jpg"></figure>
+          <figcaption>左：多视角同步采集（澎湃新闻）；下：AgiBot World 开源数据集（Hugging Face）</figcaption>
+        </div>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">数据 → 能力 → 开源 → 生态</div>
+          <h2 class="reveal d2" style="font-size:56px">倒水一个动作，<br>要重复<em>几百次</em></h2>
+          <div class="col gap16 st">
+            <div class="card b"><div class="n">数据采集厂（2024.09）</div><p style="font-size:25px">每天 <b>100 台</b>机器人训练，产生上万条数据</p></div>
+            <div class="card t"><div class="n">异构训练场（上海 2025.01）</div><p style="font-size:25px"><b>5000 ㎡</b>、上百台、十几家本体，目标全年 <b>1000 万条</b></p></div>
+            <div class="card o"><div class="n">开源</div><p style="font-size:25px">AgiBot World 数据集公开——<b>用开放换生态</b></p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R33 数字中国建设峰会（上海训练场，2025.05）；R34 Hugging Face AgiBot World；条数为目标 / 口径各异</div>
+    </section>
+
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="Q5 AI4S（一）：AlphaFold 的“数据”其实是 PDB">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · Q5 数据为什么就是模型的能力</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:820px" class="col gap16 reveal d3">
+          <figure class="crop" style="height:360px"><img src="assets/dat-protein.jpg"></figure>
+          <figure class="contain" style="height:230px"><img src="assets/dat-pdbe-ai.jpg"></figure>
+          <figcaption>AlphaFold 蛋白结构（EMBL）；PDBe 的 AI 注释（EMBL-EBI）</figcaption>
+        </div>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">AI for Science · 数据先行</div>
+          <h2 class="reveal d2" style="font-size:56px">算法是 DeepMind 的，<br><em>数据是全人类的</em></h2>
+          <div class="col gap16 st">
+            <div class="card b"><div class="n">训练数据</div><p style="font-size:25px">约 <b>17 万</b>个 PDB 实验结构 + 大型序列库</p></div>
+            <div class="card t"><div class="n">训练成本</div><p style="font-size:25px">128 块 TPUv3 核、数周——零售价<b>低于 10 万美元</b></p></div>
+            <div class="card o"><div class="n">真正的壁垒</div><p style="font-size:25px">PDB 自 1971 年起，<b>几十年、全球科学家</b>用晶体学 / 冷冻电镜一个个“测”出来</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R35 DeepMind AlphaFold 2 论文与社区讨论（训练规模）；R36 EMBL / EMBL-EBI；⚠ 训练成本为社区估算</div>
+    </section>
+
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="Q5 AI4S（二）：自己建实验室造数据">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · Q5 数据为什么就是模型的能力</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:940px"><figure class="reveal d3"><img src="assets/dat-periodic.jpg" style="height:auto"></figure><figcaption>Periodic Labs：Building Labs that Learn</figcaption></div>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">文献用完了，就去<b>做实验</b></div>
+          <h2 class="reveal d2" style="font-size:56px">科学的数据，<br>要<em>自动化实验室</em>来产</h2>
+          <div class="col gap16 st">
+            <div class="card b"><div class="n">融资（2025.09）</div><p style="font-size:25px"><b>$3 亿</b>种子轮，a16z 领投；创始人来自 OpenAI / DeepMind</p></div>
+            <div class="card t"><div class="n">做法</div><p style="font-size:25px">机器人合成粉末材料、测性质——<b>一次实验数 GB 数据</b></p></div>
+            <div class="card o"><div class="n">理念</div><p style="font-size:25px"><b>自然界就是强化学习环境</b>；失败的实验也是数据</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R37 a16z《Investing in Periodic Labs》；R38 SiliconANGLE、TechCrunch（2025）；融资额为公司公告</div>
+    </section>
+
+    <!-- === 小结：五问五答 === -->
+    <section class="slide c" data-sec="2 · 人工智能时代" data-title="小结：五个问题，五句话">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 AI 时代的数据商业</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:60px">数据商业：<em>五句话</em></h2>
+        <div class="col gap16 st" style="margin-top:30px">
+          <div class="card b flex center gap24" style="padding:18px 28px"><div class="mono blue" style="font-size:28px;min-width:70px">Q1</div><p style="font-size:28px"><b>要什么</b>：规模（万亿 Token）→ 质量（专家）→ 可验证（环境）；公开文本将见底</p></div>
+          <div class="card t flex center gap24" style="padding:18px 28px"><div class="mono teal" style="font-size:28px;min-width:70px">Q2</div><p style="font-size:28px"><b>怎么建</b>：数据飞轮 + 国家级高质量数据集 + 物理世界数采工厂</p></div>
+          <div class="card o flex center gap24" style="padding:18px 28px"><div class="mono ochre" style="font-size:28px;min-width:70px">Q3</div><p style="font-size:28px"><b>怎么卖</b>：三类机构；从“卖数据包”走向“按 Token 计量”</p></div>
+          <div class="card g flex center gap24" style="padding:18px 28px"><div class="mono" style="font-size:28px;min-width:70px">Q4</div><p style="font-size:28px"><b>多贵</b>：文本数千万美元 / 年；盗版 $3,000 / 本；真机 500–1000 元 / 小时</p></div>
+          <div class="card b flex center gap24" style="padding:18px 28px"><div class="mono blue" style="font-size:28px;min-width:70px">Q5</div><p style="font-size:28px"><b>为什么</b>：别人没有的数据 = 别人没有的能力（物理 AI、AI4S）</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 课程小结</div>
+    </section>
+
+    <!-- === SLIDE 37 · 章节 Part 3 === -->
+    <section class="slide c chapter" data-sec="3 · 数据价值" data-title="Part 3 · 数据价值">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 2</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">03</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 3</div>
+        <h2 class="reveal d2">数据<em>价值</em></h2>
+        <div class="s reveal d3">什么是价值？价值如何表现？价值如何评估？</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>3.1</b>什么是价值</div>
+        <div><b>3.2</b>收入：推荐与广告</div>
+        <div><b>3.3</b>支出：客服与制造</div>
+        <div><b>3.4</b>风险与量化</div>
+      </div>
+    </section>
+
+    <!-- === SLIDE 38 · 课程目的 === -->
+    <section class="slide c" data-sec="3 · 数据价值" data-title="本课程的目的：Data → AI → Business Value">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 什么是价值</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:66px">本课程的目的：<em>让数据产生价值</em></h2>
+        <div class="flex center reveal d3" style="margin-top:44px;gap:20px">
+          <div class="col grow gap16" style="text-align:center"><figure style="height:300px"><img src="assets/p37_1.jpg"></figure><div class="card g"><div class="n">DATA</div><h3>数据</h3></div></div>
+          <div class="arrow">→</div>
+          <div class="col grow gap16" style="text-align:center"><figure style="height:300px"><img src="assets/p37_3.png"></figure><div class="card t"><div class="n">AI</div><h3>算法 · 智能</h3></div></div>
+          <div class="arrow">→</div>
+          <div class="col grow gap16" style="text-align:center"><figure style="height:300px"><img src="assets/p37_2.png"></figure><div class="card b"><div class="n">BUSINESS VALUE</div><h3 class="blue">商业价值</h3></div></div>
+        </div>
+        <p class="reveal d5" style="margin-top:34px;font-size:30px">数据本身不产生价值，<b>被用于决策的数据才产生价值</b>。</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P37</div>
+    </section>
+
+    <!-- === SLIDE 39 · 什么是价值 === -->
+    <section class="slide c" data-sec="3 · 数据价值" data-title="什么是价值？价值就是业务的核心诉求">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 什么是价值</div><div class="pg"></div>
+      <div class="body flex gap48 center">
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">什么是价值？</div>
+          <div class="quote reveal d2" style="font-size:80px;line-height:1.3">价值，就是<br><span class="blue">业务的核心诉求</span>！</div>
+        </div>
+        <div style="width:780px" class="col gap16 st">
+          <div class="card g"><div class="n">技术视角</div><p style="font-size:27px">准确率 95%、AUC 0.9、模型参数量……</p></div>
+          <div class="card b"><div class="n">业务视角</div><p style="font-size:27px">多卖了多少？少花了多少？少亏了多少？</p></div>
+          <p style="font-size:26px">模型指标是<b>手段</b>，业务指标才是<b>目的</b>。</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P38</div>
+    </section>
+
+    <!-- === SLIDE 40 · 价值三表现 === -->
+    <section class="slide c" data-sec="3 · 数据价值" data-title="价值的三个表现：收入、支出、风险">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 什么是价值</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:66px">价值的三个表现：<em>收入 · 支出 · 风险</em></h2>
+        <div class="flex gap32 st" style="margin-top:40px">
+          <div class="col grow gap16"><figure style="height:380px"><img src="assets/p39_1.png"></figure><div class="card b"><div class="n">增收</div><h3>收入 ↑</h3><p style="font-size:24px">个性化推荐、精准广告</p></div></div>
+          <div class="col grow gap16"><figure style="height:380px"><img src="assets/p39_2.png"></figure><div class="card t"><div class="n">降本</div><h3>支出 ↓</h3><p style="font-size:24px">智能客服、智能制造</p></div></div>
+          <div class="col grow gap16"><figure style="height:380px"><img src="assets/p39_3.jpg"></figure><div class="card o"><div class="n">控险</div><h3>风险 ↓</h3><p style="font-size:24px">信用评估、反欺诈</p></div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P39</div>
+    </section>
+
+    <!-- === SLIDE 41 · 个性化推荐 === -->
+    <section class="slide c" data-sec="3 · 数据价值" data-title="收入：个性化推荐">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.2 收入：推荐与广告</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">收入 ↑ · PERSONALIZED RECOMMENDATION</div>
+        <h2 class="reveal d2" style="font-size:62px;margin-top:10px">千人千面：<em>用数据猜你想要什么</em></h2>
+        <div class="flex gap24 center reveal d3" style="margin-top:36px">
+          <div class="col gap8" style="width:420px"><figure class="contain" style="height:540px"><img src="assets/p40_1.png"></figure><figcaption>APP 主页</figcaption></div>
+          <div class="arrow">→</div>
+          <div class="col gap8" style="width:420px"><figure class="contain" style="height:540px"><img src="assets/p40_3.png"></figure><figcaption>商品推荐</figcaption></div>
+          <div class="arrow">→</div>
+          <div class="col gap8" style="width:420px"><figure class="contain" style="height:540px"><img src="assets/p40_2.png"></figure><figcaption>购买记录</figcaption></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P40</div>
+    </section>
+
+    <!-- === SLIDE 42 · 广告 === -->
+    <section class="slide c" data-sec="3 · 数据价值" data-title="收入：广告销售">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.2 收入：推荐与广告</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:900px"><figure class="contain reveal d3" style="height:660px"><img src="assets/p41_1.png"></figure><figcaption>搜索结果页：自然结果 + 广告位</figcaption></div>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">收入 ↑ · ADVERTISING</div>
+          <h2 class="reveal d2" style="font-size:60px">广告位，是数据<br><em>最直接的变现形态</em></h2>
+          <div class="col gap16 st">
+            <div class="card b"><p style="font-size:26px">预测<b>你会不会点</b>（点击率）</p></div>
+            <div class="card t"><p style="font-size:26px">按<b>预期收益</b>排序展示</p></div>
+            <div class="card o"><p style="font-size:26px">按点击 / 转化<b>计费</b></p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P41</div>
+    </section>
+
+    <!-- === SLIDE 43 · 呼叫中心 === -->
+    <section class="slide c" data-sec="3 · 数据价值" data-title="支出：呼叫中心">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.3 支出：客服与制造</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">支出 ↓ · CALL CENTER</div>
+          <h2 class="reveal d2" style="font-size:62px">客服是<em>成本中心</em>，<br>也是数据富矿</h2>
+          <div class="col gap16 st">
+            <div class="card o"><div class="n">痛点</div><p style="font-size:26px">人工坐席：人力、培训、流失，成本随话务量线性增长。</p></div>
+            <div class="card t"><div class="n">AI 的用法</div><p style="font-size:26px">智能应答分流<b>常见问题</b>，人工专注<b>复杂问题</b>；对话数据反哺产品与服务。</p></div>
+          </div>
+        </div>
+        <div style="width:720px" class="col gap16"><figure class="contain reveal d3" style="height:340px"><img src="assets/p42_4.png"></figure><figure class="contain reveal d4" style="height:340px"><img src="assets/p42_5.png"></figure></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P42</div>
+    </section>
+
+    <!-- === SLIDE 44 · 制造业 === -->
+    <section class="slide c" data-sec="3 · 数据价值" data-title="支出：制造业">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.3 支出：客服与制造</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">支出 ↓ · MANUFACTURING</div>
+        <h2 class="reveal d2" style="font-size:62px;margin-top:10px">制造业：<em>降成本 = 增利润</em></h2>
+        <div class="flex gap24 st" style="margin-top:36px">
+          <figure class="contain grow" style="height:420px"><img src="assets/p43_1.jpg"></figure>
+          <figure class="contain grow" style="height:420px"><img src="assets/p43_2.jpg"></figure>
+          <figure class="contain grow" style="height:420px"><img src="assets/p43_4.jpg"></figure>
+          <figure class="contain grow" style="height:420px"><img src="assets/p43_3.jpg"></figure>
+        </div>
+        <p class="reveal d5" style="margin-top:34px;font-size:30px">从原料、工艺、质检到返修：<b>每一环节的数据，都可能对应一笔成本</b>。</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P43</div>
+    </section>
+
+    <!-- === SLIDE 45 · 风险：信用评估 === -->
+    <section class="slide c" data-sec="3 · 数据价值" data-title="风险：信用评估">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.4 风险与量化</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">风险 ↓ · CREDIT SCORING</div>
+        <h2 class="reveal d2" style="font-size:62px;margin-top:10px">谁会还钱？<em>用数据给风险定价</em></h2>
+        <div class="flex gap24 center st" style="margin-top:36px">
+          <figure class="contain" style="width:380px;height:400px"><img src="assets/p44_1.png"></figure><div class="arrow">→</div>
+          <div class="col gap16" style="width:360px"><figure class="contain" style="height:190px"><img src="assets/p44_2.png"></figure><figure class="contain" style="height:190px"><img src="assets/p44_3.png"></figure></div><div class="arrow">→</div>
+          <figure class="contain" style="width:420px;height:400px"><img src="assets/p44_5.jpg"></figure>
+        </div>
+        <p class="reveal d5" style="margin-top:34px;font-size:30px">信用评分 → 区分好 / 坏客户 → 减少<b>坏账</b>。但拒绝太多，又损失<b>收入</b>。</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P44</div>
+    </section>
+
+    <!-- === SLIDE 46 · 信用阈值（交互）=== -->
+    <section class="slide c" data-sec="3 · 数据价值" data-title="动手：信用评分阈值，收入与风险的权衡（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.4 风险与量化</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:60px">阈值设多高？<em>收入与风险的权衡</em></h2><div class="hint">拖动滑块 · 示意数据</div></div>
+        <div class="flex gap48 reveal d3" style="margin-top:34px;align-items:stretch">
+          <div class="card g" style="width:900px"><div class="n">评分分布（示意）</div>
+            <svg viewBox="0 0 840 300" style="width:840px;height:300px;max-width:none;max-height:none" id="crSvg"></svg>
+            <div class="flex between mono muted" style="font-size:22px;margin-top:6px"><span>低分（风险高）</span><span>通过阈值：<b id="crT" style="color:var(--blue)">640</b></span><span>高分（风险低）</span></div>
+            <input type="range" id="crR" min="450" max="800" step="5" value="560" style="margin-top:14px">
+            <p style="font-size:22px;margin-top:12px;color:var(--ink-3)">假设：12% 为坏客户；放贷给好客户赚利息 +10，给坏客户损失 −100。</p>
+          </div>
+          <div class="card b grow"><div class="n">结果</div>
+            <div class="kv"><span>通过率</span><b id="crA">0%</b></div>
+            <div class="kv"><span>通过客户中的坏账率</span><b id="crB">0%</b></div>
+            <div class="kv"><span>每 1000 申请人利润</span><b id="crP">0</b></div>
+            <p style="font-size:24px;margin-top:18px" id="crM"></p>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 教学示意（参数为假设，非真实数据）</div>
+      <script>(function(){const N=(x,m,s)=>Math.exp(-((x-m)**2)/(2*s*s))/(s*Math.sqrt(2*Math.PI));const erf=x=>{const t=1/(1+.3275911*Math.abs(x)),y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-.284496736)*t+.254829592)*t*Math.exp(-x*x);return x>=0?y:-y;};const surv=(t,m,s)=>.5*(1-erf((t-m)/(s*Math.SQRT2)));
+        const gm=680,bm=570,sd=60,pb=.12;const prof=t=>1000*((1-pb)*surv(t,gm,sd)*10-pb*surv(t,bm,sd)*100);
+        let best=450,bv=-1e9;for(let t=450;t<=800;t+=5){const v=prof(t);if(v>bv){bv=v;best=t;}}
+        const svg=document.getElementById('crSvg'),X=s=>(s-400)/450*840;let h='';let pg='',pb2='';for(let s=400;s<=850;s+=5){pg+=(s===400?'M':'L')+X(s)+' '+(280-N(s,gm,sd)*(1-pb)*40000)+' ';pb2+=(s===400?'M':'L')+X(s)+' '+(280-N(s,bm,sd)*pb*40000)+' ';}
+        h+='<path d="'+pg+'" fill="none" stroke="#24509e" stroke-width="4"/><path d="'+pb2+'" fill="none" stroke="#c27a1a" stroke-width="4"/><line x1="0" y1="282" x2="840" y2="282" stroke="#1d2433" stroke-width="2"/><line id="crL" x1="0" y1="10" x2="0" y2="282" stroke="#1d2433" stroke-width="3" stroke-dasharray="8 6"/><text x="'+X(700)+'" y="90" font-size="22" fill="#24509e" font-family="Noto Sans SC">好客户</text><text x="'+X(520)+'" y="190" font-size="22" fill="#c27a1a" font-family="Noto Sans SC">坏客户</text>';svg.innerHTML=h;
+        const r=document.getElementById('crR');function up(){const t=+r.value;crT.textContent=t;const ag=surv(t,gm,sd)*(1-pb),ab=surv(t,bm,sd)*pb,ap=ag+ab;crA.textContent=(ap*100).toFixed(0)+'%';crB.textContent=(ab/Math.max(ap,1e-9)*100).toFixed(1)+'%';const p=prof(t);crP.textContent=p.toFixed(0);crP.className=p>=0?'pos':'neg';document.getElementById('crL').setAttribute('x1',X(t));document.getElementById('crL').setAttribute('x2',X(t));crM.innerHTML=Math.abs(t-best)<=10?'接近<b>利润最大</b>的阈值。':'利润最大约在阈值 <b>'+best+'</b> 附近（示意）。';}
+        r.oninput=up;up();})();</script>
+    </section>
+
+    <!-- === SLIDE 47 · 可量化参考系（交互）=== -->
+    <section class="slide c" data-sec="3 · 数据价值" data-title="动手：个性化推荐，值不值得做？（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.4 风险与量化</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">效果如何？先找<em>可量化的参考系</em></h2><div class="hint">拖动滑块 · 示意数据</div></div>
+        <div class="flex gap48 reveal d3" style="margin-top:30px">
+          <div class="card g" style="width:880px"><div class="n">以“个性化推荐 → 转化率”为例</div>
+            <div class="col gap16">
+              <div><div class="flex between"><span style="font-size:24px">月活用户</span><b id="abU" class="mono">500 万</b></div><input type="range" id="abUr" min="50" max="1000" step="10" value="500"></div>
+              <div><div class="flex between"><span style="font-size:24px">基线转化率（推荐前）</span><b id="abC" class="mono">3.0%</b></div><input type="range" id="abCr" min="5" max="50" step="1" value="30"></div>
+              <div><div class="flex between"><span style="font-size:24px">转化率相对提升（A/B 测试）</span><b id="abL" class="mono">10%</b></div><input type="range" id="abLr" min="0" max="30" step="1" value="10"></div>
+              <div><div class="flex between"><span style="font-size:24px">客单价 × 毛利率（元）</span><b id="abM" class="mono">80 × 20%</b></div><input type="range" id="abMr" min="5" max="60" step="1" value="16"></div>
+              <div><div class="flex between"><span style="font-size:24px">系统年成本（万元）</span><b id="abK" class="mono">200</b></div><input type="range" id="abKr" min="50" max="2000" step="10" value="200"></div>
+            </div>
+          </div>
+          <div class="card b grow"><div class="n">结果（年）</div>
+            <div class="kv"><span>新增订单</span><b id="abO">0</b></div>
+            <div class="kv"><span>新增毛利</span><b id="abG">0</b></div>
+            <div class="kv"><span>扣除系统成本后</span><b id="abN">0</b></div>
+            <div class="kv"><span>保本所需的最低提升</span><b id="abB">0</b></div>
+            <p style="font-size:24px;margin-top:16px" id="abT"></p>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P45（转化率 → 效果如何？）；参数为教学假设</div>
+      <script>(function(){const $=id=>document.getElementById(id);function up(){const U=+$('abUr').value,C=$('abCr').value/10,L=+$('abLr').value,M=+$('abMr').value,K=+$('abKr').value;$('abU').textContent=U+' 万';$('abC').textContent=C.toFixed(1)+'%';$('abL').textContent=L+'%';$('abM').textContent=(M/.2).toFixed(0)+' × 20%';$('abK').textContent=K;
+        const base=U*C/100*12; const add=base*L/100;const g=add*M;const net=g-K;const be=K/(base*M)*100;
+        $('abO').textContent=add.toFixed(1)+' 万单';$('abG').textContent=g.toFixed(0)+' 万元';$('abN').textContent=net.toFixed(0)+' 万元';$('abN').className=net>=0?'pos':'neg';$('abB').textContent=be.toFixed(1)+'%';
+        $('abT').innerHTML=net>=0?'<b>值得做</b>：只要 A/B 测试里转化率相对提升超过 '+be.toFixed(1)+'%。':'<b>暂不划算</b>：需要把转化率相对提升做到 '+be.toFixed(1)+'% 以上。';}
+        ['abUr','abCr','abLr','abMr','abKr'].forEach(i=>$(i).oninput=up);up();})();</script>
+    </section>
+
+    <!-- === SLIDE 48 · 官方案例 === -->
+    <section class="slide c" data-sec="3 · 数据价值" data-title="数据要素×：真实案例里的价值">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.4 风险与量化</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">“数据要素×”行动 · 官方披露案例</div>
+        <h2 class="reveal d2" style="font-size:62px;margin-top:10px">价值，落到<em>可以测量的数字</em></h2>
+        <div class="flex gap24 st" style="margin-top:40px">
+          <div class="card b grow stat"><div class="n">支出 ↓ · 工业龙头</div><div class="v">30<small>%+</small></div><div class="l">研发、采购交付周期缩短<br>库存周期 <b>3 个月 → 1 个月</b></div></div>
+          <div class="card t grow stat"><div class="n">收入 ↑ · 种植企业</div><div class="v">5.5<small>%</small></div><div class="l">数据赋能施肥环节，<br>综合提升产量</div></div>
+          <div class="card o grow stat"><div class="n">风险 ↓ · 应急管理</div><div class="v">多源<small>融合</small></div><div class="l">风险识别、安全生产<br>预警能力提升（定性）</div></div>
+        </div>
+        <p class="reveal d5" style="margin-top:34px;font-size:27px">注意：这些是<b>官方披露的案例</b>，口径与基线由各企业自行定义——回到刚才的问题：<b>参考系是什么？</b></p>
+      </div>
+      <div class="src"><b>参考</b> R3 中国政府网《数据要素乘数效应有力释放》（2025.06）</div>
+    </section>
+
+    <!-- === SLIDE 49 · 市场信号 === -->
+    <section class="slide c" data-sec="3 · 数据价值" data-title="2025 市场信号：为高质量数据付费，共识正在形成">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.4 风险与量化</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">全国数据资源调查报告（2025 年）</div>
+        <h2 class="reveal d2" style="font-size:62px;margin-top:10px">数据开始<em>被购买</em>，但还不普遍</h2>
+        <div class="flex gap24 st" style="margin-top:40px">
+          <div class="card b grow stat"><div class="v">+39.8<small>%</small></div><div class="l">企业数据产品和服务<br>交易额同比增长</div></div>
+          <div class="card t grow stat"><div class="v">+29.3<small>%</small></div><div class="l">企业数据产品和服务<br>数量同比增长</div></div>
+          <div class="card o grow stat"><div class="v">11.65<small>%</small></div><div class="l">样本企业中<br>购买过数据的比例</div></div>
+        </div>
+        <p class="reveal d5" style="margin-top:34px;font-size:28px">头部平台与央企的购买费用是其他企业的 <b>60 倍</b>；金融、软件和信息技术服务业购买比例超 30%。</p>
+      </div>
+      <div class="src"><b>参考</b> R1 国家数据局（2026.04）</div>
+    </section>
+
+    <!-- === SLIDE 50 · 总结 === -->
+    <section class="slide c" data-sec="3 · 数据价值" data-title="总结：核心思想">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 总结</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:66px">总结：<em>四个问题</em></h2>
+        <div class="flex gap24 st" style="margin-top:50px">
+          <div class="card g grow" style="min-height:430px"><div class="n">Q1</div><h3 style="font-size:42px">什么是数据？</h3><p style="font-size:25px;margin-top:14px">数字、图像、声音；互联网、科学、业务系统；2019 年起为生产要素。</p></div>
+          <div class="card b grow" style="min-height:430px"><div class="n">Q2</div><h3 style="font-size:42px">什么是价值？</h3><p style="font-size:25px;margin-top:14px">业务的核心诉求。</p></div>
+          <div class="card t grow" style="min-height:430px"><div class="n">Q3</div><h3 style="font-size:42px">价值如何表现？</h3><p style="font-size:25px;margin-top:14px">收入 ↑　支出 ↓　风险 ↓</p></div>
+          <div class="card o grow" style="min-height:430px"><div class="n">Q4</div><h3 style="font-size:42px">价值如何评估？</h3><p style="font-size:25px;margin-top:14px">找到<b>可量化的参考系</b>：转化率、成本、坏账率……再做 A/B 对比。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P46</div>
+    </section>
+
+    <!-- === SLIDE 51 · 讨论（计时）=== -->
+    <section class="slide c" data-sec="3 · 数据价值" data-title="课堂讨论（计时器）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 讨论</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">DISCUSSION</div>
+          <h2 class="reveal d2" style="font-size:66px">轮到<em>你</em>了</h2>
+          <div class="col gap16 st">
+            <div class="card b"><div class="n">Q1</div><h3 style="font-size:36px">自己所在岗位的核心业务诉求是什么？</h3></div>
+            <div class="card t"><div class="n">Q2</div><h3 style="font-size:36px">它能为公司带来什么价值？</h3></div>
+            <div class="card o"><div class="n">Q3</div><h3 style="font-size:36px">要完成这个核心业务诉求，需要什么潜在的业务知识与技能？</h3></div>
+            <div class="card g"><div class="n">Q4</div><h3 style="font-size:36px">如何评估？参考系是什么？</h3></div>
+          </div>
+        </div>
+        <div style="width:480px" class="col gap24 center"><div class="card g" style="width:100%;text-align:center"><div class="n">TIMER</div><div class="bignum" id="tmV" style="font-size:130px">05:00</div><div class="flex gap16" style="justify-content:center;margin-top:20px"><button class="tab b" id="tmS">开始</button><button class="tab" id="tmR">重置</button></div></div></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P47</div>
+      <script>(function(){let t=300,iv=null;const f=()=>tmV.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');tmS.onclick=()=>{if(iv){clearInterval(iv);iv=null;tmS.textContent='继续';return;}tmS.textContent='暂停';iv=setInterval(()=>{if(t>0){t--;f();}else{clearInterval(iv);iv=null;tmS.textContent='开始';}},1000);};tmR.onclick=()=>{clearInterval(iv);iv=null;t=300;f();tmS.textContent='开始';};})();</script>
+    </section>
+
+    <!-- === SLIDE · 蒸馏员工 Skill === -->
+    <section class="slide c" data-sec="3 · 数据价值" data-title="蒸馏员工：把岗位经验做成 Agent Skill">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 课堂延伸 · Skill</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">DISCUSSION → SKILL · 蒸馏员工</div>
+          <h2 class="reveal d2" style="font-size:58px">把刚才四问，<br>蒸馏成<em>可复用 Skill</em></h2>
+          <div class="col gap12 st">
+            <div class="card b flex center gap20" style="padding:14px 24px"><div class="mono blue" style="font-size:26px;min-width:56px">Q1</div><p style="font-size:24px;margin:0"><b>核心业务诉求</b> → <code style="font-family:var(--f-mono)">SKILL.md</code> 角色与任务边界</p></div>
+            <div class="card t flex center gap20" style="padding:14px 24px"><div class="mono teal" style="font-size:26px;min-width:56px">Q2</div><p style="font-size:24px;margin:0"><b>价值</b> → 描述里写清“何时触发、交付什么”</p></div>
+            <div class="card o flex center gap20" style="padding:14px 24px"><div class="mono ochre" style="font-size:26px;min-width:56px">Q3</div><p style="font-size:24px;margin:0"><b>知识与技能</b> → <code style="font-family:var(--f-mono)">references/</code> 清单与范例</p></div>
+            <div class="card g flex center gap20" style="padding:14px 24px"><div class="mono" style="font-size:26px;min-width:56px">Q4</div><p style="font-size:24px;margin:0"><b>评估参考系</b> → <code style="font-family:var(--f-mono)">scripts/</code> 或验收检查项</p></div>
+          </div>
+          <p class="reveal d5" style="font-size:26px">“蒸馏”= 把<b>隐性经验</b>写成 Agent 可按需加载的<b>员工手册</b>，而不是一次性聊天记录。</p>
+        </div>
+        <div style="width:720px" class="col gap16 reveal d3">
+          <figure class="contain" style="height:300px"><img src="assets/l2-ant-skills.png" alt="Agent Skills 设置界面"></figure>
+          <figcaption>Claude · Agent Skills 开关（Anthropic 官方界面）</figcaption>
+          <div class="card b" style="padding:18px 22px;font:400 22px/1.55 var(--f-mono);color:var(--ink-2)">
+            <div>distill-employee/</div>
+            <div style="margin-left:18px">├── SKILL.md</div>
+            <div style="margin-left:18px">├── references/</div>
+            <div style="margin-left:18px">└── scripts/</div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> Agent Skills 开放标准 agentskills.io；课程设计的「蒸馏员工」模板（课堂演示）</div>
+    </section>
+
+    <!-- === SLIDE · GitHub 同事.skill === -->
+    <section class="slide c" data-sec="3 · 数据价值" data-title="GitHub：同事.skill（蒸馏员工）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 课堂延伸 · Skill</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap20" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">GITHUB · DISTILLY / 同事.skill</div>
+          <h2 class="reveal d2" style="font-size:56px"><em>同事.skill</em>：<br>开源的「蒸馏员工」</h2>
+          <div class="col gap14 st">
+            <div class="card b"><div class="n">入口</div><p style="font-size:24px"><b>titanwings/colleague-skill</b>（现名 <b>dot-skill / Distilly</b>）— 遵循 AgentSkills 标准</p></div>
+            <div class="card t"><div class="n">蒸馏什么</div><p style="font-size:24px"><b>Part A · work.md</b>：职责、流程、规范、经验库<br><b>Part B · persona.md</b>：表达、决策、人际风格</p></div>
+            <div class="card o"><div class="n">原材料</div><p style="font-size:24px">聊天记录、邮件、飞书 / 钉钉导出 → 生成 <code style="font-family:var(--f-mono)">colleagues/{slug}/SKILL.md</code></p></div>
+            <div class="card g"><div class="n">怎么用</div><p style="font-size:24px">安装后对 Agent 说「蒸馏某位同事」→ 调用 <b>/{slug}</b>，像本人一样回答与干活</p></div>
+          </div>
+        </div>
+        <div style="width:760px" class="col gap16 reveal d3">
+          <figure class="crop" style="height:380px"><img src="assets/dat-skill-colleague-repo.jpg"></figure>
+          <figcaption>github.com/titanwings/colleague-skill</figcaption>
+          <div class="card b" style="padding:16px 20px;font:400 21px/1.5 var(--f-mono);color:var(--ink-2)">
+            colleagues/{slug}/<br>
+            &nbsp;&nbsp;├── SKILL.md<br>
+            &nbsp;&nbsp;├── work.md<br>
+            &nbsp;&nbsp;├── persona.md<br>
+            &nbsp;&nbsp;└── source/（messages · emails）
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R39 titanwings/colleague-skill（README_ZH、docs/PRD.md）；MIT；⚠ 社区项目，与课堂「蒸馏员工」模板同名不同源</div>
+    </section>
+
+    <!-- === SLIDE · Meta 蒸馏员工 === -->
+    <section class="slide c" data-sec="3 · 数据价值" data-title="新闻：Meta 蒸馏员工（含离职后延续）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 课堂延伸 · Skill</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:800px" class="col gap14 reveal d3">
+          <figure class="contain" style="height:690px;background:#fff"><img src="assets/dat-meta-caixin-user.png" style="object-fit:contain;width:100%;height:100%"></figure>
+          <figcaption>财新全球 · 封面报道：When Employees Leave, Their AI Clones Carry on Working（2026.06.15）</figcaption>
+          <div class="card g" style="padding:14px 20px"><p style="font-size:22px;margin:0"><b>Reuters 2026.04.21</b>：Meta 在工作电脑采集鼠标、键盘与屏采，训练办公 Agent（MCI）；CNBC 补充跟踪站点清单</p></div>
+        </div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">META · MCI · 2026.04</div>
+          <h2 class="reveal d2" style="font-size:52px">大厂在做的<br><em>「蒸馏员工」</em></h2>
+          <div class="col gap12 st">
+            <div class="card b"><div class="n">Model Capability Initiative</div><p style="font-size:23px">工作电脑采集：<b>鼠标 · 键盘 · 应用上下文 · 屏采</b> → <b>行为克隆</b>训练办公 Agent</p></div>
+            <div class="card o"><div class="n">与 GitHub Skill 的差别</div><p style="font-size:23px">同事.skill 输出 <b>.md 文件夹</b>；MCI 输出 <b>模型权重</b>——可复制、部署，接替日常任务</p></div>
+            <div class="card t"><div class="n">离职员工</div><p style="font-size:23px">财新等报道：岗位被拆成 Skill / Agent 后，<b>人走流程留</b>；另有企业把离职同事做成「数字人」接班（⚠ 同意与伦理）</p></div>
+          </div>
+          <p class="reveal d5" style="font-size:24px">课堂讨论：你的 Q1–Q4，愿意蒸馏成 <b>自己的</b> Skill，还是担心被公司<b>蒸馏走</b>？</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R44 Reuters（2026-04-21）MCI；R45 Caixin Global（2026-06-15）；R46 36氪、虎嗅（MCI 与「同事.skill」对比，⚠ 二手）；同期裁员见 Reuters 后续报道</div>
+    </section>
+
+    <!-- === SLIDE 52 · 谢谢 === -->
+    <section class="slide c" data-sec="3 · 数据价值" data-title="谢谢 · 下一讲预告">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 2</b> · 结束</div><div class="pg"></div>
+      <div class="body flex gap48 center">
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">NEXT · LECTURE 3</div>
+          <h2 class="reveal d2" style="font-size:84px">数据科学与<br><em>AI 1.0</em></h2>
+          <p class="reveal d3" style="font-size:30px">从“数据有价值”，到“怎样用数据与规则做出第一个智能系统”。</p>
+          <div class="flex center gap24 reveal d5" style="margin-top:20px"><img src="assets/logo-xjtu-red.png" style="width:96px;height:96px"><div><div style="font:700 30px var(--f-serif-cn)">常象宇</div><div style="font:400 22px var(--f-mono);color:var(--ink-3)">xiangyuchang@xjtu.edu.cn</div></div></div>
+        </div>
+        <div style="width:620px"><figure class="contain reveal d3" style="height:640px"><img src="assets/p48_1.png"></figure></div>
+      </div>
+    </section>
+
+    <!-- === 参考文献 === -->
+    <section class="slide c" data-sec="附录" data-title="参考文献">
+      <div class="toprule"></div><div class="tag"><b>附录</b> · 参考文献</div><div class="pg"></div>
+      <div class="body"><h2 class="reveal d1" style="font-size:52px;margin-bottom:18px">参考文献 <em>R1–R11</em></h2>
+        <div style="columns:2;column-gap:56px;font:400 18px/1.5 var(--f-mono);color:var(--ink-2)">
+          <p style="font:inherit;margin:0 0 10px"><b>R1</b> 国家数据局：《全国数据资源调查报告（2025年）》，2026-04-29 — nda.gov.cn/sjj/zhuanti/ztszzh/0429/20260429164803571173880_pc.html</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R2</b> 国家数据局：构建数据基础制度 2025 年工作要点 — nda.gov.cn/sjj/swdt/sjdt/0428/20250428132338848329482_pc.html</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R3</b> 数据要素乘数效应有力释放 — gov.cn/zhengce/202506/content_7026155.htm</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R4</b> 上海高级金融学院：企业数据资产入表情况跟踪报告（2025 上半年），转引自第一财经 — yicai.com/news/102927148.html</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R5</b> 国务院：关于深入实施“人工智能+”行动的意见（国发〔2025〕11 号）— gov.cn/zhengce/zhengceku/202508/content_7037862.htm</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R6</b> “十五五”规划纲要（2026–2030）— gov.cn/yaowen/liebiao/202603/content_7062633.htm</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R7</b> 国家发改委：政府工作报告首提“智能经济”— ndrc.gov.cn/wsdwhfz/202603/t20260313_1404128.html</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R8</b> 国家数据局：高质量数据集和数据标注先行先试现场会，2026-11-14 — nda.gov.cn/sjj/ywpd/szkjyjcss/1114/20261114110623086743990_pc.html</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R9</b> 国家数据局：专家解读《关于推进行业高质量数据集建设行动的实施方案》，2026-06 — nda.gov.cn/sjj/zwgk/zjjd/0610/20260610184207948233640_pc.html</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R10</b> Reuters / TechCrunch：Meta 投资 Scale AI，2025-06-13</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R11</b> IDC Global DataSphere：June 2026 forecast — idc.com/resource-center/definitions/what-are-the-global-datasphere-and-global-storagesphere/</p>
+          <p style="font:inherit;margin:0 0 10px"><b>P</b> 原 PPT：Materials/Lecture_2_intro.pptx（图片多来自原稿，来源见各页）</p>
+        </div></div>
+    </section>
+
+    <!-- === 参考文献（续）=== -->
+    <section class="slide c" data-sec="附录" data-title="参考文献（续）">
+      <div class="toprule"></div><div class="tag"><b>附录</b> · 参考文献（续）</div><div class="pg"></div>
+        <div class="body"><h2 class="reveal d1" style="font-size:52px;margin-bottom:18px">参考文献 <em>R12–R46</em></h2>
+        <div style="columns:2;column-gap:56px;font:400 16px/1.42 var(--f-mono);color:var(--ink-2)">
+          <p style="font:inherit;margin:0 0 9px"><b>R12</b> GPT-3 论文（Brown et al., 2020）；Llama 2（2023）；Llama 3（Meta, 2024，15T+ tokens）；Qwen3 Technical Report（2025，36T tokens）</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R13</b> Hugging Face：FineWeb 数据集与技术博客 — huggingface.co/datasets/HuggingFaceFW/fineweb</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R14</b> Epoch AI：Will we run out of data? — epoch.ai/blog/will-we-run-out-of-data-limits-of-llm-scaling-based-on-human-generated-data</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R15</b> 国家数据局：专家话两会｜以改革攻坚加速数据价值释放，2026-03-12</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R16</b> 总台 / 北京日报：北京人形机器人创新中心数据训练基地，2026；第一财经：跨界资本加速涌入，具身智能数据采集成风口</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R17</b> 创业邦 / 腾讯新闻：报价跌至20元/小时，具身数据淘金潮，2026-11-07（引《具身数据发展报告2026》，Interact Analysis）；澎湃新闻美数课：117 个数采项目，2026-09</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R18</b> 国家数据局等：《关于培育数据流通服务机构 加快推进数据要素市场化价值化的意见》（国数政策〔2026〕6号）— gov.cn/zhengce/zhengceku/202602/content_7057405.htm</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R19</b> 国家数据局：专家解读｜数据流通交易加速数据价值释放，2026-05-01；专家解读｜强化数据交易所综合服务功能，2026-02-10</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R20</b> 国家信息中心：建设开放共享安全的全国一体化数据市场，2026-06-25</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R21</b> 央视新闻 / 国家数据局：2025 年企业数据产品和服务交易额同比增长 39.8%，2026-06-11</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R22</b> 大众网：首例词元交易在青岛大数据交易中心完成备案（转载于数据要素×项目办 deo.org.cn）</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R23</b> 每日经济新闻：重庆探索制定词元交易标准和词元结算规则，2026-11-12</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R24</b> 数据星球：词元交易密集落地，2026-10-15（二手汇总）；银行网：数据产业“爆发”与“空转”（⚠ 二手）</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R25</b> Quartz：The price of AI training data, from $5M to $250M，2026-05</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R26</b> aidata.auction：AI Data Deal Tracker；CB Insights：AI content licensing deals；Reuters（Reddit–Google，2024-02）；WSJ（News Corp–OpenAI，2024-05）</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R27</b> Publishers Weekly：Anthropic Agrees to Pay $1.5 Billion to Settle Copyright Lawsuit，2025-09</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R28</b> Authors Guild / 法院文件：Bartz v. Anthropic 和解终审（2026-07）；anthropiccopyrightsettlement.com</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R29</b> 第一财经：具身智能数据采集成风口（价格区间引智元合伙人发言）</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R30</b> NVIDIA：Physical AI Data Factory Blueprint 新闻稿，2026-03</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R31</b> NVIDIA 开发者博客：Scale Synthetic Data and Physical AI Reasoning with Cosmos，2025-03</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R32</b> NVIDIA 博客：Robotics simulation advancements at CoRL，2026-11</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R33</b> 数字中国建设峰会：在上海，机器人正加速“进化”，2025-05-19</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R34</b> Hugging Face：agibot-world/AgiBotWorld2026 数据集</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R35</b> DeepMind AlphaFold 2 方法说明（约 17 万 PDB 结构，128 TPUv3 核）；社区估算训练成本，见 Hacker News 讨论（⚠ 非官方）</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R36</b> EMBL：AlphaFold – using open data and AI to discover the 3D protein universe；EMBL-EBI AlphaFold DB</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R37</b> a16z：Investing in Periodic Labs，2025-09</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R38</b> SiliconANGLE / TechCrunch：Periodic Labs raises $300M，2025-09 / 10</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R39</b> titanwings/colleague-skill（同事.skill / Distilly）— github.com/titanwings/colleague-skill</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R44</b> Reuters：Meta to start capturing employee mouse movements, keystrokes for AI training，2026-04-21</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R45</b> Caixin Global：When Employees Leave, Their AI Clones Carry on Working，2026-06-15</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R46</b> 36氪、虎嗅：MCI 与「同事.skill」对比（2026.04，⚠ 二手解读）；CNBC 2026-04-22 跟踪站点列表</p>
+        </div></div>
+    </section>
+
+  </div>
+</div>
+
+<!-- 底部控制条（舞台之外） -->
+<div class="deck-controls">
+  <button id="bPrev" title="上一页 ←">◀</button>
+  <button id="bOutline" title="目录 O">OUTLINE</button>
+  <span id="counter"></span>
+  <button id="bNext" title="下一页 →">▶</button>
+</div>
+
+<!-- 目录浮层：由各页 data-title / data-sec 自动生成 -->
+<div id="outline"><div class="close">ESC ✕</div></div>
+
+<!-- 侧边导航栏 -->
+<div id="sbTab" title="导航栏 S">导航</div>
+<aside id="sidebar"><div class="sbh"><b>Lecture 2 · 数据价值<span>初探</span></b><button id="sbClose">关闭 ✕</button></div><div class="sbl" id="sbList"></div></aside>
+
+<script>
+/* === 舞台缩放：整体等比缩放到窗口，保持 16:9 === */
+const stage = document.getElementById('stage');
+function fit() {
+  const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+  stage.style.transform = `translate(${(innerWidth - 1920 * s) / 2}px, ${(innerHeight - 1080 * s) / 2}px) scale(${s})`;
+}
+addEventListener('resize', fit); fit();
+
+/* === 翻页状态 === */
+const slides = [...document.querySelectorAll('.slide')];
+const counter = document.getElementById('counter');
+let cur = 0;
+slides.forEach((s, k) => { const p = s.querySelector('.pg'); if (p) p.textContent = `${String(k + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`; });
+function show(i) {
+  cur = Math.max(0, Math.min(slides.length - 1, i));
+  slides.forEach((s, k) => { s.classList.toggle('active', k === cur); s.classList.toggle('visible', k === cur); });
+  const sn = slides[cur]._stepNav;
+  if (sn) sn.reset();
+  counter.textContent = `${cur + 1} / ${slides.length}`;
+  history.replaceState(null, '', '#' + (cur + 1));
+  document.querySelectorAll('#outline a').forEach((a, k) => a.classList.toggle('cur', +a.dataset.i === cur));
+  if (window.syncSidebar) syncSidebar();
+}
+function deckNext() { if (!slideStepNext(slides[cur])) show(cur + 1); }
+function deckPrev() { if (!slideStepPrev(slides[cur])) show(cur - 1); }
+
+/* === 目录（Outline）=== */
+const ol = document.getElementById('outline');
+(function buildOutline() {
+  const secs = []; let last = null;
+  slides.forEach((s, k) => {
+    const sec = s.dataset.sec; if (!sec) return;
+    if (!last || last.name !== sec) { last = { name: sec, items: [] }; secs.push(last); }
+    last.items.push({ i: k, t: s.dataset.title || '' });
+  });
+  let h = '<h1>Lecture 2 · 数据价值<span>初探</span></h1>';
+  secs.forEach(sc => {
+    h += `<div class="sec"><h4>${sc.name}</h4><div class="items">` +
+      sc.items.map(it => `<a data-i="${it.i}"><i>${String(it.i + 1).padStart(2, '0')}</i><span>${it.t}</span></a>`).join('') + '</div></div>';
+  });
+  ol.insertAdjacentHTML('beforeend', h);
+  ol.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { show(+a.dataset.i); toggleOutline(false); }));
+})();
+function toggleOutline(f) { ol.classList.toggle('open', f === undefined ? !ol.classList.contains('open') : f); }
+document.getElementById('bOutline').onclick = () => toggleOutline();
+document.getElementById('bPrev').onclick = () => deckPrev();
+document.getElementById('bNext').onclick = () => deckNext();
+ol.querySelector('.close').onclick = () => toggleOutline(false);
+
+/* === 侧边导航栏：折叠分组，当前页高亮，可跳到任意页 === */
+const sb = document.getElementById('sidebar'), sbList = document.getElementById('sbList');
+(function buildSidebar() {
+  const secs = []; let last = null;
+  slides.forEach((s, k) => {
+    const sec = s.dataset.sec; if (!sec) return;
+    if (!last || last.name !== sec) { last = { name: sec, items: [] }; secs.push(last); }
+    last.items.push({ i: k, t: s.dataset.title || '' });
+  });
+  sbList.innerHTML = secs.map(sc => `<div class="sbs"><div class="sbt">${sc.name}<em>${sc.items.length}</em></div><div class="sbi">` +
+    sc.items.map(it => `<a data-i="${it.i}"><i>${String(it.i + 1).padStart(2, '0')}</i><span>${it.t}</span></a>`).join('') + '</div></div>').join('');
+  sbList.querySelectorAll('.sbt').forEach(t => t.addEventListener('click', () => t.parentNode.classList.toggle('open')));
+  sbList.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { show(+a.dataset.i); a.blur(); }));
+})();
+window.syncSidebar = function () {
+  sbList.querySelectorAll('a').forEach(a => a.classList.toggle('cur', +a.dataset.i === cur));
+  const c = sbList.querySelector('a.cur'); if (!c) return;
+  const g = c.closest('.sbs');
+  if (!g.classList.contains('open')) { sbList.querySelectorAll('.sbs.open').forEach(x => x.classList.remove('open')); g.classList.add('open'); }
+  if (sb.classList.contains('open')) c.scrollIntoView({ block: 'nearest' });
+};
+function toggleSidebar(f) { sb.classList.toggle('open', f === undefined ? !sb.classList.contains('open') : f); if (sb.classList.contains('open')) syncSidebar(); }
+document.getElementById('sbTab').onclick = () => toggleSidebar();
+document.getElementById('sbClose').onclick = () => toggleSidebar(false);
+document.addEventListener('mousedown', e => { if (sb.classList.contains('open') && !sb.contains(e.target) && e.target.id !== 'sbTab') toggleSidebar(false); });
+
+/* === 键盘 === */
+addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea')) return;
+  if (e.key === 'Escape') { toggleOutline(false); toggleSidebar(false); }
+  if (e.key === 's' || e.key === 'S') toggleSidebar();
+  if (e.key === 'o' || e.key === 'O') toggleOutline();
+  if (ol.classList.contains('open')) return;
+  if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); deckNext(); }
+  if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); deckPrev(); }
+  if (e.key === 'Home') show(0);
+  if (e.key === 'End') show(slides.length - 1);
+});
+requestAnimationFrame(() => requestAnimationFrame(() => show((parseInt(location.hash.slice(1)) || 1) - 1)));
+</script>
+</body>
+</html>

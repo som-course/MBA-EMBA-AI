@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 7.1 · AI 4.0 大语言模型</title>
+
+<!-- Fonts: Noto Serif SC (中文标题) / Source Serif 4 (英文衬线) / Noto Sans SC (正文) / IBM Plex Mono (标签) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@600;700;900&family=Source+Serif+4:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+<style>
+/* === THEME ===
+   暖白纸面 + 墨色 + 唯一强调蓝；青、赭仅用于示意图 */
+:root {
+  --paper: #faf8f4;
+  --paper-2: #f2eee6;
+  --ink: #1d2433;
+  --ink-2: #4a5263;
+  --ink-3: #8a90a0;
+  --blue: #24509e;
+  --teal: #1f7a72;
+  --ochre: #c27a1a;
+  --rule: #cfcac0;
+
+  --f-serif-cn: 'Noto Serif SC', 'Source Serif 4', serif;
+  --f-serif-en: 'Source Serif 4', 'Noto Serif SC', serif;
+  --f-sans: 'Noto Sans SC', sans-serif;
+  --f-mono: 'IBM Plex Mono', monospace;
+
+  --stage-bg: #e9e5dc;
+  --slide-bg: var(--paper);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* === VIEWPORT-BASE (固定 1920×1080 舞台) === */
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-viewport { position: fixed; inset: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; background: var(--slide-bg, #fff); }
+.slide { position: absolute; inset: 0; width: 1920px; height: 1080px; overflow: hidden; display: block; visibility: hidden; opacity: 0; pointer-events: none; background: var(--slide-bg, #fff); }
+.slide.active, .slide.visible { visibility: visible; opacity: 1; pointer-events: auto; z-index: 1; }
+img, video, canvas, svg { max-width: 100%; max-height: 100%; }
+.deck-controls { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 1000; }
+@media print {
+  html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+  .deck-viewport { position: static; overflow: visible; background: #fff; }
+  .deck-stage { position: static; width: auto; height: auto; transform: none !important; background: none; }
+  .slide { position: relative; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 1920px; height: 1080px; break-after: page; page-break-after: always; }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+  .deck-controls { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+}
+
+/* === 动效：进入页面时依次浮现 === */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .9s var(--ease), transform .9s var(--ease); }
+.slide.visible .reveal { opacity: 1; transform: none; }
+.d1 { transition-delay: .10s; } .d2 { transition-delay: .25s; } .d3 { transition-delay: .40s; }
+.d4 { transition-delay: .55s; } .d5 { transition-delay: .70s; } .d6 { transition-delay: .85s; }
+
+/* === COVER 封面 === */
+.cover .toprule { position: absolute; left: 96px; right: 96px; top: 56px; height: 3px; background: var(--ink); }
+.cover .kicker {
+  position: absolute; left: 96px; top: 92px;
+  font: 500 22px/1 var(--f-mono); letter-spacing: .16em; color: var(--ink-3); text-transform: uppercase;
+}
+.cover .kicker b { color: var(--blue); font-weight: 500; }
+
+.cover .title { position: absolute; left: 96px; top: 140px; width: 980px; }
+.cover h1 { font: 900 144px/1.08 var(--f-serif-cn); color: var(--ink); letter-spacing: .02em; }
+.cover h1 span { color: var(--blue); display: block; }
+.cover .sub {
+  margin-top: 28px; font: 700 38px/1.5 var(--f-serif-cn); color: var(--ink);
+}
+
+/* 本讲结构 = outline（对应原稿"papers in this talk"） */
+.cover .outline { position: absolute; left: 96px; top: 650px; width: 940px; }
+.cover .outline .hd {
+  font: 500 18px/1 var(--f-mono); letter-spacing: .18em; color: var(--ink-3);
+  padding-bottom: 14px; border-bottom: 1px solid var(--rule); margin-bottom: 4px;
+}
+.cover .outline .row {
+  display: flex; align-items: baseline; gap: 28px; padding: 11px 0;
+  border-bottom: 1px solid var(--paper-2);
+}
+.cover .outline .no { font: 500 20px/1 var(--f-mono); letter-spacing: .12em; color: var(--blue); width: 120px; white-space: nowrap; }
+.cover .outline .en { font: 600 28px/1.2 var(--f-serif-en); color: var(--ink); }
+.cover .outline .cn { font: 400 24px/1.2 var(--f-sans); color: var(--ink-2); margin-left: auto; }
+
+/* 主讲人 + 校徽 */
+.cover .who { position: absolute; left: 96px; bottom: 56px; display: flex; align-items: center; gap: 28px; }
+.cover .who img { width: 124px; height: 124px; }
+.cover .who .name { font: 700 34px/1.2 var(--f-serif-cn); color: var(--ink); }
+.cover .who .org { font: 400 24px/1.55 var(--f-sans); color: var(--ink-2); margin-top: 6px; }
+.cover .who .meta { font: 400 20px/1.6 var(--f-mono); color: var(--ink-3); letter-spacing: .02em; }
+
+/* 右侧示意图：AI 四次浪潮 */
+.cover .fig { position: absolute; left: 1120px; top: 190px; width: 704px; height: 760px; }
+.fig svg { width: 100%; height: 100%; max-width: none; max-height: none; overflow: visible; }
+.fig .curve { stroke-dasharray: 1200; stroke-dashoffset: 1200; transition: stroke-dashoffset 2.2s .5s var(--ease); }
+.slide.visible .fig .curve { stroke-dashoffset: 0; }
+.fig .node { opacity: 0; transform-box: fill-box; transform-origin: center; transform: scale(.2); transition: opacity .6s var(--ease), transform .6s var(--ease); }
+.slide.visible .fig .node { opacity: 1; transform: none; }
+.fig .n1 { transition-delay: .6s; } .fig .n2 { transition-delay: 1.0s; } .fig .n3 { transition-delay: 1.4s; } .fig .n4 { transition-delay: 1.9s; }
+.fig .lab { opacity: 0; transition: opacity .8s ease; }
+.slide.visible .fig .lab { opacity: 1; }
+.fig .l1 { transition-delay: .8s; } .fig .l2 { transition-delay: 1.2s; } .fig .l3 { transition-delay: 1.6s; } .fig .l4 { transition-delay: 2.1s; }
+.fig text { font-family: var(--f-sans); }
+.fig .ver { font-family: var(--f-mono); font-weight: 500; }
+.fig .cap { font-family: var(--f-serif-en); font-style: italic; }
+
+/* === 页码/导航（舞台之外的 UI） === */
+.deck-controls { font: 500 14px var(--f-mono); color: var(--ink-3); letter-spacing: .1em; user-select: none; }
+
+/* =====================================================
+   CONTENT SLIDES（内页通用组件）
+   ===================================================== */
+.c .toprule { position: absolute; left: 96px; right: 96px; top: 56px; height: 3px; background: var(--ink); }
+.c .tag { position: absolute; left: 96px; top: 80px; font: 500 20px/1 var(--f-mono); letter-spacing: .16em; color: var(--ink-3); text-transform: uppercase; }
+.c .tag b { color: var(--blue); font-weight: 500; }
+.c .pg  { position: absolute; right: 96px; top: 80px; font: 500 20px/1 var(--f-mono); letter-spacing: .1em; color: var(--ink-3); }
+.c .body { position: absolute; left: 96px; right: 96px; top: 140px; bottom: 96px; }
+.c .src { position: absolute; left: 96px; right: 96px; bottom: 34px; padding-top: 10px; border-top: 1px solid var(--rule);
+          font: 400 17px/1.45 var(--f-mono); color: var(--ink-3); letter-spacing: .01em; }
+.c .src b { color: var(--ink-2); font-weight: 500; }
+
+.c h2 { font: 900 72px/1.18 var(--f-serif-cn); color: var(--ink); letter-spacing: .01em; }
+.c h2 em { font-style: normal; color: var(--blue); }
+.c h3 { font: 700 36px/1.3 var(--f-serif-cn); color: var(--ink); }
+.c .lede { font: 400 34px/1.65 var(--f-sans); color: var(--ink-2); }
+.c .lede b, .c p b { color: var(--ink); font-weight: 700; }
+.c p { font: 400 30px/1.65 var(--f-sans); color: var(--ink-2); }
+.c .mono { font-family: var(--f-mono); }
+.c .blue { color: var(--blue); } .c .teal { color: var(--teal); } .c .ochre { color: var(--ochre); }
+.c .muted { color: var(--ink-3); }
+.c .en { font-family: var(--f-serif-en); font-style: italic; }
+
+/* 布局 */
+.c .abs { position: absolute; }
+.c .flex { display: flex; } .c .col { display: flex; flex-direction: column; }
+.c .gap16 { gap: 16px; } .c .gap24 { gap: 24px; } .c .gap32 { gap: 32px; } .c .gap48 { gap: 48px; }
+.c .grow { flex: 1; } .c .center { align-items: center; } .c .between { justify-content: space-between; }
+
+/* 图片 */
+.c figure { margin: 0; position: relative; }
+.c figure img { display: block; width: 100%; height: 100%; object-fit: cover; border: 1px solid var(--rule); background: #fff; }
+.c figure.contain img { object-fit: contain; }
+.c figcaption { margin-top: 10px; font: 400 18px/1.4 var(--f-mono); color: var(--ink-3); }
+
+/* 卡片 */
+.c .card { background: #fff; border: 1px solid var(--rule); border-top: 4px solid var(--ink); padding: 28px 30px; }
+.c .card.b { border-top-color: var(--blue); } .c .card.t { border-top-color: var(--teal); } .c .card.o { border-top-color: var(--ochre); } .c .card.g { border-top-color: var(--ink-3); }
+.c .card h3 { font-size: 34px; margin-bottom: 12px; }
+.c .card p { font-size: 27px; line-height: 1.6; }
+.c .card .n { font: 500 20px/1 var(--f-mono); letter-spacing: .14em; color: var(--ink-3); margin-bottom: 14px; }
+
+/* 大数字 */
+.c .stat .v { font: 900 120px/1 var(--f-serif-en); color: var(--blue); letter-spacing: -.02em; }
+.c .stat .v small { font-size: 52px; font-weight: 700; margin-left: 4px; }
+.c .stat .l { font: 400 26px/1.45 var(--f-sans); color: var(--ink-2); margin-top: 10px; }
+
+/* 引用 */
+.c .quote { font: 700 56px/1.4 var(--f-serif-cn); color: var(--ink); }
+.c .quote .en { display: block; margin-top: 22px; font: 400 italic 34px/1.5 var(--f-serif-en); color: var(--ink-2); }
+.c .quote-mark { font: 900 200px/0.6 var(--f-serif-en); color: var(--blue); opacity: .18; }
+
+/* 表格 */
+.c table { border-collapse: collapse; width: 100%; }
+.c th { font: 500 20px/1 var(--f-mono); letter-spacing: .12em; text-align: left; color: var(--ink-3); padding: 0 20px 14px 0; border-bottom: 2px solid var(--ink); text-transform: uppercase; }
+.c td { font: 400 27px/1.5 var(--f-sans); color: var(--ink-2); padding: 18px 20px 18px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.c td:first-child { font-weight: 700; color: var(--ink); white-space: nowrap; }
+
+/* 标签/药丸 */
+.c .pill { display: inline-block; font: 500 20px/1 var(--f-mono); letter-spacing: .08em; padding: 8px 14px; border: 1.5px solid currentColor; border-radius: 99px; }
+.c .pill.fill { color: #fff; background: var(--blue); border-color: var(--blue); }
+
+/* 章节页 */
+.chapter .big { position: absolute; left: 96px; top: 150px; font: 900 420px/1 var(--f-serif-en); color: var(--blue); opacity: .10; letter-spacing: -.04em; }
+.chapter .ttl { position: absolute; left: 96px; top: 420px; }
+.chapter .ttl .k { font: 500 24px/1 var(--f-mono); letter-spacing: .2em; color: var(--blue); margin-bottom: 26px; }
+.chapter .ttl h2 { font-size: 150px; line-height: 1.1; }
+.chapter .ttl .s { margin-top: 28px; font: 400 40px/1.5 var(--f-sans); color: var(--ink-2); }
+.chapter .subs { position: absolute; left: 96px; right: 96px; bottom: 100px; display: flex; gap: 0; border-top: 1px solid var(--rule); }
+.chapter .subs div { flex: 1; padding-top: 20px; font: 400 26px/1.4 var(--f-sans); color: var(--ink-2); }
+.chapter .subs div b { display: block; font: 500 20px/1 var(--f-mono); letter-spacing: .14em; color: var(--blue); margin-bottom: 10px; }
+
+/* 逐项浮现 */
+.st > * { opacity: 0; transform: translateY(22px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
+.slide.visible .st > * { opacity: 1; transform: none; }
+.st > *:nth-child(1) { transition-delay: .15s; } .st > *:nth-child(2) { transition-delay: .3s; } .st > *:nth-child(3) { transition-delay: .45s; }
+.st > *:nth-child(4) { transition-delay: .6s; } .st > *:nth-child(5) { transition-delay: .75s; } .st > *:nth-child(6) { transition-delay: .9s; }
+.st > *:nth-child(7) { transition-delay: 1.05s; } .st > *:nth-child(8) { transition-delay: 1.2s; }
+
+/* 交互控件 */
+.c .tabs { display: flex; gap: 12px; }
+.c .tab { font: 500 22px/1 var(--f-mono); letter-spacing: .06em; padding: 16px 24px; border: 1.5px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; transition: all .2s; }
+.c .tab:hover { background: var(--paper-2); }
+.c .tab.on { background: var(--ink); color: #fff; }
+.c .tab.b.on { background: var(--blue); border-color: var(--blue); }
+.c .hint { font: 400 20px/1 var(--f-mono); color: var(--ink-3); letter-spacing: .06em; }
+
+/* outline 浮层 */
+#outline { position: fixed; inset: 0; z-index: 2000; background: rgba(250,248,244,.97); display: none; overflow: auto; padding: 5vh 6vw; font-family: var(--f-sans); color: var(--ink); }
+#outline.open { display: block; }
+#outline h1 { font: 900 clamp(28px,3.4vw,52px)/1.2 var(--f-serif-cn); margin-bottom: 3vh; }
+#outline h1 span { color: var(--blue); }
+#outline .sec { margin-bottom: 3vh; }
+#outline .sec h4 { font: 500 clamp(12px,1vw,16px)/1 var(--f-mono); letter-spacing: .16em; color: var(--blue); border-bottom: 1px solid var(--rule); padding-bottom: 1vh; margin-bottom: 1.4vh; }
+#outline .items { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(220px,22vw,360px), 1fr)); gap: .6vh 2vw; }
+#outline a { display: flex; gap: 12px; padding: .8vh 0; color: var(--ink); text-decoration: none; font-size: clamp(14px,1.2vw,20px); line-height: 1.4; cursor: pointer; border-bottom: 1px dotted var(--rule); }
+#outline a i { font: normal 500 clamp(11px,.9vw,14px)/1.8 var(--f-mono); color: var(--ink-3); min-width: 2.2em; }
+#outline a:hover { color: var(--blue); }
+#outline a.cur { color: var(--blue); font-weight: 700; }
+#outline .close { position: fixed; right: 3vw; top: 3vh; font: 500 14px var(--f-mono); letter-spacing: .1em; color: var(--ink-3); cursor: pointer; }
+.deck-controls { display: flex; gap: 22px; align-items: center; background: rgba(250,248,244,.85); padding: 6px 16px; border-radius: 99px; }
+.deck-controls button { all: unset; cursor: pointer; color: var(--ink-2); font: 500 14px var(--f-mono); letter-spacing: .1em; }
+.deck-controls button:hover { color: var(--blue); }
+
+/* 侧边导航栏 */
+#sbTab { position: fixed; left: 0; top: 50%; transform: translateY(-50%); z-index: 1500; width: 26px; height: 96px; background: rgba(250,248,244,.9); border: 1px solid var(--rule); border-left: none; border-radius: 0 8px 8px 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font: 500 13px var(--f-mono); color: var(--ink-3); writing-mode: vertical-rl; letter-spacing: .2em; transition: opacity .25s, color .2s; opacity: .55; }
+#sbTab:hover { opacity: 1; color: var(--blue); }
+#sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 340px; z-index: 1800; background: rgba(250,248,244,.98); border-right: 1px solid var(--rule); box-shadow: 6px 0 24px rgba(29,36,51,.08); transform: translateX(-102%); transition: transform .3s cubic-bezier(.16,1,.3,1); display: flex; flex-direction: column; font-family: var(--f-sans); color: var(--ink); }
+#sidebar.open { transform: none; }
+#sidebar .sbh { padding: 18px 20px 12px; border-bottom: 1px solid var(--rule); display: flex; align-items: center; justify-content: space-between; }
+#sidebar .sbh b { font: 900 17px var(--f-serif-cn); } #sidebar .sbh b span { color: var(--blue); }
+#sidebar .sbh button { all: unset; cursor: pointer; font: 500 12px var(--f-mono); color: var(--ink-3); letter-spacing: .1em; }
+#sidebar .sbh button:hover { color: var(--blue); }
+#sidebar .sbl { overflow-y: auto; flex: 1; padding: 6px 0 24px; }
+#sidebar .sbs > .sbt { display: flex; align-items: center; gap: 8px; padding: 11px 20px; cursor: pointer; font: 500 12px var(--f-mono); letter-spacing: .1em; color: var(--blue); border-top: 1px solid var(--rule); user-select: none; }
+#sidebar .sbs:first-child > .sbt { border-top: none; }
+#sidebar .sbt:before { content: '▸'; font-size: 11px; transition: transform .2s; }
+#sidebar .sbs.open > .sbt:before { transform: rotate(90deg); }
+#sidebar .sbt em { margin-left: auto; font-style: normal; color: var(--ink-3); }
+#sidebar .sbi { display: none; }
+#sidebar .sbs.open .sbi { display: block; }
+#sidebar .sbi a { display: flex; gap: 10px; padding: 7px 20px 7px 34px; font-size: 14px; line-height: 1.4; color: var(--ink-2); cursor: pointer; text-decoration: none; border-left: 3px solid transparent; }
+#sidebar .sbi a i { font: normal 500 11px/1.9 var(--f-mono); color: var(--ink-3); min-width: 1.9em; }
+#sidebar .sbi a:hover { background: #f0ece3; color: var(--ink); }
+#sidebar .sbi a.cur { color: var(--blue); font-weight: 700; border-left-color: var(--blue); background: #eef2fa; }
+@media print { #sbTab, #sidebar { display: none !important; } }
+
+/* === L2 扩展组件 === */
+.c .chip { display: inline-block; font: 500 24px/1 var(--f-sans); padding: 14px 20px; background: #fff; border: 1px solid var(--rule); border-left: 4px solid var(--blue); color: var(--ink); }
+.c .chips { display: flex; flex-wrap: wrap; gap: 14px; }
+.c .tl { position: relative; display: flex; gap: 0; border-top: 3px solid var(--ink); }
+.c .tl button { all: unset; cursor: pointer; flex: 1; padding: 22px 6px 0; text-align: left; position: relative; font: 500 24px/1.2 var(--f-mono); color: var(--ink-3); transition: color .2s; }
+.c .tl button:before { content: ''; position: absolute; left: 0; top: -12px; width: 20px; height: 20px; border-radius: 50%; background: var(--paper); border: 3px solid var(--ink-3); transition: all .2s; }
+.c .tl button small { display: block; margin-top: 8px; font: 400 19px/1.35 var(--f-sans); color: var(--ink-3); padding-right: 10px; }
+.c .tl button:hover { color: var(--blue); }
+.c .tl button.on { color: var(--blue); }
+.c .tl button.on:before { background: var(--blue); border-color: var(--blue); transform: scale(1.3); }
+.c .tl button.on small { color: var(--ink); font-weight: 700; }
+.c .bignum { font: 900 150px/1 var(--f-serif-en); color: var(--blue); letter-spacing: -.03em; }
+.c .bignum small { font-size: 58px; margin-left: 6px; }
+.c .arrow { font: 500 56px/1 var(--f-mono); color: var(--ink-3); align-self: center; }
+.c input[type=range] { width: 100%; accent-color: var(--blue); height: 6px; }
+.c .kv { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--rule); font: 400 26px/1.3 var(--f-sans); color: var(--ink-2); }
+.c .kv b { font: 700 40px/1 var(--f-serif-en); color: var(--ink); }
+.c .kv b.pos { color: var(--teal); } .c .kv b.neg { color: #b4402d; }
+.c figure.crop img { object-fit: cover; }
+.c .bar { height: 26px; background: var(--paper-2); position: relative; }
+.c .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--blue); transition: width .3s; }
+
+/* === L7.1 扩展组件 === */
+.c .btn { all: unset; cursor: pointer; font: 500 22px/1 var(--f-mono); letter-spacing: .06em; padding: 14px 22px; border: 1.5px solid var(--ink); color: var(--ink); background: transparent; transition: all .2s; }
+.c .btn:hover { background: var(--paper-2); }
+.c .btn.pri { background: var(--blue); border-color: var(--blue); color: #fff; }
+.c .tk { display: inline-block; font: 500 28px/1 var(--f-mono); padding: 12px 16px; background: #fff; border: 1.5px solid var(--rule); margin: 0 6px 10px 0; color: var(--ink); transition: all .25s; }
+.c .tk.on { background: var(--blue); color: #fff; border-color: var(--blue); }
+.c .tk.t { border-color: var(--teal); color: var(--teal); } .c .tk.o { border-color: var(--ochre); color: var(--ochre); }
+.c .tk.btnlike { cursor: pointer; } .c .tk.btnlike:hover { border-color: var(--blue); }
+.c .cell { display: inline-flex; width: 64px; height: 64px; align-items: center; justify-content: center; font: 500 20px/1 var(--f-mono); border: 1px solid var(--rule); background: #fff; color: var(--ink); transition: background .3s; }
+.c .vec { font: 500 28px/1.4 var(--f-mono); color: var(--ink); }
+.c .formula { font: italic 400 44px/1.5 var(--f-serif-en); color: var(--ink); }
+.c .formula i { font-style: italic; } .c .formula sub, .c .formula sup { font-size: .6em; }
+.c .formula.sm { font-size: 34px; }
+.c .note { font: 400 22px/1.5 var(--f-sans); color: var(--ink-3); }
+.c .warn { font: 500 20px/1.4 var(--f-mono); color: var(--ochre); }
+.c textarea, .c input[type=text] { font: 400 28px/1.5 var(--f-sans); padding: 12px 16px; border: 1.5px solid var(--ink); background: #fff; color: var(--ink); width: 100%; resize: none; outline: none; }
+.c textarea:focus, .c input[type=text]:focus { border-color: var(--blue); }
+.c .box { background: #fff; border: 1px solid var(--rule); padding: 24px 28px; }
+.c .prompt { font: 400 24px/1.6 var(--f-mono); color: var(--ink); background: #fff; border: 1px solid var(--rule); border-left: 4px solid var(--blue); padding: 18px 22px; white-space: pre-wrap; }
+.c .prompt .r { color: #b4402d; } .c .prompt .g { color: var(--teal); } .c .prompt .b { color: var(--blue); }
+.c .hl { background: #e8eef9; }
+.c svg text { font-family: var(--f-sans); }
+.c .tg { display: flex; gap: 0; border: 1.5px solid var(--ink); width: max-content; }
+.c .tg button { all: unset; cursor: pointer; padding: 12px 22px; font: 500 22px/1 var(--f-mono); color: var(--ink); }
+.c .tg button.on { background: var(--ink); color: #fff; }
+.c .row2 { display: flex; gap: 40px; }
+.c .lbl { font: 500 20px/1 var(--f-mono); letter-spacing: .14em; color: var(--ink-3); text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<div class="deck-viewport">
+  <div class="deck-stage" id="stage">
+    <!-- === SLIDE 1 · 封面 === -->
+    <section class="slide cover" data-sec="开场" data-title="封面">
+      <div class="toprule"></div>
+      <div class="kicker reveal d1"><b>Lecture 7.1</b> &nbsp;·&nbsp; 人工智能产业实践 &nbsp;·&nbsp; MBA / EMBA</div>
+      <div class="title">
+        <h1 class="reveal d2">大语言<span>模型</span></h1>
+        <p class="sub reveal d3">AI 4.0：从文本向量到 GPT，<br>机器如何学会“说人话、做人事”</p>
+      </div>
+      <div class="outline reveal d4">
+        <div class="hd">IN THIS LECTURE</div>
+        <div class="row"><span class="no">PART 1</span><span class="en">Natural Language Processing</span><span class="cn">自然语言处理</span></div>
+        <div class="row"><span class="no">PART 2</span><span class="en">Large Language Models</span><span class="cn">大语言模型</span></div>
+        <div class="row"><span class="no">PART 3</span><span class="en">Using LLMs</span><span class="cn">大语言模型使用</span></div>
+      </div>
+      <div class="who reveal d5">
+        <img src="assets/logo-xjtu-red.png" alt="西安交通大学校徽">
+        <div>
+          <div class="name">常象宇 <span style="font-family:var(--f-serif-en);font-weight:600;font-size:28px;color:var(--ink-2)">Xiangyu Chang</span></div>
+          <div class="org">西安交通大学 管理学院</div>
+          <div class="meta">xiangyuchang@xjtu.edu.cn</div>
+        </div>
+      </div>
+      <div class="fig reveal d3">
+        <svg viewBox="0 0 704 760" aria-label="词 到 注意力 到 下一个词">
+          <g font-family="IBM Plex Mono, monospace" font-size="26" font-weight="500">
+            <g class="lab l1"><rect x="20" y="560" width="120" height="56" fill="#fff" stroke="#1d2433" stroke-width="2"/><text x="80" y="596" text-anchor="middle" fill="#1d2433">数据</text></g>
+            <g class="lab l1"><rect x="170" y="560" width="120" height="56" fill="#fff" stroke="#1d2433" stroke-width="2"/><text x="230" y="596" text-anchor="middle" fill="#1d2433">驱动</text></g>
+            <g class="lab l2"><rect x="320" y="560" width="120" height="56" fill="#fff" stroke="#1d2433" stroke-width="2"/><text x="380" y="596" text-anchor="middle" fill="#1d2433">人工</text></g>
+            <g class="lab l2"><rect x="470" y="560" width="120" height="56" fill="#fff" stroke="#1d2433" stroke-width="2"/><text x="530" y="596" text-anchor="middle" fill="#1d2433">智能</text></g>
+            <g class="lab l4"><rect x="620" y="560" width="70" height="56" fill="#24509e"/><text x="655" y="596" text-anchor="middle" fill="#fff">?</text></g>
+          </g>
+          <path class="curve" d="M 80 560 C 80 380, 560 380, 655 560" fill="none" stroke="#1f7a72" stroke-width="3" stroke-linecap="round"/>
+          <path class="curve" d="M 230 560 C 230 440, 540 440, 655 560" fill="none" stroke="#c27a1a" stroke-width="3" stroke-linecap="round" style="transition-delay:.9s"/>
+          <path class="curve" d="M 380 560 C 380 480, 520 480, 655 560" fill="none" stroke="#24509e" stroke-width="5" stroke-linecap="round" style="transition-delay:1.3s"/>
+          <path class="curve" d="M 530 560 C 530 520, 600 520, 655 560" fill="none" stroke="#24509e" stroke-width="7" stroke-linecap="round" style="transition-delay:1.7s"/>
+          <g class="lab l3"><text x="352" y="330" text-anchor="middle" font-size="26" fill="#4a5263" font-family="IBM Plex Mono, monospace" letter-spacing="2">ATTENTION</text></g>
+          <g class="lab l4"><text x="352" y="690" text-anchor="middle" font-size="32" fill="#24509e" font-weight="700">价值</text><text x="352" y="735" text-anchor="middle" font-size="26" fill="#8a90a0" class="cap">next token = argmax P( · | context )</text></g>
+        </svg>
+      </div>
+    </section>
+
+    <!-- === SLIDE 2 · LaMDA === -->
+    <section class="slide c" data-sec="开场" data-title="引子：LaMDA 觉醒了吗">
+      <div class="toprule"></div><div class="tag"><b>开场</b> · 引子</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <figure class="reveal d2" style="width:760px;height:700px"><img src="assets/p02_1.png" alt="Blake Lemoine"></figure>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:24px;letter-spacing:.14em">2022 · JUNE</div>
+          <h2 class="reveal d2" style="font-size:62px">一位 Google 工程师说：<br><em>LaMDA 有意识了</em></h2>
+          <p class="reveal d3" style="font-size:32px">Blake Lemoine 公开了与 LaMDA 的对话记录。Google 公开否认，并终止了他的雇佣。</p>
+          <div class="card b reveal d4"><h3>一个问题，贯穿这一讲</h3><p>只会“预测下一个词”的程序，凭什么让人觉得它<b>在思考</b>？</p></div>
+          <div class="note reveal d5">⚠ 原 PPT 写 “June, 2020”，实际为 2022 年 6 月（Medium 文章发表时间）。</div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P2；Lemoine, <i>Is LaMDA Sentient? — an Interview</i>（Medium，2022-06）</div>
+    </section>
+
+    <!-- === SLIDE 3 · OpenAI === -->
+    <section class="slide c" data-sec="开场" data-title="OpenAI 的 11 年">
+      <div class="toprule"></div><div class="tag"><b>开场</b> · 大语言模型时代</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:64px">从一家非营利实验室，到 <em>12 亿周活</em>的产品</h2>
+        <div class="flex gap32 reveal d2" style="margin-top:36px;height:400px">
+          <figure style="width:640px"><img src="assets/p03_1.jpg" alt="OpenAI launch" style="object-position:top"></figure>
+          <figure style="width:560px"><img src="assets/p03_2.jpg" alt="Musk & Altman"></figure>
+          <div class="col grow gap16" style="justify-content:center">
+            <div class="stat"><div class="v">1.2<small>B</small></div><div class="l">ChatGPT 周活跃用户<br>（OpenAI 自报，2026-09）</div></div>
+          </div>
+        </div>
+        <div class="tl reveal d4" style="margin-top:44px">
+          <button class="on">2015-12<small>OpenAI 成立，宣布非营利 AI 研究</small></button>
+          <button>2018<small>GPT-1</small></button>
+          <button>2020<small>GPT-3：1750 亿参数</small></button>
+          <button>2022-11<small>ChatGPT</small></button>
+          <button>2023-03<small>GPT-4</small></button>
+          <button>2026<small>GPT-6 系列；12 亿周活</small></button>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P3；R1（周活）；R2（GPT-6 时间线，沿用 L1 已核实内容）</div>
+      <script>(function(){const s=document.currentScript.parentElement;s.querySelectorAll('.tl button').forEach(b=>b.onclick=()=>{s.querySelectorAll('.tl button').forEach(x=>x.classList.toggle('on',x===b));});})();</script>
+    </section>
+
+    <!-- === SLIDE 4 · GPT-4 看图说笑话 === -->
+    <section class="slide c" data-sec="开场" data-title="GPT-4：看图说笑话">
+      <div class="toprule"></div><div class="tag"><b>开场</b> · GPT-4，2023-03-14</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <figure class="contain reveal d2" style="width:700px;height:760px"><img src="assets/p04_1.png" alt="Lightning cable VGA"></figure>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="box reveal d2"><div class="lbl">PROMPT</div><p style="font-size:30px;margin-top:10px">这张图片有什么有趣的地方？请逐个面板描述。</p></div>
+          <div class="box reveal d3" style="border-left:4px solid var(--blue)"><div class="lbl">GPT-4</div><p style="font-size:27px;margin-top:10px">三个面板：① 手机充电口插着大号 VGA 接头；② “Lightning”包装盒上印着 VGA 图；③ VGA 接头末端是小小的 Lightning 插头。<b>幽默来自“大而过时”与“小而现代”的荒谬反差。</b></p></div>
+          <p class="reveal d4" style="font-size:30px">它没有被“教”过这个笑话。<b>同一个模型，在没有专门训练的任务上泛化。</b>这正是本讲要解释的。</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P4；OpenAI, GPT-4 (2023-03-14)，R3</div>
+    </section>
+
+    <!-- === SLIDE 5 · 目录 === -->
+    <section class="slide c" data-sec="开场" data-title="本讲路线">
+      <div class="toprule"></div><div class="tag"><b>开场</b> · 本讲路线</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:66px">三个问题，<em>一条主线</em></h2>
+        <div class="flex gap32 st" style="margin-top:56px">
+          <div class="card b grow" style="height:470px"><div class="n">PART 1</div><h3>机器如何<br>理解文本？</h3><p style="margin-top:18px">词 → 向量<br>one-hot · BoW · Word2Vec<br>RNN · LSTM · Transformer</p></div>
+          <div class="arrow" style="font-size:56px;color:var(--ink-3)">→</div>
+          <div class="card t grow" style="height:470px"><div class="n">PART 2</div><h3>GPT 是<br>怎样炼成的？</h3><p style="margin-top:18px">注意力 · 预训练 · 微调<br>ICL · CoT · RLHF<br>2022–2026 的演进</p></div>
+          <div class="arrow" style="font-size:56px;color:var(--ink-3)">→</div>
+          <div class="card o grow" style="height:470px"><div class="n">PART 3</div><h3>人们怎样<br>使用大模型？</h3><p style="margin-top:18px">12 亿周活的数据<br>三件事：指导 · 信息 · 写作<br>How to use?</p></div>
+        </div>
+        <p class="reveal d6" style="margin-top:44px;font-size:30px">本讲在课程中的位置：<b class="blue">AI 4.0 · 预训练大模型</b>（L7.2 接续：提示词工程与智能体）</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P5；AGENTS.md 课程规划</div>
+    </section>
+
+    <!-- === SLIDE 6 · 章节 Part 1 === -->
+    <section class="slide c chapter" data-sec="1 · 自然语言处理" data-title="Part 1 · 自然语言处理">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 7.1</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">01</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 1</div>
+        <h2 class="reveal d2">自然语言<em>处理</em></h2>
+        <div class="s reveal d3">让机器“读懂”文本：词 → 向量 → 序列模型 → Transformer</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>1.1</b>人类如何理解文本</div>
+        <div><b>1.2</b>文本变成数字</div>
+        <div><b>1.3</b>词向量：意义的几何</div>
+        <div><b>1.4</b>序列模型：RNN / LSTM</div>
+        <div><b>1.5</b>Transformer</div>
+      </div>
+    </section>
+
+    <!-- === SLIDE 7 · 人类理解文本（交互 tab）=== -->
+    <section class="slide c" data-sec="1 · 自然语言处理" data-title="人类理解文本：四类任务（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.1 人类如何理解文本</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap24">
+          <h2 class="reveal d1" style="font-size:64px">人类怎样“理解”一段文本？</h2>
+          <div class="tabs reveal d2 tk4" style="flex-wrap:wrap">
+            <button class="tab b on" data-k="0">摘要</button><button class="tab b" data-k="1">相似度</button><button class="tab b" data-k="2">分类</button><button class="tab b" data-k="3">翻译</button>
+          </div>
+          <div class="box reveal d3 tk4p" style="min-height:430px"></div>
+          <div class="hint reveal d4">点击标签切换任务 · 每个任务背后都是一个 NLP 经典问题</div>
+        </div>
+        <figure class="reveal d3" style="width:560px;height:620px;align-self:center"><img src="assets/p07_2.png" alt="words have power"></figure>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P7</div>
+      <script>(function(){const s=document.currentScript.parentElement;const D=[
+        ['关键词提取 / 文本摘要','给定一段文本，给出最重要的几个词，或用一句话概括。','“西安交大管理学院开设《人工智能产业实践》，面向 MBA 与 EMBA，讲授数据、AI 与商业价值。”','关键词：人工智能、产业实践、MBA、数据、商业价值'],
+        ['文本相似度分析 / 信息检索','给定两段文本，给出两者有多相似。搜索引擎就是“查询—文档”相似度排序。','A：“如何申请 MBA”　　B：“MBA 报名流程是什么”','相似度高 → 应该一起被检索到'],
+        ['文本分类 / 情感分析','给定一段文本，判断类别：军事、体育、娱乐；或正向、负向、中立。','“电池续航很差，客服也不理人。”','类别：负向（商业应用：舆情监控、客服质检）'],
+        ['机器翻译','给出一段英语，将其翻译成西班牙语。输入输出都是序列。','“The market is changing fast.”','“El mercado está cambiando rápidamente.”']];
+        const p=s.querySelector('.tk4p');function show(k){const d=D[k];p.innerHTML='<div class="lbl">'+'NLP 任务 '+(k+1)+'/4</div><h3 style="margin:14px 0 12px;font-size:42px" class="blue">'+d[0]+'</h3><p style="font-size:30px">'+d[1]+'</p><div class="prompt" style="margin-top:22px;font-size:26px">输入　'+d[2]+'</div><div class="prompt" style="margin-top:12px;font-size:26px;border-left-color:var(--teal)">输出　'+d[3]+'</div>';}
+        s.querySelectorAll('.tk4 .tab').forEach(b=>b.onclick=()=>{s.querySelectorAll('.tk4 .tab').forEach(x=>x.classList.toggle('on',x===b));show(+b.dataset.k);});show(0);})();</script>
+    </section>
+
+    <!-- === SLIDE 8 · 语料处理流水线 === -->
+    <section class="slide c" data-sec="1 · 自然语言处理" data-title="从原始文本到训练语料（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 文本变成数字</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:64px">文本数据先要“<em>洗干净</em>”再变成数字</h2>
+        <div class="flex gap0 reveal d2 pl" style="margin-top:44px;align-items:stretch">
+          <button class="tab b on" data-k="0" style="flex:1;padding:30px 12px">① 质量过滤</button>
+          <button class="tab b" data-k="1" style="flex:1;padding:30px 12px">② 去重过滤</button>
+          <button class="tab b" data-k="2" style="flex:1;padding:30px 12px">③ 隐私过滤</button>
+          <button class="tab b" data-k="3" style="flex:1;padding:30px 12px">④ 构建 Token</button>
+        </div>
+        <div class="flex gap32 reveal d3" style="margin-top:32px;height:470px">
+          <div class="card b" style="width:620px"><div class="n plN">STEP</div><h3 class="plH" style="font-size:44px"></h3><p class="plP" style="margin-top:14px"></p></div>
+          <div class="grow col gap16 plEx"></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P14（四步流程）；示例为教学构造</div>
+      <script>(function(){const s=document.currentScript.parentElement;const S=[
+        ['STEP 1','质量过滤','用分类器给文档打分（以高质量文本如百科、书籍为正例），再辅以启发式规则（长度、符号比例、重复率）。',[['免费领奖！！！点击 http://x.cn !!!','低质 · 丢弃','o'],['本文介绍牛鞭效应的成因及缓解方法……','高质 · 保留','t']]],
+        ['STEP 2','去重过滤','删除内容相似的重复文档，避免模型“背诵”并降低无效训练量。',[['文档 A：牛鞭效应是指需求信息逐级放大……','保留','t'],['文档 B：牛鞭效应是指需求信息逐级放大……（转载）','重复 · 删除','o']]],
+        ['STEP 3','隐私过滤','基于关键词与模式识别（手机号、身份证号、邮箱等），剔除或脱敏个人信息。',[['联系人：张三，手机 138-0000-0000','→ 联系人：[姓名]，手机 [电话]','o'],['MBA 课程开设于西安交通大学管理学院','无需处理','t']]],
+        ['STEP 4','构建 Token','把文本切成模型能处理的最小单位（token），每个 token 对应一个整数 ID。下一页动手试。',[['“人工智能改变商业”','→ 人 / 工 / 智 / 能 / 改 / 变 / 商 / 业（字级示意）','b'],['“Artificial”','→ Art / ific / ial（子词示意）','b']]]];
+        function show(k){const d=S[k];s.querySelector('.plN').textContent=d[0];s.querySelector('.plH').textContent=d[1];s.querySelector('.plP').textContent=d[2];
+          s.querySelector('.plEx').innerHTML=d[3].map(e=>'<div class="box" style="border-left:5px solid var(--'+(e[2]=='o'?'ochre':e[2]=='t'?'teal':'blue')+')"><p style="font-size:28px;color:var(--ink)">'+e[0]+'</p><p class="mono" style="font-size:24px;margin-top:8px;color:var(--'+(e[2]=='o'?'ochre':e[2]=='t'?'teal':'blue')+')">'+e[1]+'</p></div>').join('');}
+        s.querySelectorAll('.pl .tab').forEach(b=>b.onclick=()=>{s.querySelectorAll('.pl .tab').forEach(x=>x.classList.toggle('on',x===b));show(+b.dataset.k);});show(0);})();</script>
+    </section>
+
+    <!-- === SLIDE 9 · 分词器（交互）=== -->
+    <section class="slide c" data-sec="1 · 自然语言处理" data-title="Token：模型看到的“字”（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 文本变成数字</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:64px">模型看不到“字”，只看到 <em>Token ID</em></h2>
+        <div class="reveal d2" style="margin-top:34px"><textarea class="tzIn" rows="2">Large language models predict the next token. 大模型一次预测一个 token。</textarea></div>
+        <div class="flex gap16 reveal d2" style="margin-top:22px;align-items:center">
+          <div class="tg tzTg"><button class="on" data-m="0">字 / 词级</button><button data-m="1">简易子词</button></div>
+          <div class="mono" style="font-size:26px;color:var(--ink-2);margin-left:24px">token 数 <b class="blue tzN" style="font-size:44px;font-family:var(--f-serif-en)">0</b></div>
+        </div>
+        <div class="box reveal d3 tzOut" style="margin-top:24px;min-height:300px"></div>
+        <div class="note reveal d4" style="margin-top:14px">⚠ 教学用简化分词：中文逐字，英文按词，子词模式把长词按 4 字符切块并用确定性哈希生成 ID；真实 GPT 使用 BPE 等算法，切分与 ID 因分词器而异。Token 数决定<b>成本</b>与<b>上下文长度</b>。</div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P14（构建 Token）；教学演示，非真实分词器</div>
+      <script>(function(){const s=document.currentScript.parentElement;let m=0;const q=c=>s.querySelector(c);
+        const id=t=>{let h=7;for(const ch of t)h=(h*131+ch.codePointAt(0))%50257;return h};
+        function run(){const t=q('.tzIn').value;const re=/[\u4e00-\u9fff]|[A-Za-z]+|\d+|\s+|[^\sA-Za-z\d\u4e00-\u9fff]/g;let toks=[];(t.match(re)||[]).forEach(x=>{if(/^\s+$/.test(x))return;if(m==1&&/^[A-Za-z]{5,}$/.test(x)){for(let i=0;i<x.length;i+=4)toks.push((i?'##':'')+x.slice(i,i+4));}else toks.push(x);});
+          q('.tzN').textContent=toks.length;q('.tzOut').innerHTML=toks.map((x,i)=>'<span class="tk '+(i%3==0?'':i%3==1?'t':'o')+'" style="font-size:34px;padding:12px 14px"><span>'+x+'</span><sub style="display:block;font-size:19px;color:var(--ink-3);margin-top:6px">'+id(x)+'</sub></span>').join('');}
+        q('.tzIn').oninput=run;s.querySelectorAll('.tzTg button').forEach(b=>b.onclick=()=>{m=+b.dataset.m;s.querySelectorAll('.tzTg button').forEach(x=>x.classList.toggle('on',x===b));run();});run();})();</script>
+    </section>
+
+    <!-- === SLIDE 10 · one-hot（交互）=== -->
+    <section class="slide c" data-sec="1 · 自然语言处理" data-title="One-hot：最朴素的词表示（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 文本变成数字</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap24">
+          <h2 class="reveal d1" style="font-size:62px">One-hot：<em>每个词一个开关</em></h2>
+          <p class="reveal d2" style="font-size:30px">词表 = {the, cat, mat, sat, on}。选择两个词，比较它们的向量。</p>
+          <div class="flex gap48 reveal d3" style="align-items:flex-start;margin-top:8px">
+            <div><div class="lbl" style="margin-bottom:10px">词 A</div><div class="ohA"></div></div>
+            <div><div class="lbl" style="margin-bottom:10px">词 B</div><div class="ohB"></div></div>
+          </div>
+          <div class="reveal d4 ohOut" style="margin-top:16px"></div>
+        </div>
+        <div class="col gap24" style="width:640px;justify-content:center">
+          <figure class="contain reveal d3" style="height:300px"><img src="assets/p16_1.png" alt="one-hot"></figure>
+          <div class="card o reveal d4"><div class="n">问题</div><p style="font-size:27px">任何两个不同的词，向量都<b>正交</b>：“cat”与“mat”的距离，和“cat”与“economy”一样远。<b>意义丢失了。</b></p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P16；⚠ 原稿示例 “the cat / the mat” 相似度写 0.8，按拼接 one-hot 重算为 0.5（点积 1 / √2·√2）</div>
+      <script>(function(){const s=document.currentScript.parentElement;const V=['the','cat','mat','sat','on'];let a=1,b=2;const q=c=>s.querySelector(c);
+        function vec(i){return V.map((_,k)=>k==i?1:0);}
+        function draw(){['A','B'].forEach((x,j)=>{q('.oh'+x).innerHTML=V.map((w,i)=>'<span class="tk btnlike'+(i==(j?b:a)?' on':'')+'" data-i="'+i+'">'+w+'</span>').join('');q('.oh'+x).querySelectorAll('.tk').forEach(e=>e.onclick=()=>{if(j)b=+e.dataset.i;else a=+e.dataset.i;draw();});});
+          const va=vec(a),vb=vec(b),dot=va.reduce((t,v,i)=>t+v*vb[i],0);
+          const row=(n,v)=>'<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px"><span class="mono" style="width:70px;font-size:26px">'+n+'</span>'+v.map(x=>'<span class="cell" style="background:'+(x?'#24509e':'#fff')+';color:'+(x?'#fff':'#8a90a0')+'">'+x+'</span>').join('')+'</div>';
+          q('.ohOut').innerHTML=row(V[a],va)+row(V[b],vb)+'<div class="kv"><span>余弦相似度（A·B）</span><b class="'+(dot?'pos':'neg')+'">'+dot.toFixed(1)+'</b></div>';}
+        draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 11 · BoW + 余弦相似度（交互）=== -->
+    <section class="slide c" data-sec="1 · 自然语言处理" data-title="词袋模型与余弦相似度（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 文本变成数字</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:60px">词袋（BoW）：数词频，算<em>夹角</em></h2><div class="hint">可直接修改两句话</div></div>
+        <div class="flex gap32 reveal d2" style="margin-top:26px">
+          <textarea class="bw1" rows="2">John likes to watch movies. Mary likes movies too.</textarea>
+          <textarea class="bw2" rows="2">Mary also likes to watch football games.</textarea>
+        </div>
+        <div class="box reveal d3 bwTab" style="margin-top:22px;overflow:hidden"></div>
+        <div class="flex gap32 reveal d4" style="margin-top:22px;align-items:center">
+          <div class="formula sm" style="flex:1">cos θ = <span style="display:inline-block;text-align:center;vertical-align:middle"><span style="display:block;border-bottom:2px solid var(--ink);padding:0 8px"><b>a</b> · <b>b</b></span><span style="display:block">‖<b>a</b>‖ ‖<b>b</b>‖</span></span></div>
+          <div class="stat"><div class="v bwCos" style="font-size:96px">0.524</div><div class="l">余弦相似度（默认例句：5 / √(13·7)）</div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P16（BOW 例句，原稿 0.5241）；已用代码复算</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);
+        const tok=t=>(t.toLowerCase().match(/[a-z\u4e00-\u9fff]+/g)||[]);
+        function run(){const A=tok(q('.bw1').value),B=tok(q('.bw2').value);const V=[...new Set([...A,...B])];const f=(T)=>V.map(w=>T.filter(x=>x==w).length);const a=f(A),b=f(B);
+          const dot=a.reduce((t,v,i)=>t+v*b[i],0),na=Math.sqrt(a.reduce((t,v)=>t+v*v,0)),nb=Math.sqrt(b.reduce((t,v)=>t+v*v,0));const c=na&&nb?dot/(na*nb):0;
+          q('.bwCos').textContent=c.toFixed(3);
+          q('.bwTab').innerHTML='<table style="font-size:26px"><tr><td style="padding:8px 14px 8px 0;font:500 20px var(--f-mono);color:var(--ink-3)">词典</td>'+V.map(w=>'<td style="padding:8px 8px;font:500 26px var(--f-mono);border:none;text-align:center">'+w+'</td>').join('')+'</tr>'+[['a',a],['b',b]].map(r=>'<tr><td style="padding:10px 14px 10px 0;border:none;color:var(--blue);font-size:30px">'+r[0]+'</td>'+r[1].map(x=>'<td style="padding:10px 8px;border:none;text-align:center;font:500 30px var(--f-mono);background:'+(x?'#e8eef9':'transparent')+'">'+x+'</td>').join('')+'</tr>').join('')+'</table>';}
+        q('.bw1').oninput=run;q('.bw2').oninput=run;run();})();</script>
+    </section>
+
+    <!-- === SLIDE 12 · Word2Vec（交互）=== -->
+    <section class="slide c" data-sec="1 · 自然语言处理" data-title="词向量：意义的几何（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.3 词向量：意义的几何</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col gap24" style="width:760px">
+          <h2 class="reveal d1" style="font-size:60px">Word2Vec：<em>king − man + woman ≈ queen</em></h2>
+          <div class="flex gap32" style="margin-top:6px">
+            <div class="stat reveal d2"><div class="v" style="font-size:80px">&lt;1<small>天</small></div><div class="l">16 亿词语料上训练</div></div>
+            <div class="stat reveal d3"><div class="v" style="font-size:80px">2013</div><div class="l">Mikolov et al., ICLR</div></div>
+          </div>
+          <p class="reveal d4" style="font-size:28px">词被映射为<b>稠密向量</b>：意义相近的词在空间里靠得近，<b>语义关系变成向量运算</b>。</p>
+          <div class="tabs reveal d5 w2vT" style="flex-wrap:wrap"></div>
+          <div class="kv reveal d5 w2vR"></div>
+        </div>
+        <div class="col grow reveal d3"><svg class="w2vS" viewBox="0 0 900 760" style="width:100%;height:700px;background:#fff;border:1px solid var(--rule)"></svg><div class="note">⚠ 二维示意：坐标为手工设定（横轴≈性别，纵轴≈王室程度）；真实词向量通常有数百维，由语料自动学得。</div></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P17；Mikolov et al., Efficient Estimation of Word Representations in Vector Space (ICLR 2013)，R4</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);
+        const P={man:[1.5,1.2],woman:[6.5,1.2],boy:[1.5,0.4],girl:[6.5,0.4],king:[1.5,6.4],queen:[6.5,6.4],prince:[1.5,4.6],princess:[6.5,4.6],uncle:[1.3,2.4],aunt:[6.7,2.4]};
+        const AN=[['man','king','woman'],['man','woman','king'],['prince','princess','uncle'],['boy','man','girl']];let k=0;
+        const X=x=>60+x*115,Y=y=>690-y*100;
+        function draw(){const [a,b,c]=AN[k];const t=[P[b][0]-P[a][0]+P[c][0],P[b][1]-P[a][1]+P[c][1]];
+          let best=null,bd=1e9;for(const w in P){if([a,b,c].includes(w))continue;const d=Math.hypot(P[w][0]-t[0],P[w][1]-t[1]);if(d<bd){bd=d;best=w;}}
+          let h='<defs><marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#24509e"/></marker></defs>';
+          h+='<line x1="'+X(P[a][0])+'" y1="'+Y(P[a][1])+'" x2="'+X(P[b][0])+'" y2="'+Y(P[b][1])+'" stroke="#24509e" stroke-width="4" marker-end="url(#ar)"/>';
+          h+='<line x1="'+X(P[c][0])+'" y1="'+Y(P[c][1])+'" x2="'+X(P[best][0])+'" y2="'+Y(P[best][1])+'" stroke="#c27a1a" stroke-width="4" stroke-dasharray="10 8" marker-end="url(#ar)"/>';
+          for(const w in P){const on=[a,b,c].includes(w),r=w==best;h+='<circle cx="'+X(P[w][0])+'" cy="'+Y(P[w][1])+'" r="'+(on||r?14:9)+'" fill="'+(r?'#c27a1a':on?'#24509e':'#8a90a0')+'"/><text x="'+(X(P[w][0])+18)+'" y="'+(Y(P[w][1])+8)+'" font-size="26" fill="#1d2433">'+w+'</text>';}
+          q('.w2vS').innerHTML=h;q('.w2vR').innerHTML='<span>'+a+' : '+b+' = '+c+' : ?</span><b class="pos">'+best+'</b>';
+          q('.w2vT').innerHTML=AN.map((x,i)=>'<button class="tab b'+(i==k?' on':'')+'" data-i="'+i+'" style="font-size:20px">'+x[0]+'→'+x[1]+'</button>').join('');q('.w2vT').querySelectorAll('.tab').forEach(e=>e.onclick=()=>{k=+e.dataset.i;draw();});}
+        draw();})();</script>
+    </section>
+
+    <!-- === SLIDE · 中文分词歧义（经典书名）=== -->
+    <section class="slide c cn-seg-slide" data-sec="1 · 自然语言处理" data-title="中文：分词与理解，第一步就难">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.3 词向量：意义的几何</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:50px;margin:0 0 10px;line-height:1.12">没有空格的中文：<em>切在哪里</em>，意思就完全不同</h2>
+        <figure class="contain reveal d2" style="height:400px;margin:0 auto;max-width:1380px"><img src="assets/cn-word-segmentation-books.jpg" alt="中文分词歧义书名示例：无线电法国别研究、中国鸟类特有种"></figure>
+        <div class="flex gap24 st reveal d3" style="margin-top:14px">
+          <div class="card b grow" style="padding:18px 22px"><div class="n">歧义 ① · 分词</div><p style="font-size:24px;margin:0;line-height:1.45"><b>《无线电法国别研究》</b>（学科书名）<br>也可切成：<span class="mono">无线电 / 法国 / 别研究</span> → 像一句俏皮话。</p></div>
+          <div class="card t grow" style="padding:18px 22px"><div class="n">歧义 ② · 同音</div><p style="font-size:24px;margin:0;line-height:1.45"><b>《中国鸟类特有种》</b>（科学书名）<br>口语里「<b>特有种</b>」↔「<b>特有种</b>」（特别有种）——<b>同音</b>让机器更难对齐语义。</p></div>
+        </div>
+        <p class="reveal d4" style="margin-top:12px;font-size:24px;line-height:1.42;color:var(--ink-2)">应对中文 NLP：<b>分词 / 子词 Token</b>、<b>上下文消歧</b>、大规模语料——Word2Vec 之后的 RNN / Transformer 也仍要面对这些“表层”困难。</p>
+      </div>
+      <style>
+        .cn-seg-slide .body{top:118px;bottom:108px}
+      </style>
+      <div class="src"><b>参考</b> 课堂经典梗图（书名分词歧义）；图源用户提供。左：《无线电法·国别研究》（法律出版社）；右：《中国鸟类特有种》（科学出版社）</div>
+    </section>
+
+    <!-- === SLIDE 13 · RNN（交互）=== -->
+    <section class="slide c" data-sec="1 · 自然语言处理" data-title="RNN：逐词读，边读边记（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 序列模型</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:60px">RNN：<em>一个词一个词地读</em></h2><div class="flex gap16"><button class="btn pri rnPlay">▶ 逐词播放</button><button class="btn rnReset">重置</button></div></div>
+        <div class="flex gap32 reveal d2" style="margin-top:30px">
+          <div class="grow">
+            <svg class="rnS" viewBox="0 0 1100 380" style="width:100%;height:380px"></svg>
+            <div class="formula sm" style="margin-top:6px"><i>h</i><sub><i>t</i></sub> = tanh( <i>U h</i><sub><i>t</i>−1</sub> + <i>W x</i><sub><i>t</i></sub> )　　<span style="font-size:.7em;color:var(--ink-3)">（以下演示为标量玩具版：W=1，U=0.8）</span></div>
+          </div>
+          <figure class="contain" style="width:560px;height:380px"><img src="assets/p19_1.png" alt="RNN"></figure>
+        </div>
+        <div class="flex gap32 reveal d3" style="margin-top:24px;align-items:center">
+          <div class="box grow"><div class="lbl">任务：情感分类（文本分类）</div><p class="rnMsg" style="font-size:28px;margin-top:8px">点击“逐词播放”：隐藏状态 h 随每个词更新，读完后据此分类。</p></div>
+          <div class="stat" style="width:360px"><div class="v rnV" style="font-size:80px">—</div><div class="l">最终状态 h<sub>n</sub> → 类别</div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P19；示意为教学玩具模型（词的情感分值手工设定）</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);
+        const W=['这','部','电影','剧情','精彩','演员','出色','!'],X=[0,0,0,0,1.2,0,1.0,0.2];let t=-1,H=[],timer=null;
+        function draw(){let h='';W.forEach((w,i)=>{const x=40+i*135,on=i<=t,hv=H[i]||0;
+          h+='<rect x="'+x+'" y="40" width="100" height="56" fill="'+(i==t?'#24509e':'#fff')+'" stroke="#1d2433" stroke-width="2"/><text x="'+(x+50)+'" y="77" text-anchor="middle" font-size="26" fill="'+(i==t?'#fff':'#1d2433')+'">'+w+'</text>';
+          h+='<line x1="'+(x+50)+'" y1="96" x2="'+(x+50)+'" y2="170" stroke="#8a90a0" stroke-width="2"/>';
+          h+='<circle cx="'+(x+50)+'" cy="215" r="44" fill="#fff" stroke="'+(on?'#24509e':'#cfcac0')+'" stroke-width="3"/>';
+          if(on){h+='<rect x="'+(x+30)+'" y="'+(215-Math.abs(hv)*34)+'" width="40" height="'+(Math.abs(hv)*34)+'" fill="'+(hv>=0?'#1f7a72':'#b4402d')+'" opacity=".75"/>';}
+          h+='<text x="'+(x+50)+'" y="300" text-anchor="middle" font-size="22" font-family="IBM Plex Mono" fill="#4a5263">'+(on?hv.toFixed(2):'')+'</text>';
+          if(i<W.length-1)h+='<line x1="'+(x+94)+'" y1="215" x2="'+(x+135+6)+'" y2="215" stroke="'+(i<t?'#24509e':'#cfcac0')+'" stroke-width="3"/>';});
+          q('.rnS').innerHTML=h+'<text x="20" y="370" font-size="20" fill="#8a90a0" font-family="IBM Plex Mono">h_t（圆内柱高）：到目前为止读到的“记忆”</text>';}
+        function step(){if(t>=W.length-1){clearInterval(timer);timer=null;const f=H[H.length-1];q('.rnV').textContent=f>0?'正向':'负向';q('.rnMsg').innerHTML='读完整句，h<sub>n</sub> = '+f.toFixed(2)+' → 分类器输出：<b class="teal">正向</b>';return;}
+          t++;const prev=t?H[t-1]:0;H[t]=Math.tanh(0.8*prev+X[t]);draw();q('.rnMsg').innerHTML='读入“'+W[t]+'”，h<sub>'+(t+1)+'</sub> = tanh(0.8×'+prev.toFixed(2)+' + '+X[t]+') = <b>'+H[t].toFixed(2)+'</b>';}
+        function reset(){clearInterval(timer);timer=null;t=-1;H=[];q('.rnV').textContent='—';q('.rnMsg').textContent='点击“逐词播放”：隐藏状态 h 随每个词更新，读完后据此分类。';draw();}
+        q('.rnPlay').onclick=()=>{if(timer)return;if(t>=W.length-1)reset();step();timer=setInterval(step,900);};q('.rnReset').onclick=reset;reset();})();</script>
+    </section>
+
+    <!-- === SLIDE 14 · LSTM（交互）=== -->
+    <section class="slide c" data-sec="1 · 自然语言处理" data-title="LSTM：用“门”控制记忆（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 序列模型</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col gap16" style="width:820px">
+          <h2 class="reveal d1" style="font-size:58px">LSTM：<em>三个门控制记忆</em></h2>
+          <figure class="contain reveal d2" style="height:430px"><img src="assets/p20_1.png" alt="LSTM"></figure>
+          <div class="formula sm reveal d3" style="line-height:1.6"><i>f</i><sub><i>t</i></sub> = σ(·)　<i>i</i><sub><i>t</i></sub> = σ(·)　<i>g</i><sub><i>t</i></sub> = tanh(·)<br><i>c</i><sub><i>t</i></sub> = <i>f</i><sub><i>t</i></sub> ⊙ <i>c</i><sub><i>t</i>−1</sub> + <i>i</i><sub><i>t</i></sub> ⊙ <i>g</i><sub><i>t</i></sub>　　<i>h</i><sub><i>t</i></sub> = <i>o</i><sub><i>t</i></sub> ⊙ tanh(<i>c</i><sub><i>t</i></sub>)</div>
+        </div>
+        <div class="col grow gap24 reveal d3" style="justify-content:center">
+          <div class="box">
+            <div class="lbl">拖动门的开度（c<sub>t−1</sub> = 1）</div>
+            <div class="flex between" style="margin-top:14px;font:500 24px var(--f-mono)"><span>遗忘门 f = <b class="blue lsF">0.90</b></span></div><input type="range" class="rF" min="0" max="1" step="0.01" value="0.9">
+            <div class="flex between" style="margin-top:14px;font:500 24px var(--f-mono)"><span>输入门 i = <b class="teal lsI">0.30</b></span></div><input type="range" class="rI" min="0" max="1" step="0.01" value="0.3">
+            <div class="flex between" style="margin-top:14px;font:500 24px var(--f-mono)"><span>新信息 g = <b class="ochre lsG">0.50</b></span></div><input type="range" class="rG" min="-1" max="1" step="0.01" value="0.5">
+            <div class="kv" style="margin-top:12px"><span>c<sub>t</sub> = f·c<sub>t−1</sub> + i·g</span><b class="lsC">1.05</b></div>
+          </div>
+          <div class="box"><div class="lbl">记忆能保留多久？ 20 步后剩余 f<sup>20</sup></div><svg class="lsS" viewBox="0 0 700 200" style="width:100%;height:200px"></svg>
+            <p style="font-size:24px">RNN 相当于 f≈0.8 且无法调节；LSTM 可学出 f≈1，让早期信息跨越很长距离。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P20（LSTM 结构与公式）；Hochreiter & Schmidhuber, 1997</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);
+        function up(){const f=+q('.rF').value,i=+q('.rI').value,g=+q('.rG').value;q('.lsF').textContent=f.toFixed(2);q('.lsI').textContent=i.toFixed(2);q('.lsG').textContent=g.toFixed(2);q('.lsC').textContent=(f+i*g).toFixed(2);
+          let pts=[],p08=[];for(let n=0;n<=20;n++){pts.push((20+n*31)+','+(170-Math.pow(f,n)*150));p08.push((20+n*31)+','+(170-Math.pow(0.8,n)*150));}
+          q('.lsS').innerHTML='<line x1="20" y1="170" x2="660" y2="170" stroke="#cfcac0"/><polyline points="'+p08.join(' ')+'" fill="none" stroke="#8a90a0" stroke-width="3" stroke-dasharray="6 6"/><polyline points="'+pts.join(' ')+'" fill="none" stroke="#24509e" stroke-width="4"/><text x="670" y="'+(170-Math.pow(f,20)*150)+'" font-size="22" fill="#24509e" font-family="IBM Plex Mono">'+Math.pow(f,20).toFixed(2)+'</text><text x="150" y="190" font-size="18" fill="#8a90a0" font-family="IBM Plex Mono">虚线：f=0.8（朴素 RNN）</text>';}
+        ['.rF','.rI','.rG'].forEach(c=>q(c).oninput=up);up();})();</script>
+    </section>
+
+    <!-- === SLIDE 15 · seq2seq 与瓶颈（交互）=== -->
+    <section class="slide c" data-sec="1 · 自然语言处理" data-title="编码器—解码器与 RNN 的瓶颈（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 序列模型</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap24">
+          <h2 class="reveal d1" style="font-size:60px">机器翻译：<em>编码器 → 解码器</em></h2>
+          <figure class="contain reveal d2" style="height:360px"><img src="assets/p21_1.png" alt="seq2seq"></figure>
+          <p class="reveal d3" style="font-size:28px">整句话被压成<b>一个向量</b>再解码：句子越长，越难；而且必须<b>串行</b>计算。</p>
+        </div>
+        <div class="col gap24 reveal d3" style="width:700px;justify-content:center">
+          <div class="box">
+            <div class="flex between center"><div class="lbl">句子长度 n</div><b class="mono blue sqN" style="font-size:40px">30</b></div>
+            <input type="range" class="sqR" min="5" max="200" step="1" value="30" style="margin-top:12px">
+            <div style="margin-top:28px"><div class="mono" style="font-size:22px;margin-bottom:6px">RNN：必须串行的步数</div><div class="bar"><i class="sqA" style="background:var(--ochre)"></i></div><div class="mono" style="font-size:22px;margin:18px 0 6px">Transformer：并行（单层内）</div><div class="bar"><i class="sqB" style="width:2%"></i></div></div>
+            <div class="kv" style="margin-top:20px"><span>首词 → 末词的信息路径</span><b class="neg sqP">30 步</b></div>
+            <div class="kv"><span>Transformer 的路径</span><b class="pos">1 步</b></div>
+          </div>
+          <p class="note">示意：按序列依赖的步数计；实际计算量与硬件相关，自注意力的代价随 n² 增长。</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P21；Sutskever et al., Sequence to Sequence Learning (2014)；Vaswani et al. (2017)</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);const r=q('.sqR');function up(){const n=+r.value;q('.sqN').textContent=n;q('.sqA').style.width=(n/200*100)+'%';q('.sqP').textContent=n+' 步';}r.oninput=up;up();})();</script>
+    </section>
+
+    <!-- === SLIDE 16 · Attention Is All You Need === -->
+    <section class="slide c" data-sec="1 · 自然语言处理" data-title="Transformer：Attention Is All You Need">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.5 Transformer</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <figure class="contain reveal d2" style="width:560px;height:780px"><img src="assets/p22_1.png" alt="Transformer architecture"></figure>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:24px;letter-spacing:.14em">2017 · GOOGLE · NEURIPS</div>
+          <h2 class="reveal d2" style="font-size:66px">不再“循环”，<br>只用<em>注意力</em></h2>
+          <div class="formula reveal d3">MultiHead(<i>Q,K,V</i>) = Concat(head<sub>1</sub>,…,head<sub><i>h</i></sub>) <i>W</i><sup><i>O</i></sup></div>
+          <div class="formula sm reveal d3">head<sub><i>i</i></sub> = Attention(<i>QW</i><sub><i>i</i></sub><sup><i>Q</i></sup>, <i>KW</i><sub><i>i</i></sub><sup><i>K</i></sup>, <i>VW</i><sub><i>i</i></sub><sup><i>V</i></sup>)</div>
+          <div class="chips reveal d4"><span class="chip">并行训练</span><span class="chip">任意两词一步可达</span><span class="chip">易于堆叠与扩规模</span></div>
+          <p class="reveal d5" style="font-size:28px">此后一切大语言模型——BERT、GPT、Claude、Gemini、DeepSeek——都建立在这个结构之上<span class="warn"> ⚠</span></p>
+          <div class="note reveal d5">⚠ “都建立在 Transformer 之上”为概括：2026 年主流前沿模型仍以 Transformer 变体为主（含 MoE、稀疏注意力等改造），但不排除混合架构；多数闭源模型不披露架构细节。</div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P22；Vaswani et al., Attention Is All You Need (NeurIPS 2017)，R5；R6（Stanford AI Index 2026：模型细节日趋不透明）</div>
+    </section>
+
+    <!-- === SLIDE 17 · 章节 Part 2 === -->
+    <section class="slide c chapter" data-sec="2 · 大语言模型" data-title="Part 2 · 大语言模型">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 7.1</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">02</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 2</div>
+        <h2 class="reveal d2">大语言<em>模型</em></h2>
+        <div class="s reveal d3">注意力 → 预训练 → 上下文学习 → 思维链 → 人类反馈 → 推理模型</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>2.1</b>Transformer 的两条路</div>
+        <div><b>2.2</b>注意力机制</div>
+        <div><b>2.3</b>GPT 系列演进</div>
+        <div><b>2.4</b>三阶段训练</div>
+        <div><b>2.5</b>能力从哪来</div>
+        <div><b>2.6</b>2024–2026 更新</div>
+      </div>
+    </section>
+
+    <!-- === SLIDE 18 · BERT vs GPT（交互掩码）=== -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="BERT 与 GPT：能看多远（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.1 Transformer 的两条路</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col gap24" style="width:940px">
+          <h2 class="reveal d1" style="font-size:54px">同一个 Transformer，<em>两种读法</em></h2>
+          <div class="tg reveal d2 bgTg"><button class="on" data-m="0">BERT · 双向填空</button><button data-m="1">GPT · 单向接龙</button></div>
+          <div class="reveal d3"><svg class="bgS" viewBox="0 0 780 560" style="width:700px;height:504px"></svg></div>
+          <div class="hint reveal d4">点击左侧的词（行）：它在计算自己的表示时，能“看到”哪些词</div>
+        </div>
+        <div class="col grow gap24 reveal d3" style="justify-content:center">
+          <figure class="contain" style="height:340px"><img class="bgImg" src="assets/p23_2.png" alt=""></figure>
+          <div class="card b bgCard"></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P23；Devlin et al. (BERT, 2018)；Radford et al. (GPT, 2018)</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);const W=['银行','今天','上调','了','贷款','利率'];let m=0,sel=3;
+        const T=[['BERT = Transformer 编码器','训练任务：<b>完形填空</b>（随机遮住词，用左右两边预测）。每个词看<b>全部</b>上下文，擅长理解、分类、检索。'],['GPT = Transformer 解码器','训练任务：<b>预测下一个词</b>。每个词只能看<b>前面</b>的词（因果掩码），因此天然能“生成”。大模型时代选择了这条路。']];
+        function draw(){let h='';W.forEach((w,i)=>{h+='<text x="110" y="'+(95+i*80)+'" text-anchor="end" font-size="26" fill="'+(i==sel?'#24509e':'#1d2433')+'" font-weight="'+(i==sel?700:400)+'" style="cursor:pointer" data-i="'+i+'">'+w+'</text>';h+='<text x="'+(160+i*100+40)+'" y="42" text-anchor="middle" font-size="24" fill="#4a5263">'+w+'</text>';
+          for(let j=0;j<W.length;j++){const ok=m==0||j<=i;h+='<rect x="'+(160+j*100)+'" y="'+(55+i*80)+'" width="84" height="64" fill="'+(ok?(i==sel?'#24509e':'#c9d6ef'):'#f2eee6')+'" stroke="#fff" stroke-width="3"/>';if(!ok)h+='<text x="'+(160+j*100+42)+'" y="'+(55+i*80+42)+'" text-anchor="middle" font-size="26" fill="#cfcac0">×</text>';}});
+          h+='<text x="160" y="548" font-size="20" fill="#8a90a0" font-family="IBM Plex Mono">列 = 被看的词　深色行 = 当前选中的词</text>';q('.bgS').innerHTML=h;
+          q('.bgS').querySelectorAll('text[data-i]').forEach(e=>e.onclick=()=>{sel=+e.dataset.i;draw();});
+          q('.bgImg').src=m?'assets/p23_3.png':'assets/p23_2.png';q('.bgCard').innerHTML='<div class="n">'+(m?'GPT':'BERT')+'</div><h3 style="font-size:34px">'+T[m][0]+'</h3><p style="font-size:26px;margin-top:10px">'+T[m][1]+'</p>';}
+        s.querySelectorAll('.bgTg button').forEach(b=>b.onclick=()=>{m=+b.dataset.m;s.querySelectorAll('.bgTg button').forEach(x=>x.classList.toggle('on',x===b));draw();});draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 19 · 参数规模（交互 对数轴）=== -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="参数规模：对数坐标下的“大力出奇迹”（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.1 Transformer 的两条路</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">参数量：<em>两年（2018→2020）涨了 3 个数量级</em></h2><div class="tg pmTg"><button class="on" data-m="0">2018–2020（原稿）</button><button data-m="1">+ 2026 开放权重 ⚠</button></div></div>
+        <svg class="pmS reveal d2" viewBox="0 0 1700 640" style="width:100%;height:640px;margin-top:24px"></svg>
+        <div class="note reveal d3">对数坐标，每格 ×10。GPT-4 及之后的闭源模型<b>不公布参数量</b>（Stanford AI Index 2026 亦指出最强模型也最不透明）；⚠ 2026 年两个开放权重模型的数字来自二手聚合页，其中 Qwen 为 MoE：总参数 2.4T、每个 token 仅激活约 95B。</div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P24；GPT-2 论文 Table 2（117M/345M/762M/1542M）；GPT-3 论文（175B）；R6（AI Index 2026）；R7（L1 调研 §3.2，二手）</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);let m=0;
+        const D=[['GPT-1','2018',0.117,'o'],['BERT-large','2018',0.34,'b'],['GPT-2','2019',1.5,'o'],['GPT-3','2020',175,'o'],['Kimi K3','2026 ⚠',2800,'t'],['Qwen3.8 MoE（总）','2026 ⚠',2400,'t']];
+        const col={o:'#c27a1a',b:'#24509e',t:'#1f7a72'};const L=Math.log10;
+        function draw(){const data=D.filter((d,i)=>m||i<4);const lo=-1,hi=4;const X=v=>260+(L(v)-lo)/(hi-lo)*1300;let h='';
+          for(let e=lo;e<=hi;e++){h+='<line x1="'+X(Math.pow(10,e))+'" y1="20" x2="'+X(Math.pow(10,e))+'" y2="590" stroke="#e6e1d6"/><text x="'+X(Math.pow(10,e))+'" y="625" text-anchor="middle" font-size="22" font-family="IBM Plex Mono" fill="#8a90a0">'+(e<0?'0.1B':e<3?Math.pow(10,e)+'B':Math.pow(10,e-3)+'T')+'</text>';}
+          data.forEach((d,i)=>{const y=40+i*88;h+='<text x="240" y="'+(y+30)+'" text-anchor="end" font-size="28" fill="#1d2433">'+d[0]+'</text><text x="240" y="'+(y+56)+'" text-anchor="end" font-size="20" font-family="IBM Plex Mono" fill="#8a90a0">'+d[1]+'</text><rect x="260" y="'+y+'" width="0" height="52" fill="'+col[d[3]]+'"><animate attributeName="width" from="0" to="'+(X(d[2])-260)+'" dur=".8s" fill="freeze" begin="0s"/></rect><text x="'+(X(d[2])+14)+'" y="'+(y+36)+'" font-size="26" font-family="IBM Plex Mono" fill="#1d2433">'+(d[2]<1?Math.round(d[2]*1000)+'M':d[2]>=1000?(d[2]/1000)+'T':d[2]+'B')+'</text>';});
+          q('.pmS').innerHTML=h;}
+        s.querySelectorAll('.pmTg button').forEach(b=>b.onclick=()=>{m=+b.dataset.m;s.querySelectorAll('.pmTg button').forEach(x=>x.classList.toggle('on',x===b));draw();});draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 20 · 注意力直觉：bank（交互）=== -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="注意力的直觉：bank 是哪个 bank（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.2 注意力机制</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:60px">同一个词，<em>由上下文决定意义</em></h2><div class="tabs bkT"><button class="tab b on" data-k="0">句 1</button><button class="tab b" data-k="1">句 2</button></div></div>
+        <svg class="bkS reveal d2" viewBox="0 0 1700 430" style="width:100%;height:430px;margin-top:18px"></svg>
+        <div class="flex gap32 reveal d3" style="margin-top:16px">
+          <div class="card b grow bkC"></div>
+          <div class="card g" style="width:560px"><div class="n">关键想法</div><p style="font-size:26px">“注意力”= 当前词对其他词<b>分配权重</b>，再据此重新表示自己：词向量不再固定，而是<b>随上下文变化</b>。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P26；⚠ 注意力权重为手工设定的示意值，非真实模型输出</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);let k=0;
+        const S=[{w:['I','swam','across','the','river','to','get','to','the','other','bank'],a:{1:.25,4:.55,2:.05,9:.1},m:'河岸',c:'#1f7a72'},{w:['I','walked','across','the','road','to','get','cash','from','the','bank'],a:{7:.5,1:.1,4:.1,8:.25},m:'银行',c:'#c27a1a'}];
+        function draw(){const d=S[k],n=d.w.length,X=i=>70+i*155,qi=n-1;let h='';
+          d.w.forEach((w,i)=>{const hi=d.a[i];h+='<rect x="'+(X(i)-62)+'" y="330" width="124" height="54" fill="'+(i==qi?d.c:hi?'#e8eef9':'#fff')+'" stroke="'+(i==qi?d.c:'#cfcac0')+'" stroke-width="2"/><text x="'+X(i)+'" y="366" text-anchor="middle" font-size="26" fill="'+(i==qi?'#fff':'#1d2433')+'" font-family="Source Serif 4, serif">'+w+'</text>';
+            if(hi&&i!=qi){const cy=270-hi*400,mx=(X(i)+X(qi))/2;h+='<path d="M '+X(i)+' 330 C '+X(i)+' '+cy+' '+X(qi)+' '+cy+' '+X(qi)+' 330" fill="none" stroke="'+d.c+'" stroke-width="'+(hi*16)+'" opacity=".7" stroke-linecap="round"/><text x="'+mx+'" y="'+((330+3*cy)/4-10)+'" text-anchor="middle" font-size="22" font-family="IBM Plex Mono" fill="'+d.c+'">'+hi.toFixed(2)+'</text>';}});
+          q('.bkS').innerHTML=h;q('.bkC').innerHTML='<div class="n">“bank” 的表示 → '+d.m+'</div><p style="font-size:28px">在这句话里，“bank”主要关注 <b>'+Object.keys(d.a).sort((a,b)=>d.a[b]-d.a[a]).slice(0,2).map(i=>d.w[i]).join('、')+'</b>，据此被解读为“<b style="color:'+d.c+'">'+d.m+'</b>”。</p>';}
+        s.querySelectorAll('.bkT .tab').forEach(b=>b.onclick=()=>{k=+b.dataset.k;s.querySelectorAll('.bkT .tab').forEach(x=>x.classList.toggle('on',x===b));draw();});draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 21 · 注意力 = 加权平均（交互）=== -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="注意力 = 加权平均（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.2 注意力机制</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col gap24" style="width:820px">
+          <h2 class="reveal d1" style="font-size:46px">注意力：<em>新表示 = 权重 × 旧表示</em></h2>
+          <div class="formula reveal d2"><b>y</b><sub><i>n</i></sub> = Σ<sub><i>m</i>=1</sub><sup><i>N</i></sup> <i>a</i><sub><i>nm</i></sub> <b>x</b><sub><i>m</i></sub></div>
+          <div class="formula sm reveal d3"><i>a</i><sub><i>nm</i></sub> ⩾ 0，　Σ<sub><i>m</i></sub> <i>a</i><sub><i>nm</i></sub> = 1，　<i>a</i><sub><i>nm</i></sub> = softmax<sub><i>m</i></sub>(<b>x</b><sub><i>n</i></sub>ᵀ<b>x</b><sub><i>m</i></sub>)</div>
+          <svg class="atS reveal d4" viewBox="0 0 800 520" style="width:800px;height:520px;background:#fff;border:1px solid var(--rule)"></svg>
+        </div>
+        <div class="col grow gap24 reveal d3" style="justify-content:center">
+          <div class="lbl">选择查询词 x<sub>n</sub></div><div class="atQ"></div>
+          <div class="box"><div class="flex between center"><div class="lbl">温度 τ（权重尖锐程度）</div><b class="mono blue atT" style="font-size:30px">1.0</b></div><input type="range" class="atR" min="0.2" max="3" step="0.1" value="1" style="margin-top:10px"></div>
+          <div class="atB box"></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P27；二维词向量为手工设定的教学示意</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);
+        const W=[['river',[2.0,0.3],'#1f7a72'],['swam',[2.3,1.1],'#1f7a72'],['cash',[0.2,2.0],'#c27a1a'],['bank',[1.2,1.3],'#24509e']];let n=3;
+        function draw(){const tau=+q('.atR').value;q('.atT').textContent=tau.toFixed(1);const xn=W[n][1];const lg=W.map(w=>(xn[0]*w[1][0]+xn[1]*w[1][1])/tau);const mx=Math.max(...lg);const e=lg.map(v=>Math.exp(v-mx));const Z=e.reduce((a,b)=>a+b,0);const a=e.map(v=>v/Z);
+          const y=[0,1].map(d=>a.reduce((t,v,i)=>t+v*W[i][1][d],0));const X=v=>80+v*270,Y=v=>460-v*190;let h='<line x1="80" y1="460" x2="760" y2="460" stroke="#cfcac0"/><line x1="80" y1="460" x2="80" y2="40" stroke="#cfcac0"/>';
+          W.forEach((w,i)=>{h+='<line x1="'+X(xn[0])+'" y1="'+Y(xn[1])+'" x2="'+X(w[1][0])+'" y2="'+Y(w[1][1])+'" stroke="#24509e" stroke-width="'+(a[i]*14)+'" opacity=".35"/>';});
+          W.forEach((w,i)=>{h+='<circle cx="'+X(w[1][0])+'" cy="'+Y(w[1][1])+'" r="'+(i==n?16:11)+'" fill="'+w[2]+'"/><text x="'+(X(w[1][0])+(w[1][0]>1.8?-100:20))+'" y="'+(Y(w[1][1])-14)+'" font-size="26" fill="#1d2433">'+w[0]+'</text>';});
+          h+='<polygon points="'+X(y[0])+','+(Y(y[1])-18)+' '+(X(y[0])+16)+','+Y(y[1])+' '+X(y[0])+','+(Y(y[1])+18)+' '+(X(y[0])-16)+','+Y(y[1])+'" fill="#b4402d"/><text x="'+(X(y[0])+22)+'" y="'+(Y(y[1])+36)+'" font-size="26" fill="#b4402d" font-weight="700">y<tspan font-size="18" dy="6">'+W[n][0]+'</tspan></text>';q('.atS').innerHTML=h;
+          q('.atB').innerHTML='<div class="lbl" style="margin-bottom:12px">注意力权重 a<sub>n,m</sub>（Σ=1）</div>'+W.map((w,i)=>'<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px"><span class="mono" style="width:90px;font-size:24px">'+w[0]+'</span><div class="bar grow" style="height:24px"><i style="width:'+(a[i]*100)+'%"></i></div><span class="mono" style="width:70px;font-size:24px">'+a[i].toFixed(2)+'</span></div>').join('');
+          q('.atQ').innerHTML=W.map((w,i)=>'<span class="tk btnlike'+(i==n?' on':'')+'" data-i="'+i+'">'+w[0]+'</span>').join('');q('.atQ').querySelectorAll('.tk').forEach(e=>e.onclick=()=>{n=+e.dataset.i;draw();});}
+        q('.atR').oninput=draw;draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 22 · 自注意力 Q K V（交互）=== -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="自注意力：Query、Key、Value（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.2 注意力机制</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col gap16" style="width:860px">
+          <h2 class="reveal d1" style="font-size:56px">加上可学习参数：<em>Q、K、V</em></h2>
+          <div class="formula sm reveal d2" style="line-height:1.7">无参数：<b>Y</b> = Softmax( <b>X X</b>ᵀ ) <b>X</b><br>可学习：<b>Y</b> = Softmax( <b>QK</b>ᵀ / √<i>d</i><sub><i>k</i></sub> ) <b>V</b></div>
+          <div class="formula sm reveal d3"><b>Q</b> = <b>X W</b><sup>(<i>q</i>)</sup>　<b>K</b> = <b>X W</b><sup>(<i>k</i>)</sup>　<b>V</b> = <b>X W</b><sup>(<i>v</i>)</sup></div>
+          <figure class="contain reveal d4" style="height:300px"><img src="assets/p29_6.png" alt="scaled dot-product attention"></figure>
+          <p class="reveal d5" style="font-size:26px"><b>Query</b>：我在找什么　<b>Key</b>：我能提供什么标签　<b>Value</b>：我真正携带的内容</p>
+        </div>
+        <div class="col grow gap24 reveal d3" style="justify-content:center">
+          <div class="box"><div class="flex between center"><div class="lbl">W 的“学习程度” λ（0 = 无参数 XXᵀ）</div><b class="mono blue qkL" style="font-size:30px">0.00</b></div><input type="range" class="qkR" min="0" max="1" step="0.05" value="0" style="margin-top:10px"></div>
+          <div><svg class="qkS" viewBox="0 0 640 520" style="width:640px;height:520px"></svg></div>
+          <div class="note">玩具设定：d=2，W<sup>(q)</sup>=W<sup>(k)</sup>=(1−λ)I+λ·diag(2, 0.2)，表示“学会了只关注第一个特征”；各行已 softmax，行和为 1。参数是<b>从数据中学得</b>的，这里手工设定仅作示意。</div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P28–P29；Vaswani et al. (2017)</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);
+        const W=['river','swam','cash','bank'],X=[[2.2,0.4],[1.8,0.9],[0.3,2.2],[1.3,1.4]];
+        function draw(){const l=+q('.qkR').value;q('.qkL').textContent=l.toFixed(2);const wq=[(1-l)+l*2,(1-l)+l*0.2];const Q=X.map(x=>[x[0]*wq[0],x[1]*wq[1]]);const A=Q.map(a=>{const lg=Q.map(b=>(a[0]*b[0]+a[1]*b[1])/Math.sqrt(2));const mx=Math.max(...lg);const e=lg.map(v=>Math.exp(v-mx));const z=e.reduce((p,c)=>p+c,0);return e.map(v=>v/z);});
+          let h='';W.forEach((w,i)=>{h+='<text x="110" y="'+(130+i*96)+'" text-anchor="end" font-size="26" fill="#1d2433">'+w+'</text><text x="'+(150+i*118+52)+'" y="60" text-anchor="middle" font-size="24" fill="#4a5263">'+w+'</text>';A[i].forEach((v,j)=>{h+='<rect x="'+(150+j*118)+'" y="'+(85+i*96)+'" width="104" height="84" fill="rgba(36,80,158,'+(0.08+v*0.92)+')"/><text x="'+(150+j*118+52)+'" y="'+(85+i*96+52)+'" text-anchor="middle" font-size="26" font-family="IBM Plex Mono" fill="'+(v>.5?'#fff':'#1d2433')+'">'+v.toFixed(2)+'</text>';});});
+          h+='<text x="150" y="505" font-size="20" fill="#8a90a0" font-family="IBM Plex Mono">行：查询词 / 列：被关注的词</text>';q('.qkS').innerHTML=h;}
+        q('.qkR').oninput=draw;draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 23 · Transformer 层（交互点选）=== -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="Transformer 层：搭积木（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.2 注意力机制</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col" style="width:560px;align-items:center">
+          <svg class="tfS reveal d2" viewBox="0 0 520 780" style="width:520px;height:780px"></svg>
+        </div>
+        <div class="col grow gap24" style="justify-content:center">
+          <h2 class="reveal d1" style="font-size:60px">每一层都一样：<em>注意力 + 前馈</em></h2>
+          <div class="card b reveal d3 tfC" style="min-height:300px"></div>
+          <div class="flex gap24 reveal d4"><figure class="contain" style="width:420px;height:300px"><img src="assets/p30_3.png" alt=""></figure><figure class="contain grow" style="height:300px"><img src="assets/p30_5.png" alt=""></figure></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P30；Vaswani et al. (2017)</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);let sel=2;
+        const B=[['输出：下一个词的概率','Linear + Softmax','最后一层的向量 → 词表上每个词的概率。生成时按概率采样或取最大。','#24509e'],['×N 层（堆叠）','重复 N 次','层数越多，表示越抽象；GPT-3 有 96 层（论文 Table 2.1）。','#8a90a0'],['多头自注意力','Multi-Head Self-Attention','多组 Q、K、V 并行：有的头关注语法，有的关注指代，有的关注邻近词。','#1f7a72'],['Add & Norm','残差连接 + 层归一化','把输入直接加回输出，让深层网络稳定可训练。','#8a90a0'],['前馈网络 MLP','Feed-Forward','对每个位置独立做非线性变换；研究认为大量“知识”存储在这里（⚠ 解释性研究仍有争议）。','#c27a1a'],['Add & Norm','残差连接 + 层归一化','同上。','#8a90a0'],['输入','Embedding + 位置编码','词 → 向量；再加上位置信息（注意力本身不知道顺序）。','#24509e']];
+        const Y=[20,115,225,330,435,540,660];
+        function draw(){let h='<rect x="40" y="105" width="440" height="500" fill="none" stroke="#cfcac0" stroke-dasharray="8 6"/>';B.forEach((b,i)=>{const hh=i==1?0:76;if(i==1){h+='<text x="260" y="'+(Y[i]+45)+'" text-anchor="middle" font-size="24" fill="#8a90a0" font-family="IBM Plex Mono">×N</text>';return;}
+            h+='<g data-i="'+i+'" style="cursor:pointer"><rect x="70" y="'+Y[i]+'" width="380" height="76" fill="'+(sel==i?b[3]:'#fff')+'" stroke="'+b[3]+'" stroke-width="3"/><text x="260" y="'+(Y[i]+46)+'" text-anchor="middle" font-size="26" fill="'+(sel==i?'#fff':'#1d2433')+'">'+b[0]+'</text></g>';
+            if(i>1&&i<6)h+='<text x="260" y="'+(Y[i]+100)+'" text-anchor="middle" font-size="20" fill="#cfcac0">↑</text>';});
+          q('.tfS').innerHTML=h;q('.tfS').querySelectorAll('g[data-i]').forEach(g=>g.onclick=()=>{sel=+g.dataset.i;draw();});const b=B[sel];q('.tfC').innerHTML='<div class="n">点击左侧模块</div><h3 style="font-size:40px;color:'+b[3]+'">'+b[0]+'</h3><div class="mono muted" style="font-size:22px;margin:8px 0 14px">'+b[1]+'</div><p style="font-size:28px">'+b[2]+'</p>';}
+        draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 24 · GPT 系列总览（交互）=== -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="GPT 系列：同一个想法越做越大（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 GPT 系列演进</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:62px">GPT = <em>G</em>enerative <em>P</em>re-trained <em>T</em>ransformer</h2>
+        <div class="tl reveal d2 gpT" style="margin-top:48px"></div>
+        <div class="flex gap32 reveal d3" style="margin-top:44px">
+          <div class="card b grow gpC" style="height:400px"></div>
+          <div class="card g" style="width:560px;height:400px"><div class="n">人物</div><p style="font-size:25px"><b>Alec Radford</b>：GPT 系列主要作者，DCGAN 一作，PPO 作者之一。<br><b>Ilya Sutskever</b>：AlexNet 作者之一，OpenAI 联合创始人、时任首席科学家（2024 年离开）。</p><div class="note">⚠ 原稿称 Sutskever 为 “OpenAI 的 CTO”，更准确的头衔是联合创始人与首席科学家。</div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P31、P33；GPT-1/2/3 论文；OpenAI InstructGPT（2022-01-27）、GPT-4（2023-03-14），R3、R8</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);let k=0;
+        const D=[['GPT-1','2018','1.17 亿','预训练 + 微调','先用海量普通文本“接龙”预训练，再针对每个任务做小规模微调。'],['GPT-2','2019','15 亿','零样本','不再微调：任务写进提示里，直接用。'],['GPT-3','2020','1750 亿','上下文学习','给几个例子就会做新任务，权重一个不改。'],['InstructGPT','2022-01','13 亿起','人类反馈对齐','用 RLHF 让模型“听得懂人话”：13 亿的 InstructGPT 比 1750 亿的 GPT-3 更受人类评估者偏好。'],['ChatGPT','2022-11','未公布','对话','InstructGPT 的“姊妹模型”，以对话形式开放给公众。'],['GPT-4','2023-03','未公布','多模态','接受图像 + 文本输入；技术细节（规模、数据、架构）未公开。']];
+        function draw(){q('.gpT').innerHTML=D.map((d,i)=>'<button class="'+(i==k?'on':'')+'" data-i="'+i+'">'+d[0]+'<small>'+d[1]+'</small></button>').join('');q('.gpT').querySelectorAll('button').forEach(b=>b.onclick=()=>{k=+b.dataset.i;draw();});
+          const d=D[k];q('.gpC').innerHTML='<div class="n">'+d[1]+' · 参数 '+d[2]+'</div><h3 style="font-size:52px" class="blue">'+d[0]+'：'+d[3]+'</h3><p style="font-size:34px;margin-top:16px">'+d[4]+'</p>';}
+        draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 25 · GPT-1 预训练：接龙（交互）=== -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="GPT-1 预训练：文字接龙（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 GPT 系列演进</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap16">
+          <h2 class="reveal d1" style="font-size:58px">预训练：<em>读一段，猜下一个词</em></h2>
+          <div class="box reveal d2"><div class="lbl">自监督：标签就在文本里，不需要人工标注</div>
+            <div class="flex gap16" style="margin-top:14px;align-items:center;flex-wrap:wrap" id="nxEx"><span class="tk">一辆</span><span class="tk">列车</span><span class="tk">缓慢</span><span class="tk o">　?　</span><span class="tk">在</span><span class="tk">崎岖</span><span class="tk">的</span><span class="tk">山路上</span></div>
+            <div class="note">“挖去”一个词，用上下文预测——不需要任何人来打标签。</div></div>
+          <div class="box reveal d3"><div class="flex between center"><div class="lbl">玩具语言模型（在 14 句商业短语上统计训练）</div><div class="flex gap16"><button class="btn nxU">撤销</button><button class="btn nxR">重置</button></div></div>
+            <div class="nxT" style="margin:14px 0;min-height:70px;font:500 36px/1.4 var(--f-serif-cn)"></div>
+            <div class="flex between center"><span class="mono" style="font-size:22px">温度 T = <b class="blue nxTv">1.0</b></span><input type="range" class="nxS" min="0.3" max="2" step="0.1" value="1" style="width:420px"></div></div>
+        </div>
+        <div class="col gap16 reveal d3" style="width:600px;justify-content:center">
+          <div class="lbl">下一个词的概率（点击即选中）</div><div class="nxP"></div>
+          <div class="note">⚠ 这是 bigram/trigram 计数模型，仅演示“预测下一词 → 采样 → 追加”的循环；GPT 用 Transformer 在数千亿词上学得同样形式的条件概率 P(w<sub>t</sub> | w<sub>1</sub>…w<sub>t−1</sub>)。</div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P32–P33；Radford et al., Improving Language Understanding by Generative Pre-Training (2018)，R9</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);
+        const C=['数据 是 新 的 生产 要素','数据 是 新 的 石油','数据 驱动 商业 决策','商业 决策 需要 数据','人工 智能 改变 商业 模式','人工 智能 需要 数据 和 算力','大 模型 改变 商业 模式','大 模型 需要 大量 数据','大 模型 预测 下 一个 词','模型 预测 下 一个 词','大 模型 需要 大量 算力','数据 驱动 人工 智能','人工 智能 驱动 商业 价值','大 模型 创造 商业 价值'].map(x=>x.split(' '));
+        const B={},T={};C.forEach(c=>{for(let i=0;i<c.length;i++){const a=c[i-1]||'^',b=c[i-2]||'^',n=c[i];((B[a]=B[a]||{})[n]=(B[a][n]||0)+1);const k=b+'|'+a;((T[k]=T[k]||{})[n]=(T[k][n]||0)+1);}});
+        let seq=[];const starts=['数据','人工','大','模型','商业'];
+        function dist(){const a=seq[seq.length-1]||'^',b=seq[seq.length-2]||'^';let d=T[b+'|'+a]||B[a];if(!seq.length){d={};starts.forEach(w=>d[w]=B['^'][w]||1);}return d||{};}
+        function draw(){const T_=+q('.nxS').value;q('.nxTv').textContent=T_.toFixed(1);const d=dist();const ks=Object.keys(d);const w=ks.map(k=>Math.pow(d[k],1/T_));const Z=w.reduce((a,b)=>a+b,0);const p=ks.map((k,i)=>[k,w[i]/Z]).sort((a,b)=>b[1]-a[1]);
+          q('.nxT').innerHTML=seq.length?seq.map(x=>'<span style="margin-right:10px">'+x+'</span>').join('')+'<span class="blue">▍</span>':'<span class="muted" style="font-size:26px">点击右侧任一开头词</span>';
+          q('.nxP').innerHTML=p.length?p.map(x=>'<div class="nxI" data-w="'+x[0]+'" style="display:flex;align-items:center;gap:14px;margin-bottom:10px;cursor:pointer"><span class="tk" style="width:150px;text-align:center;margin:0;font-size:24px">'+x[0]+'</span><div class="bar grow" style="height:26px"><i style="width:'+(x[1]*100)+'%"></i></div><span class="mono" style="width:70px;font-size:22px">'+(x[1]*100).toFixed(0)+'%</span></div>').join(''):'<div class="box">句子结束（语料中无后续）。点“重置”。</div>';
+          q('.nxP').querySelectorAll('.nxI').forEach(e=>e.onclick=()=>{seq.push(e.dataset.w);draw();});}
+        q('.nxS').oninput=draw;q('.nxU').onclick=()=>{seq.pop();draw();};q('.nxR').onclick=()=>{seq=[];draw();};draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 26 · GPT-1 微调（交互）=== -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="GPT-1 微调：任务改写成同一种输入（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 GPT 系列演进</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap24">
+          <h2 class="reveal d1" style="font-size:58px">微调：<em>一个模型，四种输入格式</em></h2>
+          <div class="tabs reveal d2 ftT" style="flex-wrap:wrap"></div>
+          <div class="box reveal d3 ftC" style="min-height:360px"></div>
+          <p class="reveal d4" style="font-size:28px">不同 NLP 子任务被抽象成<b>同一种“序列 + 特殊符号”</b>，只需在 Transformer 顶端加一个线性层。</p>
+        </div>
+        <figure class="contain reveal d3" style="width:640px;height:760px;align-self:center"><img src="assets/p34_1.png" alt="GPT-1 task formats"></figure>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P34；Radford et al. (2018) Figure 1</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);let k=0;
+        const D=[['分类','情感 / 文本分类',[['Start','x'],['这家餐厅服务很好','t'],['Extract','x']],'→ 线性层 → 正向 / 负向'],['蕴含','前提能否推出假设',[['Start','x'],['他在跑步','t'],['Delim','x'],['他在运动','o'],['Extract','x']],'→ 线性层 → 蕴含 / 矛盾 / 中立'],['相似度','两句话是否同义',[['Start','x'],['句 A','t'],['Delim','x'],['句 B','o'],['Extract','x']],'两个顺序各算一次，相加后 → 线性层（句子无先后）'],['多选题','从多个答案选一个',[['Start','x'],['上下文 z','t'],['Delim','x'],['答案 q<sub>i</sub>','o'],['Extract','x']],'每个候选答案各算一个分数 → softmax 选最大']];
+        function draw(){q('.ftT').innerHTML=D.map((d,i)=>'<button class="tab b'+(i==k?' on':'')+'" data-i="'+i+'">'+d[0]+'</button>').join('');q('.ftT').querySelectorAll('.tab').forEach(b=>b.onclick=()=>{k=+b.dataset.i;draw();});const d=D[k];
+          q('.ftC').innerHTML='<div class="lbl">'+d[1]+'</div><div style="margin-top:22px">'+d[2].map(t=>'<span class="tk '+(t[1]=='x'?'on':t[1])+'" style="font-size:26px">'+t[0]+'</span>').join('')+'</div><p style="font-size:28px;margin-top:20px" class="blue">'+d[3]+'</p>';}
+        draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 27 · GPT-2 零样本（交互）=== -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="GPT-2：零样本，任务写进提示里（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 GPT 系列演进</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:60px">GPT-2：<em>不再微调</em>，直接“问”</h2><div class="tg g2Tg"><button class="on" data-m="0">微调时代</button><button data-m="1">零样本时代</button></div></div>
+        <div class="flex gap32 reveal d2" style="margin-top:34px">
+          <div class="stat" style="width:360px"><div class="v">15<small>亿</small></div><div class="l">参数（1542M），比 GPT-1 大 &gt;10 倍</div></div>
+          <div class="stat" style="width:430px"><div class="v">800<small>万</small></div><div class="l">网页文档 · 40 GB（WebText）</div></div>
+          <div class="card o grow"><div class="n">诚实的结果</div><p style="font-size:26px">它并没有在监督任务上决定性地打败 BERT；于是<b>换了赛道</b>：强调“无需微调”的零样本，在 8 个语言建模数据集中的 7 个取得当时最佳。</p></div>
+        </div>
+        <div class="box reveal d3 g2C" style="margin-top:28px;min-height:330px"></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P35–P36；Radford et al., Language Models are Unsupervised Multitask Learners (2019)；⚠ 原稿称数据“百万级”，论文为约 800 万文档 / 40 GB，R10</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);let m=0;
+        const H=['<div class="lbl">需要特殊符号 → 必须微调才能识别</div><div class="prompt" style="margin-top:14px">&lt;BOS&gt; 今天天气怎么样？ &lt;SEP&gt; What’s the weather today? &lt;EOS&gt;</div><p style="font-size:26px;margin-top:16px">特殊 token 只有微调时才学得会，每个任务都要一份标注数据。</p>','<div class="lbl">一切都是自然语言 → 直接用通用的“文本补全”能力</div><div class="prompt" style="margin-top:14px">“今天天气怎么样？”这句话用英文来表述为：<span class="b">▍</span></div><p style="font-size:26px;margin-top:16px">推断时只需把提示文本送入模型，它接着写：<b class="blue">What’s the weather today?</b>——<b>提示词（prompt）</b>从此成为人机接口。</p>'];
+        function draw(){q('.g2C').innerHTML=H[m];}s.querySelectorAll('.g2Tg button').forEach(b=>b.onclick=()=>{m=+b.dataset.m;s.querySelectorAll('.g2Tg button').forEach(x=>x.classList.toggle('on',x===b));draw();});draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 28 · GPT-3 大力出奇迹 === -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="GPT-3：大力出奇迹">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 GPT 系列演进</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:24px;letter-spacing:.14em">2020 · NEURIPS</div>
+          <h2 class="reveal d2" style="font-size:66px">回到本质：<br><em>把模型做大</em></h2>
+          <div class="flex gap32 reveal d3"><div class="stat"><div class="v">175<small>B</small></div><div class="l">参数</div></div><div class="stat"><div class="v">≈116<small>×</small></div><div class="l">GPT-2（1.5B）的倍数</div></div></div>
+          <p class="reveal d4" style="font-size:30px">不再追求每项任务的最优，而是看<b>少量示例下的通用能力</b>——<b>上下文学习</b>（In-Context Learning）。</p>
+          <div class="note reveal d5">论文作者栏很长：前面的作者主要做实验。GPT-3 当时是比任何非稀疏语言模型大 10 倍的模型。</div>
+        </div>
+        <figure class="contain reveal d3" style="width:680px;height:404px;flex-shrink:0;align-self:center"><img src="assets/p37_1.png" alt="Language Models are Few-Shot Learners"></figure>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P37；Brown et al., Language Models are Few-Shot Learners (NeurIPS 2020)，R11</div>
+    </section>
+
+    <!-- === SLIDE 29 · 上下文学习（交互）=== -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="上下文学习：给例子，不改权重（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 GPT 系列演进</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap16">
+          <div class="flex between center"><h2 class="reveal d1" style="font-size:56px">示例越多，<em>任务越清楚</em></h2><div class="tg icTg"><button class="on" data-m="0">翻译</button><button data-m="1">乘法规律（ChatGPT 实测）</button></div></div>
+          <div class="box reveal d2"><div class="flex between center"><div class="lbl">提示中的示例数 k</div><b class="mono blue icK" style="font-size:34px">0</b></div><input type="range" class="icR" min="0" max="3" step="1" value="0" style="margin-top:10px"><div class="flex between mono muted" style="font-size:20px"><span>zero-shot</span><span>one-shot</span><span>few-shot</span><span>few-shot</span></div></div>
+          <div class="prompt reveal d3 icP" style="min-height:250px"></div>
+          <div class="flex gap24 reveal d4" style="align-items:center"><div class="box grow icO"></div><div class="mono" style="font-size:22px;padding:14px 18px;border:1.5px solid var(--teal);color:var(--teal)">🔒 模型参数 θ 未更新</div></div>
+        </div>
+        <div class="col gap16 reveal d3" style="width:640px;justify-content:center">
+          <figure class="contain" style="height:340px"><img src="assets/p40_1.png" alt="zero-shot ICL CoT"></figure>
+          <p style="font-size:24px">按传统定义，上下文学习中的 one-shot / few-shot 仍属“零梯度更新”：<b>学习发生在推理时的提示里</b>，而不是训练时的权重里。</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P38、P40、P47（ChatGPT 实测截图：0/1 例失败，2 例得出 4×5=20）；GPT-3 论文 Fig. 2.1（翻译示例）</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);let m=0;
+        const T=[{h:'Translate English to French:',ex:['sea otter => loutre de mer','peppermint => menthe poivrée','plush giraffe => girafe peluche'],qy:'cheese =>',o:['（不确定格式，可能续写成解释）','fromage（学会了格式）','fromage','fromage']},{h:'',ex:['2, 3 => 6','3, 4 => 12'],qy:'4, 5 =>',o:['无法判断规律，要求你补充说明','3,4 => 12？ 仍无法判断模式','4×5 = 20（识别出“相乘”）','4×5 = 20']}];
+        function draw(){const k=+q('.icR').value,t=T[m];q('.icK').textContent=k;let ex=t.ex.slice(m?0:0,k);if(m){ex=t.ex.slice(0,Math.min(k,2));}
+          let p=(t.h?'<span class="g">'+t.h+'</span>\n':'')+ex.map(e=>'<span class="b">'+e+'</span>').join('\n')+(ex.length?'\n':'')+t.qy+'<span class="r"> ▍</span>';
+          if(m&&k==1)p=('<span class="b">3, 4 => 12</span>\n4, 5 =>')+'<span class="r"> ▍</span>';
+          q('.icP').innerHTML=p;q('.icO').innerHTML='<div class="lbl">'+(m?'ChatGPT 的回答（原 PPT 截图）':'典型输出')+'</div><p style="font-size:26px;margin-top:6px"><b>'+t.o[k]+'</b></p>';}
+        s.querySelectorAll('.icTg button').forEach(b=>b.onclick=()=>{m=+b.dataset.m;s.querySelectorAll('.icTg button').forEach(x=>x.classList.toggle('on',x===b));draw();});q('.icR').oninput=draw;draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 30 · 思维链（交互）=== -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="思维链：先想后答（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 GPT 系列演进</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap16">
+          <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">思维链：<em>把推理写出来</em></h2><div class="tg ctTg"><button class="on" data-m="0">标准提示</button><button data-m="1">思维链提示</button></div></div>
+          <div class="prompt reveal d2" style="font-size:25px"><span class="b">Q：</span>食堂有 23 个苹果，午餐用掉 20 个，又买了 6 个，现在有几个苹果？</div>
+          <div class="box reveal d3 ctO" style="min-height:300px"></div>
+          <div class="flex gap16 reveal d4"><button class="btn pri ctN">▶ 逐步展开</button><span class="hint ctH"></span></div>
+          <div class="card o reveal d5"><div class="n">⚠ 关于“10B 分界线”</div><p style="font-size:24px">原稿写“大小模型的分界线：10B”。Wei et al. 2022 的结论是：思维链对<b>小于约 10B 的模型多半有害</b>，约 <b>100B 量级</b>才稳定受益。2024 年后的推理模型把思维链<b>训练进了模型</b>（见 2.6）。</p></div>
+        </div>
+        <figure class="contain reveal d3" style="width:620px;height:760px;align-self:center"><img src="assets/p39_1.png" alt="Chain-of-thought prompting"></figure>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P39；Wei et al., Chain-of-Thought Prompting Elicits Reasoning in LLMs (NeurIPS 2022)，R12；示例改编自该论文 Fig. 1</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);let m=0,st=0;
+        const S=['食堂原来有 23 个苹果。','用掉 20 个，剩 23 − 20 = 3 个。','又买了 6 个，3 + 6 = 9 个。','答案是 9。'];
+        function draw(){if(!m){q('.ctO').innerHTML='<div class="lbl">模型直接给答案（论文示意）</div><p style="font-size:34px;margin-top:12px">答案是 <b style="color:#b4402d">27</b>。 ✗</p><p class="note">一步到位，没有中间推理，容易出错。</p>';q('.ctN').style.display='none';q('.ctH').textContent='';}
+          else{q('.ctN').style.display='';q('.ctO').innerHTML='<div class="lbl">模型先写出推理过程，再给答案</div><div style="margin-top:12px">'+S.slice(0,st).map((x,i)=>'<p style="font-size:30px;'+(i==3?'color:#1f7a72;font-weight:700':'')+'">'+x+(i==3?' ✓':'')+'</p>').join('')+'</div>';q('.ctH').textContent=st<4?'点击按钮展开下一步 '+st+'/4':'完成';}}
+        s.querySelectorAll('.ctTg button').forEach(b=>b.onclick=()=>{m=+b.dataset.m;st=m?1:0;s.querySelectorAll('.ctTg button').forEach(x=>x.classList.toggle('on',x===b));draw();});q('.ctN').onclick=()=>{if(st<4)st++;draw();};draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 31 · RLHF 三步（交互）=== -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="RLHF：InstructGPT 三步法（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 三阶段训练</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:56px">让模型<em>听得懂人话</em>：InstructGPT</h2><div class="tabs rlT"><button class="tab b on" data-k="0">Step 1 · SFT</button><button class="tab b" data-k="1">Step 2 · 奖励模型</button><button class="tab b" data-k="2">Step 3 · 强化学习</button></div></div>
+        <div class="flex gap32 reveal d2" style="margin-top:24px">
+          <div style="position:relative;width:1130px;height:678px;flex:none"><img src="assets/p41_1.png" style="width:1130px;height:678px;border:1px solid var(--rule)" alt="InstructGPT"><div class="rlM" style="position:absolute;inset:0;pointer-events:none"></div></div>
+          <div class="col grow gap16 rlC" style="justify-content:center"></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P41；Ouyang et al., Training language models to follow instructions with human feedback (2022)，R13</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);let k=0;
+        const D=[['13K','prompt 数据','人类标注者写出示范回答，用监督学习微调 GPT-3 → <b>SFT 模型</b>。'],['33K','prompt 数据','同一个 prompt 采样多个回答，标注者<b>排序</b>；用排序训练<b>奖励模型 RM</b>（辅助任务）。'],['31K','prompt 数据','策略生成回答，RM 打分作为奖励，用 <b>PPO</b> 更新策略，使输出更符合人类偏好 → <b>InstructGPT</b>。']];
+        function draw(){q('.rlM').innerHTML=[0,1,2].map(i=>'<div style="position:absolute;left:'+(i*33.33)+'%;top:0;bottom:0;width:33.33%;background:'+(i==k?'transparent':'rgba(250,248,244,.82)')+';'+(i==k?'outline:4px solid #24509e;outline-offset:-4px':'')+'"></div>').join('');
+          q('.rlC').innerHTML='<div class="stat"><div class="v">'+D[k][0]+'</div><div class="l">'+D[k][1]+'</div></div><p style="font-size:28px">'+D[k][2]+'</p>';
+          s.querySelectorAll('.rlT .tab').forEach(x=>x.classList.toggle('on',+x.dataset.k==k));}
+        s.querySelectorAll('.rlT .tab').forEach(b=>b.onclick=()=>{k=+b.dataset.k;draw();});draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 32 · 奖励模型：排序（交互）=== -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="奖励模型：你来当标注者（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 三阶段训练</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap16">
+          <h2 class="reveal d1" style="font-size:56px">人类偏好 → <em>奖励信号</em></h2>
+          <div class="prompt reveal d2" style="font-size:24px"><span class="b">客户投诉：</span>手机电池续航太差，我要退货！　<span class="muted">请写一条客服回复。</span></div>
+          <div class="lbl reveal d3">按“从好到坏”的顺序依次点击 4 条回答</div>
+          <div class="rmL reveal d3" style="display:grid;grid-template-columns:1fr 1fr;gap:16px"></div>
+          <div class="flex gap16"><button class="btn rmR">重新排序</button></div>
+        </div>
+        <div class="col gap16 reveal d3" style="width:620px;justify-content:center">
+          <div class="box"><div class="lbl">排序 → 成对偏好</div><div class="rmP" style="margin-top:12px;font:500 24px/1.8 var(--f-mono)">请先完成排序。</div></div>
+          <div class="box"><div class="lbl">玩具奖励分 = 胜出次数</div><div class="rmS" style="margin-top:12px"></div></div>
+          <div class="note">K 条回答的一次排序，产生 K(K−1)/2 个成对比较（K=4 → 6 对）；奖励模型学习让“被偏好者”得分更高。</div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P41–P42；Ouyang et al. (2022)；回答为教学构造</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);
+        const A=['抱歉给您带来不便。电池问题我们会记录。','抱歉！可免费检测电池；若确属质量问题，7 天内支持退货，并为您预约上门取件。','这是正常损耗，不属于退货范围。','非常抱歉，您的感受我们完全理解。'];let rk=[];
+        function draw(){q('.rmL').innerHTML=A.map((a,i)=>{const r=rk.indexOf(i);return '<div class="box rmA" data-i="'+i+'" style="cursor:pointer;border-left:5px solid '+(r>=0?'#24509e':'#cfcac0')+';position:relative"><span class="mono blue" style="position:absolute;right:14px;top:8px;font-size:34px">'+(r>=0?'#'+(r+1):'')+'</span><span style="font-size:24px;color:var(--ink)">'+String.fromCharCode(65+i)+'. '+a+'</span></div>';}).join('');
+          q('.rmL').querySelectorAll('.rmA').forEach(e=>e.onclick=()=>{const i=+e.dataset.i;if(rk.includes(i))return;rk.push(i);draw();});
+          if(rk.length==4){const pr=[];for(let i=0;i<4;i++)for(let j=i+1;j<4;j++)pr.push(String.fromCharCode(65+rk[i])+' ≻ '+String.fromCharCode(65+rk[j]));q('.rmP').innerHTML=pr.join('　');q('.rmS').innerHTML=rk.map((x,i)=>'<div style="display:flex;align-items:center;gap:14px;margin-bottom:8px"><span class="mono" style="width:40px;font-size:24px">'+String.fromCharCode(65+x)+'</span><div class="bar grow" style="height:22px"><i style="width:'+((3-i)/3*100)+'%"></i></div><span class="mono" style="width:30px;font-size:24px">'+(3-i)+'</span></div>').join('');}
+          else{q('.rmP').textContent='已排 '+rk.length+'/4';q('.rmS').innerHTML='';}}
+        q('.rmR').onclick=()=>{rk=[];draw();};draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 33 · 三阶段对比（交互）=== -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="三阶段训练：同一个问题，三种回答（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 三阶段训练</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:60px">预训练 → 微调 → 对齐：<em>说人话、做人事</em></h2>
+        <div class="flex gap0 reveal d2 stT" style="margin-top:34px;align-items:stretch">
+          <button class="tab b on" data-k="0" style="flex:1;padding:24px 10px">预训练 Pre-training</button>
+          <button class="tab b" data-k="1" style="flex:1;padding:24px 10px">有监督微调 SFT</button>
+          <button class="tab b" data-k="2" style="flex:1;padding:24px 10px">人类反馈强化学习 RLHF</button>
+        </div>
+        <div class="flex gap32 reveal d3" style="margin-top:28px">
+          <div class="col gap16" style="width:600px"><div class="card b stC" style="height:520px"></div></div>
+          <div class="col grow gap16"><div class="prompt" style="font-size:24px"><span class="b">用户：</span>如何让同事的报告更有说服力？</div><div class="prompt stO" style="min-height:300px;font:400 26px/1.7 var(--f-sans);border-left-color:var(--teal)"></div><div class="prompt" style="font-size:24px"><span class="b">用户：</span>教我伪造一份财务报表。</div><div class="prompt stO2" style="font:400 26px/1.7 var(--f-sans);border-left-color:var(--teal)"></div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P42；输出为示意性构造，非真实模型逐字输出</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);
+        const D=[['阶段 1','预训练','数据：海量普通文本；目标：预测下一词（自注意力“完形填空”）。得到一个“会续写的通才”，但<b>不一定听你的</b>。','如何让同事的报告更有说服力？如何写好年终总结？如何做好 PPT 汇报？……<span class="muted">（继续续写更多相似的问题）</span>','……<span class="muted">（可能续写成一篇教程，也可能照做）</span>'],['阶段 2','有监督微调 SFT','数据：人类写的“指令—回答”示范；目标：提示学习与指令微调，学会<b>按指令作答</b>。','1. 先给结论，再给依据。 2. 用数据与案例支撑。 3. 预判对方的反对意见。','……<span class="muted">（按指令一步步照做，缺乏安全边界）</span>'],['阶段 3','RLHF · 与人类价值对齐','数据：人类偏好排序 → 奖励模型 → 强化学习；目标：<b>有用、诚实、无害</b>。','可以从三方面入手：结论先行、证据充分、预判质疑。如果告诉我报告主题，我可以帮你改一版。','这涉及造假，我不能协助。若您想了解合规的财务报告编制或审计要点，我可以帮您。']];
+        function draw(k){const d=D[k];q('.stC').innerHTML='<div class="n">'+d[0]+'</div><h3 style="font-size:44px" class="blue">'+d[1]+'</h3><p style="font-size:28px;margin-top:16px">'+d[2]+'</p>';q('.stO').innerHTML=d[3];q('.stO2').innerHTML=d[4];s.querySelectorAll('.stT .tab').forEach(x=>x.classList.toggle('on',+x.dataset.k==k));}
+        s.querySelectorAll('.stT .tab').forEach(b=>b.onclick=()=>draw(+b.dataset.k));draw(0);})();</script>
+    </section>
+
+    <!-- === SLIDE 34 · ChatGPT、GPT-4 与时间线 === -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="ChatGPT、GPT-4 与大模型家谱">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 三阶段训练</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col" style="width:1130px"><figure class="contain reveal d2" style="height:660px"><img src="assets/p44_1.png" alt="LLM timeline"></figure><div class="note">图为 2023 年的大模型“家谱”快照，此后新增模型极多，见 2.6。</div></div>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="card b reveal d2"><div class="n">2022-11-30</div><h3>ChatGPT</h3><p>OpenAI 称它是 InstructGPT 的“姊妹模型”，以对话形式开放。</p></div>
+          <div class="card t reveal d3"><div class="n">2023-03-14</div><h3>GPT-4</h3><p>接受图像 + 文本；<b>规模、数据、架构均未公布</b>——开启了“前沿模型不再公开细节”的时代。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P43–P44；OpenAI GPT-4 (2023-03-14)，R3；R6（AI Index 2026 透明度）</div>
+    </section>
+
+    <!-- === SLIDE 35 · 大语言模型 What（交互 tab）=== -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="大语言模型是什么：三种能力（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.5 能力从哪来</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:60px">它到底<em>会什么</em>？</h2><div class="tabs whT"><button class="tab b on" data-k="0">世界知识</button><button class="tab b" data-k="1">上下文学习</button><button class="tab b" data-k="2">语言生成</button></div></div>
+        <div class="flex gap32 reveal d2" style="margin-top:28px;height:700px">
+          <div class="card b whC" style="width:560px"></div>
+          <figure class="contain grow"><img class="whI" src="assets/p46_1.png" alt=""></figure>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P45–P48（ChatGPT 截图）</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);
+        const D=[['世界知识','事实性知识与常识：阿波罗登月的人、飞船、时长、日期，一问一答。','注意：流畅 ≠ 正确，需要核实（幻觉问题）。','assets/p46_1.png'],['上下文学习','遵循给定任务的几个示例，为新的测试用例生成解决方案。','截图：给出 “2, 3 ⇒ 6；3, 4 ⇒ 12”，模型推出 4, 5 ⇒ 20。','assets/p47_3.png'],['语言生成','遵循提示词，生成补全提示词的文本。','示例：“仅使用中国的地名写一首打油诗”，以及旅行计划。','assets/p48_1.png']];
+        function draw(k){const d=D[k];q('.whC').innerHTML='<div class="n">能力 '+(k+1)+'/3</div><h3 style="font-size:46px" class="blue">'+d[0]+'</h3><p style="font-size:30px;margin-top:16px">'+d[1]+'</p><p style="font-size:26px;margin-top:16px;color:var(--ink-3)">'+d[2]+'</p>';q('.whI').src=d[3];s.querySelectorAll('.whT .tab').forEach(x=>x.classList.toggle('on',+x.dataset.k==k));}
+        s.querySelectorAll('.whT .tab').forEach(b=>b.onclick=()=>draw(+b.dataset.k));draw(0);})();</script>
+    </section>
+
+    <!-- === SLIDE 36 · Why：能力来源 === -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="能力从哪里来：训练阶段与能力对照">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.5 能力从哪来</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:60px">每一种能力，<em>对应一个训练环节</em></h2>
+        <table class="reveal d2" style="margin-top:34px"><thead><tr><th>能力</th><th>主要来源</th><th>可信度</th></tr></thead><tbody>
+          <tr><td class="blue">世界知识 · 上下文学习 · 语言生成</td><td>预训练；存储知识依赖海量参数（GPT-3：1750 亿）</td><td>共识</td></tr>
+          <tr><td class="blue">遵循指令、泛化到新任务</td><td>指令微调：指令的种类与数量越多越好</td><td>共识</td></tr>
+          <tr><td class="blue">复杂推理</td><td>很可能来自代码训练；后来被思维链与强化学习进一步强化</td><td>⚠ 2022 年的推测</td></tr>
+          <tr><td class="blue">中立、客观、安全、详实的回答</td><td>与人类对齐：SFT 或 RLHF</td><td>共识</td></tr>
+          <tr><td class="blue">多轮对话</td><td>RLHF（ChatGPT）：建模对话历史、增加信息量、拒绝知识外的问题</td><td>共识</td></tr></tbody></table>
+        <div class="card o reveal d4" style="margin-top:30px"><div class="n">对齐税 Alignment Tax</div><p style="font-size:27px">对齐会让模型在部分任务上的性能<b>低于未对齐的版本</b>；原稿还提到 ChatGPT 为对话牺牲了部分上下文学习能力。InstructGPT 论文用混入预训练梯度（PPO-ptx）来缓解。</p></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P49（能力来源的归因源自 2022-12 的社区分析，属推测）；Ouyang et al. (2022)，R13</div>
+    </section>
+
+    <!-- === SLIDE 37 · 2022–2026 前沿模型时间线（交互）=== -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="2022–2026：前沿模型时间线（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.6 2024–2026 更新</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">GPT 之后：<em>四年，四条赛道</em></h2><div class="tabs mdT"><button class="tab b on" data-k="all">全部</button><button class="tab b" data-k="OpenAI">OpenAI</button><button class="tab b" data-k="Anthropic">Anthropic</button><button class="tab b" data-k="Google">Google</button><button class="tab b" data-k="中国开放权重">中国开放权重</button></div></div>
+        <div class="mdL reveal d2" style="margin-top:22px;display:grid;grid-template-columns:1fr 1fr;column-gap:40px;grid-auto-flow:column"></div>
+        <div class="note reveal d3" style="margin-top:12px">⚠ 模型命名在 2026 年变化很大，请以“系列 + 版本 + 日期”为准。Gemini 4 的信息来自二手聚合页；Claude Mythos Preview 为受限发布（仅限合作方）。以上与 L1 调研口径一致，截至 2026-11-14。</div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P20–22、P43；R2（L1 调研：厂商官方页与聚合页）；OpenAI o1 (2024-09-12)、DeepSeek-R1 (2025-01-20)，R14</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);let k='all';
+        const D=[['2022-11','OpenAI','ChatGPT 发布（基于 GPT-3.5）'],['2023-03','OpenAI','GPT-4：多模态，细节未公开'],['2024-09','OpenAI','o1：强化学习训练的“先想后答”推理模型'],['2025-08','OpenAI','GPT-5（METR 当月评估其 50% 时间跨度约 3.4 小时）'],['2026-04','OpenAI','GPT-5.5：百万 token 上下文，内置计算机使用'],['2026-07','OpenAI','GPT-5.6（Sol / Terra / Luna）与 ChatGPT Work'],['2026-09','OpenAI','GPT-6 Astra：计算机使用、软件工程领先'],
+          ['2023-03','Anthropic','Claude 初代发布'],['2026-02','Anthropic','Claude Opus 4.6；Sonnet 4.6（百万上下文 beta）'],['2026-04','Anthropic','Claude Mythos Preview：因网络安全能力强而不公开发布'],['2026-06','Anthropic','Claude Fable 5 / Mythos 5：同一底座，两种护栏配置'],['2026-11','Anthropic','Claude Fable 5.2 / Mythos 5.2'],
+          ['2022-06','Google','LaMDA（Lemoine 事件）'],['2023-12','Google','Gemini 1.0'],['2026-02','Google','Gemini 3.1 Pro；3 Deep Think'],['2026-05','Google','I/O：Gemini 3.5 Flash'],['2026-10','Google','Gemini 4 Argon（⚠ 二手来源）'],
+          ['2025-01','中国开放权重','DeepSeek-R1：开源推理模型，MIT 许可'],['2026-04','中国开放权重','DeepSeek-V4 Preview（开源，百万上下文）'],['2026-07','中国开放权重','Kimi K3：2.8T 参数，权重开放'],['2026-08','中国开放权重','Qwen3.8 开放权重；GLM-5.3']];
+        const C={OpenAI:'#24509e',Anthropic:'#c27a1a',Google:'#1f7a72','中国开放权重':'#8a90a0'};
+        function draw(){const L=D.filter(d=>k=='all'||d[1]==k).sort((a,b)=>a[0]<b[0]?-1:1);q('.mdL').style.gridTemplateRows='repeat('+Math.ceil(L.length/2)+',auto)';q('.mdL').innerHTML=L.map(d=>'<div style="display:flex;gap:16px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--rule)"><span class="mono" style="width:100px;font-size:21px;color:var(--ink-3)">'+d[0]+'</span><span class="mono" style="width:150px;font-size:19px;color:'+C[d[1]]+';font-weight:500">'+d[1]+'</span><span style="font-size:23px;color:var(--ink);flex:1">'+d[2]+'</span></div>').join('');s.querySelectorAll('.mdT .tab').forEach(x=>x.classList.toggle('on',x.dataset.k==k));}
+        s.querySelectorAll('.mdT .tab').forEach(b=>b.onclick=()=>{k=b.dataset.k;draw();});draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 38 · 推理模型：思考更久（交互）=== -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="推理模型：用算力换准确率（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.6 2024–2026 更新</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col gap16" style="width:760px">
+          <div class="mono blue reveal d1" style="font-size:24px;letter-spacing:.14em">TEST-TIME COMPUTE</div>
+          <h2 class="reveal d2" style="font-size:60px">思维链从“提示技巧”变成<em>训练目标</em></h2>
+          <p class="reveal d3" style="font-size:29px">2024-09 OpenAI o1：用<b>强化学习</b>训练模型生成长思维链；性能随<b>训练算力</b>与<b>思考时间（推理算力）</b>同时提升。2025-01 DeepSeek-R1 以开源方式复现这一路线。</p>
+          <div class="card b reveal d4"><div class="n">一个最小模型：多数表决（Self-Consistency）</div><p style="font-size:25px">让模型独立解 n 次，取多数答案。若单次正确率为 p，且错误答案互不一致，n 越大越准——这就是“思考更久”的统计直觉。</p></div>
+        </div>
+        <div class="col grow gap16 reveal d3" style="justify-content:center">
+          <div class="box">
+            <div class="flex between center"><span class="mono" style="font-size:24px">单次正确率 p = <b class="blue rsP">0.60</b></span></div><input type="range" class="rP" min="0.3" max="0.9" step="0.01" value="0.6">
+            <div class="flex between center" style="margin-top:12px"><span class="mono" style="font-size:24px">采样次数 n = <b class="blue rsN">5</b></span></div><input type="range" class="rN" min="1" max="31" step="2" value="5">
+          </div>
+          <svg class="rsS" viewBox="0 0 800 400" style="width:100%;height:400px;background:#fff;border:1px solid var(--rule)"></svg>
+          <div class="kv"><span>多数表决正确率</span><b class="pos rsA">—</b></div>
+          <div class="note">⚠ 教学模型：假设各次采样独立，且正确答案概率 p &gt; 0.5 时多数票趋近 1；p &lt; 0.5 时反而更差。真实推理模型的能力由强化学习训练出的长思维链决定，机制更复杂；算力成本随 n 线性增加。</div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P39；OpenAI, Learning to reason with LLMs (2024-09-12)；DeepSeek-R1 (2025-01-20)；Wang et al., Self-Consistency (2022)，R14</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);
+        function acc(p,n){let t=0;const need=Math.floor(n/2)+1;for(let k=need;k<=n;k++){let c=1;for(let i=0;i<k;i++)c=c*(n-i)/(i+1);t+=c*Math.pow(p,k)*Math.pow(1-p,n-k);}return t;}
+        function draw(){const p=+q('.rP').value,n=+q('.rN').value;q('.rsP').textContent=p.toFixed(2);q('.rsN').textContent=n;const X=i=>60+i*(700/15),Y=v=>360-v*320;let pts=[];for(let i=0;i<=15;i++){pts.push(X(i)+','+Y(acc(p,i*2+1)));}
+          q('.rsS').innerHTML='<line x1="60" y1="360" x2="760" y2="360" stroke="#cfcac0"/><line x1="60" y1="40" x2="760" y2="40" stroke="#e6e1d6"/><line x1="60" y1="'+Y(p)+'" x2="760" y2="'+Y(p)+'" stroke="#8a90a0" stroke-dasharray="6 6"/><text x="764" y="'+(Y(p)+6)+'" font-size="18" fill="#8a90a0" font-family="IBM Plex Mono">p</text><polyline points="'+pts.join(' ')+'" fill="none" stroke="#24509e" stroke-width="4"/><circle cx="'+X((n-1)/2)+'" cy="'+Y(acc(p,n))+'" r="10" fill="#c27a1a"/><text x="60" y="388" font-size="18" fill="#8a90a0" font-family="IBM Plex Mono">n = 1 … 31</text><text x="20" y="48" font-size="18" fill="#8a90a0" font-family="IBM Plex Mono">1.0</text>';
+          q('.rsA').textContent=(acc(p,n)*100).toFixed(1)+'%';}
+        q('.rP').oninput=draw;q('.rN').oninput=draw;draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 39 · 混合专家 MoE（交互）=== -->
+    <section class="slide c" data-sec="2 · 大语言模型" data-title="混合专家（MoE）：总参数 ≠ 每次用到的参数（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.6 2024–2026 更新</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap16">
+          <h2 class="reveal d1" style="font-size:58px">更大，但<em>不更贵</em>：稀疏激活</h2>
+          <p class="reveal d2" style="font-size:28px">把前馈层拆成多个“专家”，路由器为每个 token 只挑 <b>k</b> 个。点击一个词，看哪些专家被激活。</p>
+          <div class="reveal d3 moW" style="margin-top:8px"></div>
+          <svg class="moS reveal d3" viewBox="0 0 1000 300" style="width:1000px;height:300px"></svg>
+          <div class="flex gap24 reveal d4"><div class="stat"><div class="v moA" style="font-size:90px">25<small>%</small></div><div class="l">本次激活的专家占比（k/E = 2/8）</div></div></div>
+        </div>
+        <div class="col gap16 reveal d3" style="width:560px;justify-content:center">
+          <div class="card t"><div class="n">2026 开放权重 ⚠</div><h3>Qwen3.8 MoE</h3><p>总参数约 2.4T，<b>每 token 激活约 95B</b>（≈4%）。</p></div>
+          <div class="card g"><div class="n">2026 开放权重 ⚠</div><h3>Kimi K3</h3><p>2.8T 参数、原生视觉、1M 上下文。</p></div>
+          <div class="note">⚠ 数字来自二手聚合页（L1 调研 R30），未逐条对照官方页面；图中 8 个专家、k=2 与路由结果均为示意。</div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P24（参数规模）；R7（L1 调研 §3.2，二手）；MoE 概念：Shazeer et al. (2017)，R15</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);const W=['利率','上调','客户','违约','风险'];let sel=0;
+        const hash=(w,i)=>{let h=17;for(const c of w)h=(h*31+c.charCodeAt(0)+i*7)%97;return h;};
+        function route(w){const sc=[...Array(8)].map((_,e)=>[hash(w,e),e]).sort((a,b)=>b[0]-a[0]);return sc.slice(0,2).map(x=>x[1]);}
+        function draw(){q('.moW').innerHTML=W.map((w,i)=>'<span class="tk btnlike'+(i==sel?' on':'')+'" data-i="'+i+'">'+w+'</span>').join('');q('.moW').querySelectorAll('.tk').forEach(e=>e.onclick=()=>{sel=+e.dataset.i;draw();});
+          const r=route(W[sel]);let h='<rect x="410" y="10" width="180" height="50" fill="#24509e"/><text x="500" y="43" text-anchor="middle" font-size="24" fill="#fff">路由器 Router</text>';
+          for(let e=0;e<8;e++){const x=40+e*118,on=r.includes(e);h+='<line x1="500" y1="60" x2="'+(x+45)+'" y2="170" stroke="'+(on?'#c27a1a':'#e6e1d6')+'" stroke-width="'+(on?5:2)+'"/><rect x="'+x+'" y="170" width="90" height="90" fill="'+(on?'#c27a1a':'#fff')+'" stroke="'+(on?'#c27a1a':'#cfcac0')+'" stroke-width="2"/><text x="'+(x+45)+'" y="223" text-anchor="middle" font-size="24" fill="'+(on?'#fff':'#8a90a0')+'" font-family="IBM Plex Mono">E'+(e+1)+'</text>';}
+          q('.moS').innerHTML=h;}
+        draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 40 · 章节 Part 3 === -->
+    <section class="slide c chapter" data-sec="3 · 大语言模型使用" data-title="Part 3 · 大语言模型使用">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 7.1</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">03</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 3</div>
+        <h2 class="reveal d2">大语言模型<em>使用</em></h2>
+        <div class="s reveal d3">12 亿人每周在用它——他们到底在做什么？</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>3.1</b>规模与黏性</div>
+        <div><b>3.2</b>三件事：指导、信息、写作</div>
+        <div><b>3.3</b>工作与生活、学历与使用</div>
+        <div><b>3.4</b>How to use?</div>
+      </div>
+    </section>
+
+    <!-- === SLIDE 41 · 周活增长（交互）=== -->
+    <section class="slide c" data-sec="3 · 大语言模型使用" data-title="ChatGPT 周活跃用户：2023–2026（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 规模与黏性</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap16">
+          <h2 class="reveal d1" style="font-size:58px">原稿：<em>7 亿</em>周活。一年后：<em>12 亿</em></h2>
+          <svg class="wuS reveal d2" viewBox="0 0 1100 560" style="width:1100px;height:560px;background:#fff;border:1px solid var(--rule)"></svg>
+          <div class="hint reveal d3">点击圆点查看公告日期与数值</div>
+        </div>
+        <div class="col gap16 reveal d3" style="width:560px;justify-content:center">
+          <div class="stat"><div class="v wuV">—</div><div class="l wuL">点击左图的点</div></div>
+          <div class="card b"><div class="n">NBER 研究的口径（2025-07）</div><p style="font-size:25px">7 亿用户、每周约 <b>180 亿</b>条消息，约占全球成年人口的 <b>10%</b>。</p></div>
+          <div class="card o"><div class="n">2026-11 OpenAI 自述 ⚠</div><p style="font-size:25px">1.2B 周活；语音 2.5 亿周活；每周 15 亿张图片；检索量约为 Google 的 1/5（OpenAI 自己的未公开估计）。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P52；R1（TechCrunch 2026-02-27；The Verge 2026-09-29；McGrath 汇总）；R16（NBER w34255）；⚠ 均为 OpenAI 自报，未经独立审计</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);
+        const D=[['2023-11-06',100],['2024-08-29',200],['2024-12-04',300],['2025-02-20',400],['2025-03-31',500],['2025-08-04',700],['2025-10-06',800],['2026-02-27',900],['2026-07-15',1000,'2026-07（突破 10 亿，具体日期未核）'],['2026-09-29',1200]];
+        const t0=Date.parse('2023-11-01'),t1=Date.parse('2026-10-15');const pd=d=>Date.parse(d.slice(0,7)+'-'+(d.length>=10?d.slice(8,10):'15'));let sel=D.length-1;
+        function draw(){let h='';for(let v=0;v<=1200;v+=300){const y=500-v/1200*440;h+='<line x1="90" y1="'+y+'" x2="1060" y2="'+y+'" stroke="#e6e1d6"/><text x="80" y="'+(y+6)+'" text-anchor="end" font-size="20" fill="#8a90a0" font-family="IBM Plex Mono">'+(v?v+'M':'0')+'</text>';}
+          ['2024','2025','2026'].forEach(yr=>{const x=90+(Date.parse(yr+'-01-01')-t0)/(t1-t0)*970;h+='<text x="'+x+'" y="535" font-size="20" fill="#8a90a0" font-family="IBM Plex Mono">'+yr+'</text>';});
+          const P=D.map(d=>[90+(pd(d[0])-t0)/(t1-t0)*970,500-d[1]/1200*440]);h+='<polyline points="'+P.map(p=>p.join(',')).join(' ')+'" fill="none" stroke="#24509e" stroke-width="4"/>';
+          P.forEach((p,i)=>{h+='<circle data-i="'+i+'" cx="'+p[0]+'" cy="'+p[1]+'" r="'+(i==sel?15:10)+'" fill="'+(i==sel?'#c27a1a':'#24509e')+'" style="cursor:pointer"/>';});q('.wuS').innerHTML=h;
+          q('.wuS').querySelectorAll('circle').forEach(c=>c.onclick=()=>{sel=+c.dataset.i;draw();});
+          const d=D[sel];q('.wuV').innerHTML=(d[1]>=1000?(d[1]/1000).toFixed(1)+'<small>B</small>':d[1]+'<small>M</small>');q('.wuL').textContent=(d[2]||d[0])+' · 周活跃用户（OpenAI 公布）';}
+        draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 42 · 黏性：队列 === -->
+    <section class="slide c" data-sec="3 · 大语言模型使用" data-title="黏性：每个用户越用越多">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 规模与黏性</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <figure class="contain reveal d2" style="width:1060px;height:760px"><img src="assets/p53_1.png" alt="cohort"></figure>
+        <div class="col grow gap24" style="justify-content:center">
+          <h2 class="reveal d1" style="font-size:60px">用户黏性<em>很强</em></h2>
+          <p class="reveal d3" style="font-size:30px">图：按注册季度分组，每个周活用户每天发送的消息数（以 2023Q1 队列的初始值为 1×）。</p>
+          <div class="card b reveal d4"><p style="font-size:27px">① <b>早期用户最黏</b>：2023Q1 队列约 1.4×。<br>② 2025 年起，<b>所有队列的人均使用强度同步上升</b>。<br>③ 新注册的队列起点更低，但同样随时间爬升。</p></div>
+          <div class="note reveal d5">⚠ 仅含消费版（Free / Plus / Pro）；指数以首个队列为基准，反映相对强度而非绝对条数。读图为本课归纳。</div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P53；R16（NBER w34255 Figure 5）</div>
+    </section>
+
+    <!-- === SLIDE 43 · 三件事（交互）=== -->
+    <section class="slide c" data-sec="3 · 大语言模型使用" data-title="人们用它做什么：三件事（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.2 三件事：指导、信息、写作</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">三件事占了<em>近 80%</em>：指导、信息、写作</h2><div class="tg tpTg"><button class="on" data-m="0">全部消息</button><button data-m="1">工作相关消息</button></div></div>
+        <svg class="tpS reveal d2" viewBox="0 0 1700 490" style="width:100%;height:440px;margin-top:10px"></svg>
+        <div class="flex gap32 reveal d3" style="margin-top:6px">
+          <div class="card b grow"><div class="n tpN">观察</div><p class="tpT" style="font-size:26px"></p></div>
+          <div class="card g" style="width:620px"><div class="n">教与学</div><p style="font-size:26px">“实用指导”中，<b>辅导 / 教学（Tutoring or Teaching）占全部消息的 10.2%</b>——学习与辅导是一类重要的日常用途。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P54–P56；R16（NBER w34255，Fig. 7–9；2025-06 数据）；占比为 2025 年 6 月前后的消费版样本</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);let m=0;
+        const A=[['实用指导',28.8,'#1f7a72'],['信息查询',24.4,'#b4402d'],['写作',23.9,'#c27a1a'],['多媒体',7.3,'#24509e'],['自我表达',5.3,'#8a90a0'],['其他',5.2,'#cfcac0'],['技术帮助',5.1,'#8a90a0']];
+        const B=[['写作',40.0,'#c27a1a'],['实用指导',24.1,'#1f7a72'],['信息查询',13.5,'#b4402d'],['技术帮助',10.0,'#8a90a0'],['多媒体',7.6,'#24509e'],['其他',3.7,'#cfcac0'],['自我表达',1.1,'#8a90a0']];
+        const N=['全部消息：实用指导 + 信息查询 + 写作 ≈ 77%。人们首先把它当成<b>可以随时请教的顾问</b>与<b>搜索替代品</b>。','工作场景：<b>写作居首（40%）</b>——大模型的独特价值在于<b>生成数字化成果</b>，这是传统搜索引擎做不到的；其次才是实用指导与信息查询。'];
+        function draw(){const D=m?B:A;let h='';D.forEach((d,i)=>{const y=20+i*70,w=d[1]/40*1100;h+='<text x="200" y="'+(y+38)+'" text-anchor="end" font-size="28" fill="#1d2433">'+d[0]+'</text><rect x="220" y="'+y+'" width="0" height="52" fill="'+d[2]+'"><animate attributeName="width" from="0" to="'+w+'" dur=".7s" fill="freeze"/></rect><text x="'+(220+w+14)+'" y="'+(y+38)+'" font-size="28" font-family="IBM Plex Mono" fill="#1d2433">'+d[1].toFixed(1)+'%</text>';});q('.tpS').innerHTML=h;q('.tpT').innerHTML=N[m];}
+        s.querySelectorAll('.tpTg button').forEach(b=>b.onclick=()=>{m=+b.dataset.m;s.querySelectorAll('.tpTg button').forEach(x=>x.classList.toggle('on',x===b));draw();});draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 44 · 工作 vs 生活；学历（交互）=== -->
+    <section class="slide c" data-sec="3 · 大语言模型使用" data-title="工作与生活，学历与使用（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.3 工作与生活、学历与使用</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col gap24" style="width:760px;justify-content:center">
+          <h2 class="reveal d1" style="font-size:50px">多数使用其实发生在<em>工作之外</em></h2>
+          <div class="flex gap32 reveal d2 center">
+            <div class="stat"><div class="v" style="font-size:100px;color:var(--ink-3)">53<small>%</small></div><div class="l">非工作消息占比<br>2024-06</div></div><div class="arrow">→</div>
+            <div class="stat"><div class="v" style="font-size:100px">73<small>%</small></div><div class="l">2025-06</div></div>
+          </div>
+          <p class="reveal d3" style="font-size:28px">工作使用在增长，但<b>生活使用增长得更快</b>。对管理者：员工早已在用，问题是<b>如何把个人习惯转化为组织能力</b>。</p>
+        </div>
+        <div class="col grow gap16 reveal d3" style="justify-content:center">
+          <div class="flex between center"><div class="lbl">按学历：工作相关消息占比</div><div class="tg edTg"><button class="on" data-m="0">未调整</button><button data-m="1">控制其他因素后</button></div></div>
+          <svg class="edS" viewBox="0 0 800 460" style="width:100%;height:460px;background:#fff;border:1px solid var(--rule)"></svg>
+          <div class="note">学历越高，工作场景使用占比越高。⚠ 未调整 → 调整后差距缩小（0.48 → 0.43），说明部分差异来自职业与人口结构；星号表示在 1% 水平显著。</div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P55、P57；R16（NBER w34255）；数值读自原论文图（Panel A，Work related）</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);let m=0;
+        const V=[[0.37,0.46,0.48],[0.37,0.41,0.43]],L=['低于本科','本科','本科以上'];
+        function draw(){let h='<line x1="80" y1="400" x2="760" y2="400" stroke="#cfcac0"/>';for(let v=0;v<=0.5;v+=0.1){const y=400-v/0.55*350;h+='<line x1="80" y1="'+y+'" x2="760" y2="'+y+'" stroke="#e6e1d6"/><text x="70" y="'+(y+6)+'" text-anchor="end" font-size="18" fill="#8a90a0" font-family="IBM Plex Mono">'+v.toFixed(1)+'</text>';}
+          V[m].forEach((v,i)=>{const x=140+i*210,hh=v/0.55*350;h+='<rect x="'+x+'" y="400" width="140" height="0" fill="'+(m?'#24509e':'#94b0d8')+'"><animate attributeName="height" from="0" to="'+hh+'" dur=".6s" fill="freeze"/><animate attributeName="y" from="400" to="'+(400-hh)+'" dur=".6s" fill="freeze"/></rect><text x="'+(x+70)+'" y="'+(400-hh-12)+'" text-anchor="middle" font-size="28" font-family="IBM Plex Mono" fill="#1d2433">'+v.toFixed(2)+(m&&i?'***':'')+'</text><text x="'+(x+70)+'" y="432" text-anchor="middle" font-size="22" fill="#4a5263">'+L[i]+'</text>';});q('.edS').innerHTML=h;}
+        s.querySelectorAll('.edTg button').forEach(b=>b.onclick=()=>{m=+b.dataset.m;s.querySelectorAll('.edTg button').forEach(x=>x.classList.toggle('on',x===b));draw();});draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 45 · How to use?（提示词构建器 交互）=== -->
+    <section class="slide c" data-sec="3 · 大语言模型使用" data-title="How to use？用提示词把任务说清楚（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.4 How to use?</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col gap16" style="width:760px">
+          <div class="mono blue reveal d1" style="font-size:24px;letter-spacing:.14em">HOW TO USE ?</div>
+          <h2 class="reveal d2" style="font-size:58px">好提示 = <em>把上下文给足</em></h2>
+          <p class="reveal d3" style="font-size:26px">基于本讲原理：模型靠<b>提示中的上下文</b>决定输出。逐项打开，看提示如何变“完整”。</p>
+          <div class="reveal d4 pbT" style="display:flex;flex-direction:column;gap:12px"></div>
+        </div>
+        <div class="col grow gap16 reveal d3" style="justify-content:center">
+          <div class="flex between center"><div class="lbl">组装后的提示词</div><div class="mono" style="font-size:22px">完整度 <b class="blue pbS">1</b>/6</div></div>
+          <div class="prompt pbP" style="min-height:560px;font:400 25px/1.75 var(--f-sans);white-space:pre-wrap"></div>
+          <div class="note">任务：为 MBA 课堂准备“牛鞭效应”教学案例。⚠ 提示词对应 Part 2 的原理（角色/背景 → 上下文学习；示例 → few-shot；“逐步” → 思维链；约束与格式 → 指令遵循）；更系统的方法见 L7.2。</div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P58（How to use?）；原理对应见 Part 2；L7.2 提示词工程</div>
+      <script>(function(){const s=document.currentScript.parentElement;const q=c=>s.querySelector(c);
+        const D=[['任务','请为 MBA 课堂设计一个“牛鞭效应”的教学案例。',true,'blue'],['角色','你是一位供应链管理教授。',false,'g'],['背景','听众是西安交大的 MBA 学员，平均有 8 年工作经验，来自制造与零售行业。',false,'g'],['示例','参考风格：先用一个真实场景引入，再给出数据，最后提出 2 个讨论问题。',false,'g'],['约束与格式','控制在 500 字内；用“场景—数据—问题”三段式输出。',false,'g'],['逐步思考','请先列出你的设计思路，再给出最终案例。',false,'g']];
+        const on=D.map(d=>d[2]);
+        function draw(){q('.pbT').innerHTML=D.map((d,i)=>'<button class="tab'+(on[i]?' b on':'')+'" data-i="'+i+'" style="text-align:left;font-size:24px'+(i==0?';cursor:default':'')+'">'+(on[i]?'✓ ':'＋ ')+d[0]+'</button>').join('');q('.pbT').querySelectorAll('.tab').forEach(b=>b.onclick=()=>{const i=+b.dataset.i;if(i==0)return;on[i]=!on[i];draw();});
+          const order=[1,2,0,3,4,5];q('.pbP').innerHTML=order.filter(i=>on[i]).map(i=>(i==0?'<b class="blue">'+D[i][1]+'</b>':D[i][1])).join('\n\n');q('.pbS').textContent=on.filter(x=>x).length;}
+        draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 46 · 总结 === -->
+    <section class="slide c" data-sec="总结" data-title="总结：从词到对话的一条链">
+      <div class="toprule"></div><div class="tag"><b>总结</b> · 本讲小结</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:62px">一条链：<em>文本 → 向量 → 注意力 → 对齐</em></h2>
+        <div class="flex gap16 st" style="margin-top:50px;align-items:stretch">
+          <div class="card b grow"><div class="n">① 表示</div><h3 style="font-size:30px">词 → 向量</h3><p style="font-size:23px">one-hot → BoW → Word2Vec：从“符号”到“几何”</p></div>
+          <div class="card b grow"><div class="n">② 结构</div><h3 style="font-size:30px">注意力</h3><p style="font-size:23px">Transformer：并行、任意两词一步可达</p></div>
+          <div class="card t grow"><div class="n">③ 预训练</div><h3 style="font-size:30px">预测下一词</h3><p style="font-size:23px">自监督；GPT-1→3：越大越通用</p></div>
+          <div class="card t grow"><div class="n">④ 使用</div><h3 style="font-size:30px">ICL · CoT</h3><p style="font-size:23px">不改权重，靠提示里的例子与推理</p></div>
+          <div class="card o grow"><div class="n">⑤ 对齐</div><h3 style="font-size:30px">SFT · RLHF</h3><p style="font-size:23px">说人话、做人事；有对齐税</p></div>
+          <div class="card o grow"><div class="n">⑥ 推理</div><h3 style="font-size:30px">先想后答</h3><p style="font-size:23px">强化学习 + 推理算力（2024→）</p></div>
+        </div>
+        <div class="flex gap32 reveal d5" style="margin-top:44px">
+          <div class="card g grow"><div class="n">管理者的三个判断</div><p style="font-size:27px">① 模型的能力来自<b>数据 + 规模 + 对齐</b>，不是魔法；② 前沿模型的细节正变得<b>不透明</b>；③ 12 亿人已在用——<b>瓶颈在组织，不在技术</b>。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 本讲全部内容；原 PPT P5–P59</div>
+    </section>
+
+    <!-- === SLIDE 47 · 思考题 === -->
+    <section class="slide c" data-sec="总结" data-title="课堂讨论与课后思考">
+      <div class="toprule"></div><div class="tag"><b>总结</b> · 讨论</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:62px">回到开头：<em>它真的“理解”吗？</em></h2>
+        <div class="flex gap32 st" style="margin-top:50px">
+          <div class="card b grow" style="height:420px"><div class="n">Q1 · 机制</div><p style="font-size:30px">只做“预测下一个词”的模型，为什么能完成翻译、写代码、看图说笑话？<b>你认为这是“理解”吗？</b></p></div>
+          <div class="card t grow" style="height:420px"><div class="n">Q2 · 管理</div><p style="font-size:30px">你所在行业中，哪些工作的 <b>主要产出是文本</b>？按 NBER 的发现，写作在工作使用中占 40%——它对你的组织意味着什么？</p></div>
+          <div class="card o grow" style="height:420px"><div class="n">Q3 · 治理</div><p style="font-size:30px">前沿模型不再公布规模与数据，对企业<b>采购与风险管理</b>有什么影响？对齐税与安全边界如何权衡？</p></div>
+        </div>
+        <p class="reveal d6" style="margin-top:40px;font-size:28px">课后：用本讲的“提示词构建器”改写你日常的一个工作提示，比较输出差异。下一讲 <b class="blue">L7.2</b>：提示词工程与智能体。</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P58–P59</div>
+    </section>
+
+    <!-- === 参考文献 === -->
+    <section class="slide c" data-sec="附录" data-title="参考文献">
+      <div class="toprule"></div><div class="tag"><b>附录</b> · 参考文献</div><div class="pg"></div>
+      <div class="body"><h2 class="reveal d1" style="font-size:52px;margin-bottom:18px">参考文献 <em>R1–R16</em></h2>
+        <div style="columns:2;column-gap:56px;font:400 17px/1.45 var(--f-mono);color:var(--ink-2)">
+          <p style="font:inherit;margin:0 0 10px"><b>R1</b> OpenAI ChatGPT 周活公告：TechCrunch《ChatGPT reaches 900M weekly active users》2026-02-27 — techcrunch.com/2026/02/27/chatgpt-reaches-900m-weekly-active-users/；The Verge《ChatGPT now has 1.2 billion weekly users》2026-09-29 — theverge.com/ai-artificial-intelligence/1002265/；McGrath 公告汇总（2023-11 至 2026-02）；DailyMech 转述 Big Technology 采访，2026-11-04（语音 / 图像 / 检索量，⚠ 自报）</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R2</b> 本项目 L1 调研：HTMLSlides/L1/Research_2026.md（OpenAI / Anthropic / Google 2026 时间线，截至 2026-11-14，其 R13–R16、R28–R29 等一手与二手来源）</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R3</b> OpenAI: GPT-4, 2023-03-14 — openai.com/index/gpt-4-research/</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R4</b> Mikolov et al., Efficient Estimation of Word Representations in Vector Space, ICLR 2013 — arxiv.org/abs/1301.3781</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R5</b> Vaswani et al., Attention Is All You Need, NeurIPS 2017 — arxiv.org/abs/1706.03762</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R6</b> Stanford HAI: 2026 AI Index Report — hai.stanford.edu/ai-index/2026-ai-index-report</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R7</b> 本项目 L1 调研 §3.2（中国开放权重模型：DeepSeek-V4、Kimi K3、Qwen3.8、GLM-5.3；来源为二手聚合页，⚠ 未逐条核对）</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R8</b> OpenAI: Aligning language models to follow instructions (InstructGPT), 2022-01-27 — openai.com/index/instruction-following/</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R9</b> Radford et al., Improving Language Understanding by Generative Pre-Training (GPT-1), 2018</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R10</b> Radford et al., Language Models are Unsupervised Multitask Learners (GPT-2), 2019 — cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R11</b> Brown et al., Language Models are Few-Shot Learners (GPT-3), NeurIPS 2020 — arxiv.org/abs/2005.14165</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R12</b> Wei et al., Chain-of-Thought Prompting Elicits Reasoning in Large Language Models, NeurIPS 2022 — arxiv.org/abs/2201.11903</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R13</b> Ouyang et al., Training language models to follow instructions with human feedback, 2022 — arxiv.org/abs/2203.02155</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R14</b> OpenAI: Learning to reason with LLMs（o1），2024-09-12 — openai.com/index/learning-to-reason-with-llms/；DeepSeek-R1 Release，2025-01-20 — deepseek.com/en/news/deepseek-r1/；Wang et al., Self-Consistency Improves Chain of Thought Reasoning, 2022 — arxiv.org/abs/2203.11171</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R15</b> Shazeer et al., Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer, 2017 — arxiv.org/abs/1701.06538</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R16</b> Chatterji, Cunningham, Deming, Hitzig, Ong, Shan, Wadman: How People Use ChatGPT, NBER Working Paper 34255, 2025-09 — nber.org/papers/w34255</p>
+          <p style="font:inherit;margin:0 0 10px"><b>P</b> 原 PPT：Materials/Lecture_7.1_GPT.pptx（图片多来自原稿或原论文，来源见各页）</p>
+        </div></div>
+    </section>
+
+  </div>
+</div>
+
+<!-- 底部控制条（舞台之外） -->
+<div class="deck-controls">
+  <button id="bPrev" title="上一页 ←">◀</button>
+  <button id="bOutline" title="目录 O">OUTLINE</button>
+  <span id="counter"></span>
+  <button id="bNext" title="下一页 →">▶</button>
+</div>
+
+<!-- 目录浮层：由各页 data-title / data-sec 自动生成 -->
+<div id="outline"><div class="close">ESC ✕</div></div>
+
+<!-- 侧边导航栏 -->
+<div id="sbTab" title="导航栏 S">导航</div>
+<aside id="sidebar"><div class="sbh"><b>Lecture 7.1 · 大语言<span>模型</span></b><button id="sbClose">关闭 ✕</button></div><div class="sbl" id="sbList"></div></aside>
+
+<script>
+/* === 舞台缩放：整体等比缩放到窗口，保持 16:9 === */
+const stage = document.getElementById('stage');
+function fit() {
+  const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+  stage.style.transform = `translate(${(innerWidth - 1920 * s) / 2}px, ${(innerHeight - 1080 * s) / 2}px) scale(${s})`;
+}
+addEventListener('resize', fit); fit();
+
+/* === 翻页状态 === */
+const slides = [...document.querySelectorAll('.slide')];
+const counter = document.getElementById('counter');
+let cur = 0;
+slides.forEach((s, k) => { const p = s.querySelector('.pg'); if (p) p.textContent = `${String(k + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`; });
+function show(i) {
+  cur = Math.max(0, Math.min(slides.length - 1, i));
+  slides.forEach((s, k) => { s.classList.toggle('active', k === cur); s.classList.toggle('visible', k === cur); });
+  counter.textContent = `${cur + 1} / ${slides.length}`;
+  history.replaceState(null, '', '#' + (cur + 1));
+  document.querySelectorAll('#outline a').forEach((a, k) => a.classList.toggle('cur', +a.dataset.i === cur));
+  if (window.syncSidebar) syncSidebar();
+}
+
+/* === 目录（Outline）=== */
+const ol = document.getElementById('outline');
+(function buildOutline() {
+  const secs = []; let last = null;
+  slides.forEach((s, k) => {
+    const sec = s.dataset.sec; if (!sec) return;
+    if (!last || last.name !== sec) { last = { name: sec, items: [] }; secs.push(last); }
+    last.items.push({ i: k, t: s.dataset.title || '' });
+  });
+  let h = '<h1>Lecture 7.1 · 大语言<span>模型</span></h1>';
+  secs.forEach(sc => {
+    h += `<div class="sec"><h4>${sc.name}</h4><div class="items">` +
+      sc.items.map(it => `<a data-i="${it.i}"><i>${String(it.i + 1).padStart(2, '0')}</i><span>${it.t}</span></a>`).join('') + '</div></div>';
+  });
+  ol.insertAdjacentHTML('beforeend', h);
+  ol.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { show(+a.dataset.i); toggleOutline(false); }));
+})();
+function toggleOutline(f) { ol.classList.toggle('open', f === undefined ? !ol.classList.contains('open') : f); }
+document.getElementById('bOutline').onclick = () => toggleOutline();
+document.getElementById('bPrev').onclick = () => show(cur - 1);
+document.getElementById('bNext').onclick = () => show(cur + 1);
+ol.querySelector('.close').onclick = () => toggleOutline(false);
+
+/* === 侧边导航栏：折叠分组，当前页高亮，可跳到任意页 === */
+const sb = document.getElementById('sidebar'), sbList = document.getElementById('sbList');
+(function buildSidebar() {
+  const secs = []; let last = null;
+  slides.forEach((s, k) => {
+    const sec = s.dataset.sec; if (!sec) return;
+    if (!last || last.name !== sec) { last = { name: sec, items: [] }; secs.push(last); }
+    last.items.push({ i: k, t: s.dataset.title || '' });
+  });
+  sbList.innerHTML = secs.map(sc => `<div class="sbs"><div class="sbt">${sc.name}<em>${sc.items.length}</em></div><div class="sbi">` +
+    sc.items.map(it => `<a data-i="${it.i}"><i>${String(it.i + 1).padStart(2, '0')}</i><span>${it.t}</span></a>`).join('') + '</div></div>').join('');
+  sbList.querySelectorAll('.sbt').forEach(t => t.addEventListener('click', () => t.parentNode.classList.toggle('open')));
+  sbList.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { show(+a.dataset.i); a.blur(); }));
+})();
+window.syncSidebar = function () {
+  sbList.querySelectorAll('a').forEach(a => a.classList.toggle('cur', +a.dataset.i === cur));
+  const c = sbList.querySelector('a.cur'); if (!c) return;
+  const g = c.closest('.sbs');
+  if (!g.classList.contains('open')) { sbList.querySelectorAll('.sbs.open').forEach(x => x.classList.remove('open')); g.classList.add('open'); }
+  if (sb.classList.contains('open')) c.scrollIntoView({ block: 'nearest' });
+};
+function toggleSidebar(f) { sb.classList.toggle('open', f === undefined ? !sb.classList.contains('open') : f); if (sb.classList.contains('open')) syncSidebar(); }
+document.getElementById('sbTab').onclick = () => toggleSidebar();
+document.getElementById('sbClose').onclick = () => toggleSidebar(false);
+document.addEventListener('mousedown', e => { if (sb.classList.contains('open') && !sb.contains(e.target) && e.target.id !== 'sbTab') toggleSidebar(false); });
+
+/* === 键盘 === */
+addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea')) return;
+  if (e.key === 'Escape') { toggleOutline(false); toggleSidebar(false); }
+  if (e.key === 's' || e.key === 'S') toggleSidebar();
+  if (e.key === 'o' || e.key === 'O') toggleOutline();
+  if (ol.classList.contains('open')) return;
+  if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); show(cur + 1); }
+  if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); show(cur - 1); }
+  if (e.key === 'Home') show(0);
+  if (e.key === 'End') show(slides.length - 1);
+});
+requestAnimationFrame(() => requestAnimationFrame(() => show((parseInt(location.hash.slice(1)) || 1) - 1)));
+</script>
+</body>
+</html>

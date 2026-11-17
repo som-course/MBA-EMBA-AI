@@ -16,8 +16,9 @@
 | L5.2 分类回归树与随机森林 | [`L5_2/index.html`](L5_2/index.html) |
 | L6.1 深度学习 | [`L6_1/index.html`](L6_1/index.html) |
 | L6.2 强化学习 | [`L6_2/index.html`](L6_2/index.html) |
+| L7.1 GPT / 大语言模型 | [`L7_1/index.html`](L7_1/index.html) |
 
-线上示例：`https://som-course.github.io/MBA-EMBA-AI/L6_2/index.html`（推送 `main` 后生效）
+线上示例：`https://som-course.github.io/MBA-EMBA-AI/L7_1/index.html`（推送 `main` 后生效）
 
 2. 人工智能与量化投资
 

@@ -211,8 +211,8 @@ footer a{color:var(--blue);border-bottom:2px solid var(--blue)} footer a:hover{b
 <!-- ================= STATS ================= -->
 <div class="stats">
   <div class="wrap">
-    <div class="stat rv"><div class="v" data-n="10">0<small>份课件</small></div><div class="l">L1 – L8，其中 L5 / L6 / L7 分上下讲</div></div>
-    <div class="stat rv" style="--d:.06s"><div class="v" data-n="598">0<small>页</small></div><div class="l">全部为交互式 HTML，浏览器即开即讲</div></div>
+    <div class="stat rv"><div class="v" id="statDecks" data-n="0">0<small>份课件</small></div><div class="l">L1 – L8，其中 L5 / L6 / L7 分上下讲</div></div>
+    <div class="stat rv" style="--d:.06s"><div class="v" id="statPages" data-n="0">0<small>页</small></div><div class="l">全部为交互式 HTML，浏览器即开即讲</div></div>
     <div class="stat rv" style="--d:.12s"><div class="v">AI 1.0<small>→ 4.0</small></div><div class="l">专家系统 · 机器学习 · 深度学习 · 大模型</div></div>
     <div class="stat rv" style="--d:.18s"><div class="v">3<small>个主轴</small></div><div class="l">数据 · 智能 · 商业价值</div></div>
   </div>
@@ -293,12 +293,16 @@ const L=[
  {id:'L5.1',dir:'L5_1',k:'ml',n:'5',sub:'.1',t:'机器学习',en:'Generalization · Evaluation',pages:32,parts:['预测问题与三类学习','过拟合与交叉验证','分类与回归的度量','表格数据与落地'],g:'curve'},
  {id:'L5.2',dir:'L5_2',k:'ml',n:'5',sub:'.2',t:'决策树与随机森林',en:'CART · Random Forest',pages:33,parts:['分类回归树','随机森林','从树到实践'],g:'tree'},
  {id:'L6.1',dir:'L6_1',k:'dl',n:'6',sub:'.1',t:'深度学习',en:'Deep Learning · Applications',pages:57,parts:['人工智能定义','深度学习','应用举例','优缺点'],g:'net'},
- {id:'L6.2',dir:'L6_2',k:'dl',n:'6',sub:'.2',t:'强化学习',en:'Reinforcement Learning · Mahjong AI',pages:46,parts:['游戏：AI 的试验场','把麻将变成数据问题','左右互搏：强化学习','Suphx · LuckyJ · AlphaHu'],g:'tiles'},
- {id:'L7.1',dir:'L7_1',k:'llm',n:'7',sub:'.1',t:'大语言模型',en:'NLP · LLM · Using LLMs',pages:48,parts:['自然语言处理','大语言模型','大语言模型使用'],g:'tokens'},
+ {id:'L6.2',dir:'L6_2',k:'dl',n:'6',sub:'.2',t:'强化学习',en:'Reinforcement Learning · Mahjong AI',pages:47,parts:['游戏：AI 的试验场','把麻将变成数据问题','左右互搏：强化学习','Suphx · LuckyJ · AlphaHu'],g:'tiles'},
+ {id:'L7.1',dir:'L7_1',k:'llm',n:'7',sub:'.1',t:'大语言模型',en:'NLP · LLM · Using LLMs',pages:49,parts:['自然语言处理','大语言模型','大语言模型使用'],g:'tokens'},
  {id:'L7.2',dir:'L7_2',k:'llm',n:'7',sub:'.2',t:'提示词工程与智能体',en:'Prompt Engineering · Agents',pages:63,parts:['提示词工程','智能体','Harness · OpenClaw','创新体与组织'],g:'loop'},
  {id:'L8',dir:'L8',k:'biz',n:'8',t:'智能产业实践',en:'The AI 50 · Four Layers · Value',pages:55,parts:['AI 50：50 家公司与一年的变化','四层产业栈','商业与价值：钱、人、结局','认知改变：个人·组织·系统'],g:'stack'}
 ];
 const STAGE_OF={tech:'tech',ml:'ml',dl:'dl',llm:'llm',biz:'biz'};
+const deckCount=L.filter(l=>l.dir&&!l.soon).length;
+const pagesSum=L.reduce((s,l)=>s+(l.soon?0:l.pages),0);
+document.getElementById('statDecks').dataset.n=deckCount;
+document.getElementById('statPages').dataset.n=pagesSum;
 
 /* ===== tiny abstract glyphs (stroke = currentColor) ===== */
 const G={

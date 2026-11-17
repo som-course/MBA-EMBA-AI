@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 5.1 · AI 2.0 机器学习</title>
+
+<!-- Fonts: Noto Serif SC (中文标题) / Source Serif 4 (英文衬线) / Noto Sans SC (正文) / IBM Plex Mono (标签) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@600;700;900&family=Source+Serif+4:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+<style>
+/* === THEME ===
+   暖白纸面 + 墨色 + 唯一强调蓝；青、赭仅用于示意图 */
+:root {
+  --paper: #faf8f4;
+  --paper-2: #f2eee6;
+  --ink: #1d2433;
+  --ink-2: #4a5263;
+  --ink-3: #8a90a0;
+  --blue: #24509e;
+  --teal: #1f7a72;
+  --ochre: #c27a1a;
+  --rule: #cfcac0;
+
+  --f-serif-cn: 'Noto Serif SC', 'Source Serif 4', serif;
+  --f-serif-en: 'Source Serif 4', 'Noto Serif SC', serif;
+  --f-sans: 'Noto Sans SC', sans-serif;
+  --f-mono: 'IBM Plex Mono', monospace;
+
+  --stage-bg: #e9e5dc;
+  --slide-bg: var(--paper);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* === VIEWPORT-BASE (固定 1920×1080 舞台) === */
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-viewport { position: fixed; inset: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; background: var(--slide-bg, #fff); }
+.slide { position: absolute; inset: 0; width: 1920px; height: 1080px; overflow: hidden; display: block; visibility: hidden; opacity: 0; pointer-events: none; background: var(--slide-bg, #fff); }
+.slide.active, .slide.visible { visibility: visible; opacity: 1; pointer-events: auto; z-index: 1; }
+img, video, canvas, svg { max-width: 100%; max-height: 100%; }
+.deck-controls { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 1000; }
+@media print {
+  html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+  .deck-viewport { position: static; overflow: visible; background: #fff; }
+  .deck-stage { position: static; width: auto; height: auto; transform: none !important; background: none; }
+  .slide { position: relative; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 1920px; height: 1080px; break-after: page; page-break-after: always; }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+  .deck-controls { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+}
+
+/* === 动效：进入页面时依次浮现 === */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .9s var(--ease), transform .9s var(--ease); }
+.slide.visible .reveal { opacity: 1; transform: none; }
+.d1 { transition-delay: .10s; } .d2 { transition-delay: .25s; } .d3 { transition-delay: .40s; }
+.d4 { transition-delay: .55s; } .d5 { transition-delay: .70s; } .d6 { transition-delay: .85s; }
+
+/* === COVER 封面 === */
+.cover .toprule { position: absolute; left: 96px; right: 96px; top: 56px; height: 3px; background: var(--ink); }
+.cover .kicker {
+  position: absolute; left: 96px; top: 92px;
+  font: 500 22px/1 var(--f-mono); letter-spacing: .16em; color: var(--ink-3); text-transform: uppercase;
+}
+.cover .kicker b { color: var(--blue); font-weight: 500; }
+
+.cover .title { position: absolute; left: 96px; top: 140px; width: 980px; }
+.cover h1 { font: 900 144px/1.08 var(--f-serif-cn); color: var(--ink); letter-spacing: .02em; }
+.cover h1 span { color: var(--blue); display: block; }
+.cover .sub {
+  margin-top: 28px; font: 700 38px/1.5 var(--f-serif-cn); color: var(--ink);
+}
+
+/* 本讲结构 = outline（对应原稿"papers in this talk"） */
+.cover .outline { position: absolute; left: 96px; top: 650px; width: 940px; }
+.cover .outline .hd {
+  font: 500 18px/1 var(--f-mono); letter-spacing: .18em; color: var(--ink-3);
+  padding-bottom: 14px; border-bottom: 1px solid var(--rule); margin-bottom: 4px;
+}
+.cover .outline .row {
+  display: flex; align-items: baseline; gap: 28px; padding: 11px 0;
+  border-bottom: 1px solid var(--paper-2);
+}
+.cover .outline .no { font: 500 20px/1 var(--f-mono); letter-spacing: .12em; color: var(--blue); width: 120px; white-space: nowrap; }
+.cover .outline .en { font: 600 28px/1.2 var(--f-serif-en); color: var(--ink); }
+.cover .outline .cn { font: 400 24px/1.2 var(--f-sans); color: var(--ink-2); margin-left: auto; }
+
+/* 主讲人 + 校徽 */
+.cover .who { position: absolute; left: 96px; bottom: 56px; display: flex; align-items: center; gap: 28px; }
+.cover .who img { width: 124px; height: 124px; }
+.cover .who .name { font: 700 34px/1.2 var(--f-serif-cn); color: var(--ink); }
+.cover .who .org { font: 400 24px/1.55 var(--f-sans); color: var(--ink-2); margin-top: 6px; }
+.cover .who .meta { font: 400 20px/1.6 var(--f-mono); color: var(--ink-3); letter-spacing: .02em; }
+
+/* 右侧示意图：AI 四次浪潮 */
+.cover .fig { position: absolute; left: 1120px; top: 190px; width: 704px; height: 760px; }
+.fig svg { width: 100%; height: 100%; max-width: none; max-height: none; overflow: visible; }
+.fig .curve { stroke-dasharray: 1200; stroke-dashoffset: 1200; transition: stroke-dashoffset 2.2s .5s var(--ease); }
+.slide.visible .fig .curve { stroke-dashoffset: 0; }
+.fig .node { opacity: 0; transform-box: fill-box; transform-origin: center; transform: scale(.2); transition: opacity .6s var(--ease), transform .6s var(--ease); }
+.slide.visible .fig .node { opacity: 1; transform: none; }
+.fig .n1 { transition-delay: .6s; } .fig .n2 { transition-delay: 1.0s; } .fig .n3 { transition-delay: 1.4s; } .fig .n4 { transition-delay: 1.9s; }
+.fig .lab { opacity: 0; transition: opacity .8s ease; }
+.slide.visible .fig .lab { opacity: 1; }
+.fig .l1 { transition-delay: .8s; } .fig .l2 { transition-delay: 1.2s; } .fig .l3 { transition-delay: 1.6s; } .fig .l4 { transition-delay: 2.1s; }
+.fig text { font-family: var(--f-sans); }
+.fig .ver { font-family: var(--f-mono); font-weight: 500; }
+.fig .cap { font-family: var(--f-serif-en); font-style: italic; }
+
+/* === 页码/导航（舞台之外的 UI） === */
+.deck-controls { font: 500 14px var(--f-mono); color: var(--ink-3); letter-spacing: .1em; user-select: none; }
+
+/* =====================================================
+   CONTENT SLIDES（内页通用组件）
+   ===================================================== */
+.c .toprule { position: absolute; left: 96px; right: 96px; top: 56px; height: 3px; background: var(--ink); }
+.c .tag { position: absolute; left: 96px; top: 80px; font: 500 20px/1 var(--f-mono); letter-spacing: .16em; color: var(--ink-3); text-transform: uppercase; }
+.c .tag b { color: var(--blue); font-weight: 500; }
+.c .pg  { position: absolute; right: 96px; top: 80px; font: 500 20px/1 var(--f-mono); letter-spacing: .1em; color: var(--ink-3); }
+.c .body { position: absolute; left: 96px; right: 96px; top: 140px; bottom: 96px; }
+.c .src { position: absolute; left: 96px; right: 96px; bottom: 34px; padding-top: 10px; border-top: 1px solid var(--rule);
+          font: 400 17px/1.45 var(--f-mono); color: var(--ink-3); letter-spacing: .01em; }
+.c .src b { color: var(--ink-2); font-weight: 500; }
+
+.c h2 { font: 900 72px/1.18 var(--f-serif-cn); color: var(--ink); letter-spacing: .01em; }
+.c h2 em { font-style: normal; color: var(--blue); }
+.c h3 { font: 700 36px/1.3 var(--f-serif-cn); color: var(--ink); }
+.c .lede { font: 400 34px/1.65 var(--f-sans); color: var(--ink-2); }
+.c .lede b, .c p b { color: var(--ink); font-weight: 700; }
+.c p { font: 400 30px/1.65 var(--f-sans); color: var(--ink-2); }
+.c .mono { font-family: var(--f-mono); }
+.c .blue { color: var(--blue); } .c .teal { color: var(--teal); } .c .ochre { color: var(--ochre); }
+.c .muted { color: var(--ink-3); }
+.c .en { font-family: var(--f-serif-en); font-style: italic; }
+
+/* 布局 */
+.c .abs { position: absolute; }
+.c .flex { display: flex; } .c .col { display: flex; flex-direction: column; }
+.c .gap16 { gap: 16px; } .c .gap24 { gap: 24px; } .c .gap32 { gap: 32px; } .c .gap48 { gap: 48px; }
+.c .grow { flex: 1; } .c .center { align-items: center; } .c .between { justify-content: space-between; }
+
+/* 图片 */
+.c figure { margin: 0; position: relative; }
+.c figure img { display: block; width: 100%; height: 100%; object-fit: cover; border: 1px solid var(--rule); background: #fff; }
+.c figure.contain img { object-fit: contain; }
+.c figcaption { margin-top: 10px; font: 400 18px/1.4 var(--f-mono); color: var(--ink-3); }
+
+/* 卡片 */
+.c .card { background: #fff; border: 1px solid var(--rule); border-top: 4px solid var(--ink); padding: 28px 30px; }
+.c .card.b { border-top-color: var(--blue); } .c .card.t { border-top-color: var(--teal); } .c .card.o { border-top-color: var(--ochre); } .c .card.g { border-top-color: var(--ink-3); }
+.c .card h3 { font-size: 34px; margin-bottom: 12px; }
+.c .card p { font-size: 27px; line-height: 1.6; }
+.c .card .n { font: 500 20px/1 var(--f-mono); letter-spacing: .14em; color: var(--ink-3); margin-bottom: 14px; }
+
+/* 大数字 */
+.c .stat .v { font: 900 120px/1 var(--f-serif-en); color: var(--blue); letter-spacing: -.02em; }
+.c .stat .v small { font-size: 52px; font-weight: 700; margin-left: 4px; }
+.c .stat .l { font: 400 26px/1.45 var(--f-sans); color: var(--ink-2); margin-top: 10px; }
+
+/* 引用 */
+.c .quote { font: 700 56px/1.4 var(--f-serif-cn); color: var(--ink); }
+.c .quote .en { display: block; margin-top: 22px; font: 400 italic 34px/1.5 var(--f-serif-en); color: var(--ink-2); }
+.c .quote-mark { font: 900 200px/0.6 var(--f-serif-en); color: var(--blue); opacity: .18; }
+
+/* 表格 */
+.c table { border-collapse: collapse; width: 100%; }
+.c th { font: 500 20px/1 var(--f-mono); letter-spacing: .12em; text-align: left; color: var(--ink-3); padding: 0 20px 14px 0; border-bottom: 2px solid var(--ink); text-transform: uppercase; }
+.c td { font: 400 27px/1.5 var(--f-sans); color: var(--ink-2); padding: 18px 20px 18px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.c td:first-child { font-weight: 700; color: var(--ink); white-space: nowrap; }
+
+/* 标签/药丸 */
+.c .pill { display: inline-block; font: 500 20px/1 var(--f-mono); letter-spacing: .08em; padding: 8px 14px; border: 1.5px solid currentColor; border-radius: 99px; }
+.c .pill.fill { color: #fff; background: var(--blue); border-color: var(--blue); }
+
+/* 章节页 */
+.chapter .big { position: absolute; left: 96px; top: 150px; font: 900 420px/1 var(--f-serif-en); color: var(--blue); opacity: .10; letter-spacing: -.04em; }
+.chapter .ttl { position: absolute; left: 96px; top: 420px; }
+.chapter .ttl .k { font: 500 24px/1 var(--f-mono); letter-spacing: .2em; color: var(--blue); margin-bottom: 26px; }
+.chapter .ttl h2 { font-size: 150px; line-height: 1.1; }
+.chapter .ttl .s { margin-top: 28px; font: 400 40px/1.5 var(--f-sans); color: var(--ink-2); }
+.chapter .subs { position: absolute; left: 96px; right: 96px; bottom: 100px; display: flex; gap: 0; border-top: 1px solid var(--rule); }
+.chapter .subs div { flex: 1; padding-top: 20px; font: 400 26px/1.4 var(--f-sans); color: var(--ink-2); }
+.chapter .subs div b { display: block; font: 500 20px/1 var(--f-mono); letter-spacing: .14em; color: var(--blue); margin-bottom: 10px; }
+
+/* 逐项浮现 */
+.st > * { opacity: 0; transform: translateY(22px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
+.slide.visible .st > * { opacity: 1; transform: none; }
+.st > *:nth-child(1) { transition-delay: .15s; } .st > *:nth-child(2) { transition-delay: .3s; } .st > *:nth-child(3) { transition-delay: .45s; }
+.st > *:nth-child(4) { transition-delay: .6s; } .st > *:nth-child(5) { transition-delay: .75s; } .st > *:nth-child(6) { transition-delay: .9s; }
+.st > *:nth-child(7) { transition-delay: 1.05s; } .st > *:nth-child(8) { transition-delay: 1.2s; }
+
+/* 交互控件 */
+.c .tabs { display: flex; gap: 12px; }
+.c .tab { font: 500 22px/1 var(--f-mono); letter-spacing: .06em; padding: 16px 24px; border: 1.5px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; transition: all .2s; }
+.c .tab:hover { background: var(--paper-2); }
+.c .tab.on { background: var(--ink); color: #fff; }
+.c .tab.b.on { background: var(--blue); border-color: var(--blue); }
+.c .hint { font: 400 20px/1 var(--f-mono); color: var(--ink-3); letter-spacing: .06em; }
+
+/* outline 浮层 */
+#outline { position: fixed; inset: 0; z-index: 2000; background: rgba(250,248,244,.97); display: none; overflow: auto; padding: 5vh 6vw; font-family: var(--f-sans); color: var(--ink); }
+#outline.open { display: block; }
+#outline h1 { font: 900 clamp(28px,3.4vw,52px)/1.2 var(--f-serif-cn); margin-bottom: 3vh; }
+#outline h1 span { color: var(--blue); }
+#outline .sec { margin-bottom: 3vh; }
+#outline .sec h4 { font: 500 clamp(12px,1vw,16px)/1 var(--f-mono); letter-spacing: .16em; color: var(--blue); border-bottom: 1px solid var(--rule); padding-bottom: 1vh; margin-bottom: 1.4vh; }
+#outline .items { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(220px,22vw,360px), 1fr)); gap: .6vh 2vw; }
+#outline a { display: flex; gap: 12px; padding: .8vh 0; color: var(--ink); text-decoration: none; font-size: clamp(14px,1.2vw,20px); line-height: 1.4; cursor: pointer; border-bottom: 1px dotted var(--rule); }
+#outline a i { font: normal 500 clamp(11px,.9vw,14px)/1.8 var(--f-mono); color: var(--ink-3); min-width: 2.2em; }
+#outline a:hover { color: var(--blue); }
+#outline a.cur { color: var(--blue); font-weight: 700; }
+#outline .close { position: fixed; right: 3vw; top: 3vh; font: 500 14px var(--f-mono); letter-spacing: .1em; color: var(--ink-3); cursor: pointer; }
+.deck-controls { display: flex; gap: 22px; align-items: center; background: rgba(250,248,244,.85); padding: 6px 16px; border-radius: 99px; }
+.deck-controls button { all: unset; cursor: pointer; color: var(--ink-2); font: 500 14px var(--f-mono); letter-spacing: .1em; }
+.deck-controls button:hover { color: var(--blue); }
+
+/* 侧边导航栏 */
+#sbTab { position: fixed; left: 0; top: 50%; transform: translateY(-50%); z-index: 1500; width: 26px; height: 96px; background: rgba(250,248,244,.9); border: 1px solid var(--rule); border-left: none; border-radius: 0 8px 8px 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font: 500 13px var(--f-mono); color: var(--ink-3); writing-mode: vertical-rl; letter-spacing: .2em; transition: opacity .25s, color .2s; opacity: .55; }
+#sbTab:hover { opacity: 1; color: var(--blue); }
+#sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 340px; z-index: 1800; background: rgba(250,248,244,.98); border-right: 1px solid var(--rule); box-shadow: 6px 0 24px rgba(29,36,51,.08); transform: translateX(-102%); transition: transform .3s cubic-bezier(.16,1,.3,1); display: flex; flex-direction: column; font-family: var(--f-sans); color: var(--ink); }
+#sidebar.open { transform: none; }
+#sidebar .sbh { padding: 18px 20px 12px; border-bottom: 1px solid var(--rule); display: flex; align-items: center; justify-content: space-between; }
+#sidebar .sbh b { font: 900 17px var(--f-serif-cn); } #sidebar .sbh b span { color: var(--blue); }
+#sidebar .sbh button { all: unset; cursor: pointer; font: 500 12px var(--f-mono); color: var(--ink-3); letter-spacing: .1em; }
+#sidebar .sbh button:hover { color: var(--blue); }
+#sidebar .sbl { overflow-y: auto; flex: 1; padding: 6px 0 24px; }
+#sidebar .sbs > .sbt { display: flex; align-items: center; gap: 8px; padding: 11px 20px; cursor: pointer; font: 500 12px var(--f-mono); letter-spacing: .1em; color: var(--blue); border-top: 1px solid var(--rule); user-select: none; }
+#sidebar .sbs:first-child > .sbt { border-top: none; }
+#sidebar .sbt:before { content: '▸'; font-size: 11px; transition: transform .2s; }
+#sidebar .sbs.open > .sbt:before { transform: rotate(90deg); }
+#sidebar .sbt em { margin-left: auto; font-style: normal; color: var(--ink-3); }
+#sidebar .sbi { display: none; }
+#sidebar .sbs.open .sbi { display: block; }
+#sidebar .sbi a { display: flex; gap: 10px; padding: 7px 20px 7px 34px; font-size: 14px; line-height: 1.4; color: var(--ink-2); cursor: pointer; text-decoration: none; border-left: 3px solid transparent; }
+#sidebar .sbi a i { font: normal 500 11px/1.9 var(--f-mono); color: var(--ink-3); min-width: 1.9em; }
+#sidebar .sbi a:hover { background: #f0ece3; color: var(--ink); }
+#sidebar .sbi a.cur { color: var(--blue); font-weight: 700; border-left-color: var(--blue); background: #eef2fa; }
+@media print { #sbTab, #sidebar { display: none !important; } }
+
+/* === L2 扩展组件 === */
+.c .chip { display: inline-block; font: 500 24px/1 var(--f-sans); padding: 14px 20px; background: #fff; border: 1px solid var(--rule); border-left: 4px solid var(--blue); color: var(--ink); }
+.c .chips { display: flex; flex-wrap: wrap; gap: 14px; }
+.c .tl { position: relative; display: flex; gap: 0; border-top: 3px solid var(--ink); }
+.c .tl button { all: unset; cursor: pointer; flex: 1; padding: 22px 6px 0; text-align: left; position: relative; font: 500 24px/1.2 var(--f-mono); color: var(--ink-3); transition: color .2s; }
+.c .tl button:before { content: ''; position: absolute; left: 0; top: -12px; width: 20px; height: 20px; border-radius: 50%; background: var(--paper); border: 3px solid var(--ink-3); transition: all .2s; }
+.c .tl button small { display: block; margin-top: 8px; font: 400 19px/1.35 var(--f-sans); color: var(--ink-3); padding-right: 10px; }
+.c .tl button:hover { color: var(--blue); }
+.c .tl button.on { color: var(--blue); }
+.c .tl button.on:before { background: var(--blue); border-color: var(--blue); transform: scale(1.3); }
+.c .tl button.on small { color: var(--ink); font-weight: 700; }
+.c .bignum { font: 900 150px/1 var(--f-serif-en); color: var(--blue); letter-spacing: -.03em; }
+.c .bignum small { font-size: 58px; margin-left: 6px; }
+.c .arrow { font: 500 56px/1 var(--f-mono); color: var(--ink-3); align-self: center; }
+.c input[type=range] { width: 100%; accent-color: var(--blue); height: 6px; }
+.c .kv { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--rule); font: 400 26px/1.3 var(--f-sans); color: var(--ink-2); }
+.c .kv b { font: 700 40px/1 var(--f-serif-en); color: var(--ink); }
+.c .kv b.pos { color: var(--teal); } .c .kv b.neg { color: #b4402d; }
+.c figure.crop img { object-fit: cover; }
+.c .bar { height: 26px; background: var(--paper-2); position: relative; }
+.c .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--blue); transition: width .3s; }
+
+/* === L5.1 扩展组件 === */
+.c .ctl { display: flex; align-items: center; gap: 18px; font: 500 22px/1 var(--f-mono); color: var(--ink-2); margin-top: 14px; }
+.c .ctl label { width: 230px; flex: none; }
+.c .ctl b { font: 700 30px/1 var(--f-serif-en); color: var(--blue); min-width: 96px; text-align: right; }
+.c .btn { white-space: nowrap; font: 500 22px/1 var(--f-mono); letter-spacing: .04em; padding: 14px 22px; border: 1.5px solid var(--blue); background: var(--blue); color: #fff; cursor: pointer; transition: all .2s; }
+.c .btn:hover { filter: brightness(1.15); }
+.c .btn.ghost { background: transparent; color: var(--blue); }
+.c .panel { background: #fff; border: 1px solid var(--rule); }
+.c .frac { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; margin: 0 .25em; font-size: .8em; line-height: 1.3; }
+.c .frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 .3em; }
+.c .math { font: 400 44px/1.6 var(--f-serif-en); color: var(--ink); }
+.c svg text { font-family: var(--f-sans); }
+.c .legend { display: flex; gap: 26px; font: 400 22px/1 var(--f-sans); color: var(--ink-2); }
+.c .legend i { display: inline-block; width: 16px; height: 16px; border-radius: 50%; margin-right: 8px; vertical-align: -2px; }
+.c .mrow { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0; border-bottom: 1px solid var(--rule); font: 400 24px/1.3 var(--f-sans); color: var(--ink-2); }
+.c .mrow b { font: 700 34px/1 var(--f-serif-en); color: var(--ink); }
+.c canvas { background: #fff; border: 1px solid var(--rule); }
+</style>
+</head>
+<body>
+
+<div class="deck-viewport">
+  <div class="deck-stage" id="stage">
+    <script>window.SPAM_N={spam:1813,ham:2788};
+window.SPAM_GRID={"your":{"t":[0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.0,2.1,2.2,2.3,2.4,2.5,2.6,2.7,2.8,2.9,3.0,3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9,4.0],"sp":[1466,1458,1444,1425,1395,1345,1310,1234,1192,1138,1071,972,896,804,725,645,596,555,504,475,429,392,360,342,313,286,268,249,225,211,193,175,158,125,109,105,96,90,82,70,63],"hm":[957,930,870,803,731,676,615,558,510,459,418,375,340,309,270,252,235,210,192,179,167,154,140,132,116,109,103,94,87,78,72,67,65,63,57,51,50,46,44,42,40]},"free":{"t":[0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.0,2.1,2.2,2.3,2.4,2.5,2.6,2.7,2.8,2.9,3.0],"sp":[989,935,860,754,638,545,472,407,365,315,276,255,231,201,181,166,153,134,129,116,109,98,86,81,79,67,62,61,59,55,46],"hm":[252,213,176,145,127,108,90,76,66,60,55,46,43,38,32,28,28,25,19,17,13,13,13,12,9,9,9,8,8,8,7]},"remove":{"t":[0.0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1.0,1.05,1.1,1.15,1.2,1.25,1.3,1.35,1.4,1.45,1.5],"sp":[764,723,650,615,556,524,495,444,404,371,330,313,287,260,237,220,208,200,184,173,158,140,124,112,106,97,94,88,84,79,71],"hm":[43,40,40,38,34,26,25,22,21,20,16,16,14,13,8,8,8,8,6,6,6,6,6,6,6,5,5,5,5,5,5]},"char!":{"t":[0.0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1.0,1.05,1.1,1.15,1.2,1.25,1.3,1.35,1.4,1.45,1.5,1.55,1.6,1.65,1.7,1.75,1.8,1.85,1.9,1.95,2.0],"sp":[1511,1442,1345,1234,1138,1036,954,875,782,685,605,543,497,451,416,383,352,320,286,263,242,221,203,183,165,150,133,124,117,105,99,90,85,78,71,68,63,61,60,55,54],"hm":[747,627,501,400,331,277,235,196,163,134,115,104,91,84,74,61,52,49,47,43,39,38,33,30,26,25,24,22,22,21,20,19,19,19,19,17,16,16,15,15,15]},"char$":{"t":[0.0,0.02,0.04,0.06,0.08,0.1,0.12,0.14,0.16,0.18,0.2,0.22,0.24,0.26,0.28,0.3,0.32,0.34,0.36,0.38,0.4,0.42,0.44,0.46,0.48,0.5,0.52,0.54,0.56,0.58,0.6,0.62,0.64,0.66,0.68,0.7,0.72,0.74,0.76,0.78,0.8,0.82,0.84,0.86,0.88,0.9,0.92,0.94,0.96,0.98,1.0],"sp":[1109,1088,1037,977,906,865,776,720,639,552,486,430,375,338,308,291,268,249,225,211,195,181,169,167,151,141,131,120,111,110,105,100,96,96,89,85,80,76,71,67,59,56,52,50,47,43,43,40,38,36,35],"hm":[291,237,171,127,99,87,74,60,50,43,40,33,30,27,24,23,22,19,19,17,15,14,13,12,12,12,12,12,12,12,12,11,10,9,7,7,6,5,5,4,4,3,3,2,2,2,1,1,1,1,1]},"capAvg":{"t":[1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,8.5,9.0,9.5,10.0,12.0,15.0,20.0,30.0,50.0],"sp":[1795,1660,1493,1269,1097,944,777,661,571,484,409,360,306,270,246,222,198,179,164,130,97,63,50,42],"hm":[2457,1919,1183,733,474,313,225,150,119,92,64,53,43,38,36,32,30,27,25,21,16,4,2,1]}};
+window.SPAM_EDA={"your":[1.38,0.439],"free":[0.518,0.074],"remove":[0.275,0.009],"char!":[0.514,0.11],"char$":[0.174,0.012],"000":[0.247,0.007],"george":[0.002,1.265],"hp":[0.017,0.895],"edu":[0.015,0.287]};</script>
+
+    <script>
+window.ML = (function () {
+  const r = {};
+  r.rng = function (s) { return function () { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
+  r.gauss = function (R) { let u = 0; while (!u) u = R(); const v = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  r.$ = id => document.getElementById(id);
+  r.erf = function (x) { const s = Math.sign(x); x = Math.abs(x); const t = 1 / (1 + .3275911 * x); const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - .284496736) * t + .254829592) * t * Math.exp(-x * x); return s * y; };
+  r.Phi = z => .5 * (1 + r.erf(z / Math.SQRT2));
+  r.phi = z => Math.exp(-z * z / 2) / Math.sqrt(2 * Math.PI);
+  /* 勒让德基多项式拟合，x∈[0,1] */
+  function leg(u, d) { const P = [1, u]; for (let k = 2; k <= d; k++) P[k] = ((2 * k - 1) * u * P[k - 1] - (k - 1) * P[k - 2]) / k; return P.slice(0, d + 1); }
+  r.polyfit = function (xs, ys, d) {
+    const n = d + 1, A = Array.from({ length: n }, () => new Array(n + 1).fill(0));
+    xs.forEach((x, k) => { const p = leg(2 * x - 1, d); for (let i = 0; i < n; i++) { for (let j = 0; j < n; j++) A[i][j] += p[i] * p[j]; A[i][n] += p[i] * ys[k]; } });
+    for (let i = 0; i < n; i++) A[i][i] += 1e-9;
+    for (let i = 0; i < n; i++) { let m = i; for (let k = i + 1; k < n; k++) if (Math.abs(A[k][i]) > Math.abs(A[m][i])) m = k; [A[i], A[m]] = [A[m], A[i]]; for (let k = i + 1; k < n; k++) { const f = A[k][i] / A[i][i]; for (let j = i; j <= n; j++) A[k][j] -= f * A[i][j]; } }
+    const c = new Array(n).fill(0);
+    for (let i = n - 1; i >= 0; i--) { let s = A[i][n]; for (let j = i + 1; j < n; j++) s -= A[i][j] * c[j]; c[i] = s / A[i][i]; }
+    return c;
+  };
+  r.polyval = (c, x) => { const p = leg(2 * x - 1, c.length - 1); let s = 0; for (let i = 0; i < c.length; i++) s += c[i] * p[i]; return s; };
+  r.mse = (c, xs, ys) => xs.reduce((s, x, k) => s + (r.polyval(c, x) - ys[k]) ** 2, 0) / xs.length;
+  /* 标尺 */
+  r.scale = (a0, a1, b0, b1) => v => b0 + (v - a0) / (a1 - a0) * (b1 - b0);
+  r.f = (v, d = 2) => (Math.abs(v) >= 1e4 ? v.toExponential(1) : v.toFixed(d));
+  /* 用 SPAM_GRID 构造真实垃圾邮件单特征规则 */
+  r.spamLabel = { your: 'your', free: 'free', remove: 'remove', 'char!': '“!”', 'char$': '“$”', capAvg: '大写均长' };
+  r.spamRoc = function (f) {
+    const G = SPAM_GRID[f], N = SPAM_N;
+    const pts = G.t.map((t, i) => ({ t, tpr: G.sp[i] / N.spam, fpr: G.hm[i] / N.ham, fp: G.hm[i], fn: N.spam - G.sp[i], tp: G.sp[i], tn: N.ham - G.hm[i] }));
+    const s = [{ t: -1, tpr: 1, fpr: 1 }].concat(pts, [{ t: 1e9, tpr: 0, fpr: 0 }]);
+    let auc = 0; for (let i = 0; i < s.length - 1; i++) auc += (s[i].fpr - s[i + 1].fpr) * (s[i].tpr + s[i + 1].tpr) / 2;
+    return { pts, auc };
+  };
+  r.sine = function (seed, n, sd, strat) { const R = r.rng(seed), xs = [], ys = []; for (let i = 0; i < n; i++) { const x = strat ? (i + R() * .9) / n : R(); xs.push(x); ys.push(Math.sin(2 * Math.PI * x) + sd * r.gauss(R)); } return { xs, ys }; };
+  /* 对数误差折线图：series = [{v:[...],c:color,n:name}]，返回 svg 字符串内容 */
+  r.errChart = function (W, H, series, cur, extra) {
+    const L = 70, R2 = W - 20, T = 20, B = H - 52, nd = series[0].v.length, lo = -3, hi = 3;
+    const x = r.scale(0, nd - 1, L, R2), y = v => r.scale(lo, hi, B, T)(Math.max(lo, Math.min(hi, Math.log10(v))));
+    let h = '';
+    for (let e = lo; e <= hi; e++) h += `<line x1="${L}" x2="${R2}" y1="${y(Math.pow(10, e))}" y2="${y(Math.pow(10, e))}" stroke="#eee6d8"/><text x="${L - 8}" y="${y(Math.pow(10, e)) + 6}" text-anchor="end" font-size="16" fill="#8a90a0">${Math.pow(10, e) >= 1 ? Math.pow(10, e) : Math.pow(10, e).toFixed(-e)}</text>`;
+    for (let i = 0; i < nd; i += 2) h += `<text x="${x(i)}" y="${H - 26}" text-anchor="middle" font-size="16" fill="#8a90a0">${i}</text>`;
+    h += `<text x="${(L + R2) / 2}" y="${H - 4}" text-anchor="middle" font-size="16" fill="#4a5263">模型复杂度（多项式次数）· 纵轴为对数</text>`;
+    series.forEach(s => { h += `<path d="${s.v.map((v, i) => (i ? 'L' : 'M') + x(i) + ' ' + y(v)).join('')}" fill="none" stroke="${s.c}" stroke-width="3.5"/>`; });
+    h += `<line x1="${x(cur)}" x2="${x(cur)}" y1="${T}" y2="${B}" stroke="#1d2433" stroke-dasharray="5 5"/>`;
+    series.forEach(s => h += `<circle cx="${x(cur)}" cy="${y(s.v[cur])}" r="7" fill="${s.c}"/>`);
+    return h + (extra ? extra(x, y) : '');
+  };
+  return r;
+})();
+    </script>
+
+    <!-- === SLIDE 1 · 封面 === -->
+    <section class="slide cover" data-sec="开场" data-title="封面">
+      <div class="toprule"></div>
+      <div class="kicker reveal d1"><b>Lecture 5.1</b> &nbsp;·&nbsp; 人工智能产业实践 &nbsp;·&nbsp; MBA / EMBA</div>
+      <div class="title">
+        <h1 class="reveal d2">AI 2.0<span>机器学习</span></h1>
+        <p class="sub reveal d3">从数据中学习预测规则：<br>什么是学习，怎样判断“学得好”</p>
+      </div>
+      <div class="outline reveal d4" style="top:628px">
+        <div class="hd">IN THIS LECTURE</div>
+        <div class="row" style="padding:6px 0"><span class="no">PART 1</span><span class="en">What Is Machine Learning</span><span class="cn">预测问题与三类学习</span></div>
+        <div class="row" style="padding:6px 0"><span class="no">PART 2</span><span class="en">Generalization</span><span class="cn">过拟合与交叉验证</span></div>
+        <div class="row" style="padding:6px 0"><span class="no">PART 3</span><span class="en">Evaluation</span><span class="cn">分类与回归的度量</span></div>
+        <div class="row" style="padding:6px 0"><span class="no">PART 4</span><span class="en">ML in 2026</span><span class="cn">表格数据与落地</span></div>
+      </div>
+      <div class="who reveal d5">
+        <img src="assets/logo-xjtu-red.png" alt="西安交通大学校徽">
+        <div>
+          <div class="name">常象宇 <span style="font-family:var(--f-serif-en);font-weight:600;font-size:28px;color:var(--ink-2)">Xiangyu Chang</span></div>
+          <div class="org">西安交通大学 管理学院</div>
+          <div class="meta">xiangyuchang@xjtu.edu.cn</div>
+        </div>
+      </div>
+      <div class="fig reveal d3">
+        <svg viewBox="0 0 704 760" aria-label="数据点与学到的曲线">
+          <line x1="40" y1="640" x2="684" y2="640" stroke="#1d2433" stroke-width="3"/>
+          <line x1="40" y1="640" x2="40" y2="120" stroke="#1d2433" stroke-width="3"/>
+          <path class="curve" d="M 60 500 C 160 220, 260 220, 350 380 S 540 600, 660 260" fill="none" stroke="#24509e" stroke-width="5" stroke-linecap="round"/>
+          <g class="node n1"><circle cx="90" cy="440" r="12" fill="#8a90a0"/><circle cx="150" cy="300" r="12" fill="#8a90a0"/><circle cx="220" cy="270" r="12" fill="#8a90a0"/><circle cx="300" cy="350" r="12" fill="#8a90a0"/></g>
+          <g class="node n2"><circle cx="380" cy="440" r="12" fill="#1f7a72"/><circle cx="450" cy="560" r="12" fill="#1f7a72"/><circle cx="520" cy="540" r="12" fill="#1f7a72"/><circle cx="600" cy="360" r="12" fill="#1f7a72"/></g>
+          <g class="node n3"><circle cx="650" cy="250" r="16" fill="#c27a1a"/></g>
+          <g class="lab l1"><text x="190" y="700" text-anchor="middle" font-size="24" fill="#4a5263">训练样本</text></g>
+          <g class="lab l2"><text x="500" y="700" text-anchor="middle" font-size="24" fill="#1f7a72">未见样本</text></g>
+          <text class="cap" x="360" y="745" text-anchor="middle" font-size="28" fill="#1d2433">learn from data ⇢ generalize</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- === SLIDE 2 · 三个问题 === -->
+    <section class="slide c" data-sec="开场" data-title="本讲要回答三个问题">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 5.1</b> · 开场</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:68px">本讲要回答<em>三个问题</em></h2>
+        <div class="flex gap32 st" style="margin-top:56px">
+          <div class="card b grow" style="min-height:430px"><div class="n">PART 1 · 预测问题</div><h3 style="font-size:46px;margin-bottom:22px">机器<br>“学”的是什么？</h3><p>从训练样本中学出预测函数 f，用于总体里的新样本。</p></div>
+          <div class="card t grow" style="min-height:430px"><div class="n">PART 2 · 泛化</div><h3 style="font-size:46px;margin-bottom:22px">训练集全对，<br>为什么还不够？</h3><p>过拟合、内外样本误差、训练/测试划分与交叉验证。</p></div>
+          <div class="card o grow" style="min-height:430px"><div class="n">PART 3 · 度量</div><h3 style="font-size:46px;margin-bottom:22px">怎样判断<br>“学得好”？</h3><p>正确率为何会骗人；混淆矩阵、ROC、代价；回归的 MSE / RMSE。</p></div>
+        </div>
+        <div class="flex center gap24 reveal d5" style="margin-top:50px;font:500 30px var(--f-mono);color:var(--ink-2)">
+          <span class="pill">DATA</span><span class="muted">→</span><span class="pill fill">AI 2.0 · ML</span><span class="muted">→</span><span class="pill">BUSINESS VALUE</span>
+          <span style="margin-left:24px;font:400 26px var(--f-sans);color:var(--ink-3)">本讲：预测型机器学习的“方法论”，具体算法留给后续</span>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P2、P4–P5；课程主线 Data → AI → Business Value</div>
+    </section>
+
+    <!-- === SLIDE 3 · AI 2.0 框架 === -->
+    <section class="slide c" data-sec="开场" data-title="AI 2.0：人工设计特征，机器学习规则">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 5.1</b> · 开场</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:64px">AI 2.0：<em>人给特征，机器学规则</em></h2>
+        <div class="flex gap32 center reveal d2" style="margin-top:56px">
+          <div class="card g" style="width:430px;min-height:300px"><div class="n">① 业务知识</div><h3 style="font-size:38px">构建特征 X</h3><p>词频、大写字母长度、客户的年龄与行为……</p></div>
+          <div class="arrow">→</div>
+          <div class="card b" style="width:470px;min-height:300px;border-top-width:8px"><div class="n">② 学习算法</div><h3 style="font-size:38px">Y = f ( X )</h3><p>逻辑回归 · 分类决策树 · 朴素贝叶斯</p></div>
+          <div class="arrow">→</div>
+          <div class="card o" style="width:430px;min-height:300px"><div class="n">③ 业务价值</div><h3 style="font-size:38px">预测目标 Y</h3><p>是不是垃圾邮件？会不会违约？下月销量？</p></div>
+        </div>
+        <div class="flex gap32 st" style="margin-top:60px">
+          <div class="card b grow" style="min-height:230px"><div class="n">预测任务</div><p>目标：<b>f 在新样本上准</b>。本讲重点，评价看“样本外”。</p></div>
+          <div class="card t grow" style="min-height:230px"><div class="n">解释性任务</div><p>目标：<b>理解 X 如何影响 Y</b>（系数、显著性）。属于回归分析（L4）的主场。</p></div>
+          <div class="card g grow" style="min-height:230px"><div class="n">与 AI 1.0 的区别</div><p>1.0：人写规则（<span class="mono">capitalAve &gt; 2.4</span>）；2.0：<b>由数据决定阈值与权重</b>。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P2；AI 1.0 → 2.0 对比承接 L1 / L3</div>
+    </section>
+
+    <!-- === 章节 Part 1 === -->
+    <section class="slide c chapter" data-sec="1 · 什么是机器学习" data-title="Part 1 · 什么是机器学习">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 5.1</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">01</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 1</div>
+        <h2 class="reveal d2">什么是<em>机器学习</em></h2>
+        <div class="s reveal d3">预测问题、监督学习的两种任务，以及没有标签的学习</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>1.1</b>预测问题：总体与样本</div>
+        <div><b>1.2</b>机器学习的定义</div>
+        <div><b>1.3</b>分类 · 回归 · 聚类</div>
+        <div><b>1.4</b>其他学习范式</div>
+      </div>
+    </section>
+
+    <!-- === 预测问题 === -->
+    <section class="slide c" data-sec="1 · 什么是机器学习" data-title="预测问题：从样本到总体">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.1 预测问题</div><div class="pg"></div>
+      <div class="body flex gap48 center">
+        <div style="width:930px">
+          <figure class="contain reveal d2" style="height:520px"><img src="assets/p03_1.png" alt="总体、抽样、训练集、预测函数"></figure>
+        </div>
+        <div class="grow col gap24">
+          <h2 class="reveal d1" style="font-size:60px">预测问题的<em>本质</em></h2>
+          <div class="st col gap16">
+            <div class="card b"><div class="n">已知</div><p>总体中抽出的<b>训练样本</b>：(X, Y)</p></div>
+            <div class="card t"><div class="n">求</div><p>预测函数 <b class="mono">f̂ ( X )</b></p></div>
+            <div class="card o"><div class="n">期望</div><p>在<b>整个总体的新样本</b>上也预测得准，而不是只在训练集上</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P3、P14（图 p03_1）</div>
+    </section>
+
+    <!-- === 机器学习定义 === -->
+    <section class="slide c" data-sec="1 · 什么是机器学习" data-title="机器学习：数学 · 统计 · 计算机">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 机器学习的定义</div><div class="pg"></div>
+      <div class="body flex gap48 center">
+        <div style="width:760px" class="reveal d2">
+          <svg viewBox="0 0 760 700" style="width:760px;height:700px">
+            <circle cx="380" cy="230" r="190" fill="#24509e" fill-opacity=".14" stroke="#24509e" stroke-width="3"/>
+            <circle cx="230" cy="470" r="190" fill="#1f7a72" fill-opacity=".14" stroke="#1f7a72" stroke-width="3"/>
+            <circle cx="530" cy="470" r="190" fill="#c27a1a" fill-opacity=".14" stroke="#c27a1a" stroke-width="3"/>
+            <text x="380" y="120" text-anchor="middle" font-size="38" font-weight="700" fill="#24509e" style="font-family:var(--f-mono)">MATH</text>
+            <text x="380" y="158" text-anchor="middle" font-size="24" fill="#4a5263">优化</text>
+            <text x="130" y="560" text-anchor="middle" font-size="38" font-weight="700" fill="#1f7a72" style="font-family:var(--f-mono)">STAT</text>
+            <text x="130" y="598" text-anchor="middle" font-size="24" fill="#4a5263">统计建模与分析</text>
+            <text x="630" y="560" text-anchor="middle" font-size="38" font-weight="700" fill="#c27a1a" style="font-family:var(--f-mono)">CS</text>
+            <text x="630" y="598" text-anchor="middle" font-size="24" fill="#4a5263">算法设计</text>
+            <circle cx="380" cy="400" r="64" fill="#fff" stroke="#1d2433" stroke-width="3"/>
+            <text x="380" y="412" text-anchor="middle" font-size="40" font-weight="700" fill="#1d2433" style="font-family:var(--f-mono)">ML</text>
+          </svg>
+        </div>
+        <div class="grow col gap24">
+          <h2 class="reveal d1" style="font-size:60px">机器学习 = <em>以预测为目标的学习过程</em></h2>
+          <p class="lede reveal d3">针对<b>经验性数据</b>，让计算机模拟人类学习的准则，完成<b>以预测为终极目标</b>的一系列处理。</p>
+          <div class="chips st"><span class="chip">统计建模</span><span class="chip">优化处理</span><span class="chip">算法设计</span><span class="chip">统计分析</span></div>
+          <p class="reveal d5" style="font-size:26px;color:var(--ink-3)">注意关键词是“预测”：好模型 ≠ 对历史拟合得好。</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P4–P5（定义与三学科交叉，文字压缩）</div>
+    </section>
+
+    <!-- === 监督学习：分类 === -->
+    <section class="slide c" data-sec="1 · 什么是机器学习" data-title="监督学习 · 分类：让机器自己找边界" id="s-cls">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.3 分类 · 回归 · 聚类</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:1000px">
+          <div class="flex between center"><h2 style="font-size:52px">监督学习 · <em>分类</em></h2><div class="legend"><span><i style="background:#c27a1a"></i>苹果 (Y=1)</span><span><i style="background:#24509e"></i>不是苹果 (Y=0)</span></div></div>
+          <svg id="cls-s" viewBox="0 0 1000 620" style="width:1000px;height:620px;background:#fff;border:1px solid var(--rule);margin-top:16px"></svg>
+        </div>
+        <div class="grow col" style="justify-content:space-between">
+          <div>
+            <p style="font-size:28px">训练集：<b>X</b> = 特征（如颜色、形状），<b>Y</b> = 是否为苹果（离散标签）。</p>
+            <div class="ctl"><label>边界方向 θ</label><input id="cls-th" type="range" min="0" max="359" value="20"><b id="cls-thv">20°</b></div>
+            <div class="ctl"><label>边界位置 b</label><input id="cls-b" type="range" min="-250" max="250" value="150"><b id="cls-bv">1.5</b></div>
+            <div class="flex gap16" style="margin-top:20px"><button class="btn" id="cls-go">让机器来学</button><button class="btn ghost" id="cls-rs">重置 / 新样本</button></div>
+          </div>
+          <div>
+            <div class="mrow"><span>训练正确率</span><b id="cls-acc" class="blue">–</b></div>
+            <div class="mrow"><span>被判错的点</span><b id="cls-err">–</b></div>
+            <p style="font-size:24px;margin-top:14px;color:var(--ink-3)">“学习”就是在<b>损失函数</b>指引下，一步步调参（此处为逻辑回归的梯度下降）。</p>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P6（苹果分类）；演示为课堂教学用模拟数据与逻辑回归梯度下降</div>
+      <script>
+(function () {
+  const $ = ML.$, svg = $('cls-s'); let seed = 7, pts = [], th = 20, bb = 1.5, timer = null;
+  const sx = ML.scale(-4, 4, 0, 1000), sy = ML.scale(3, -3, 0, 620);
+  function gen() { const R = ML.rng(seed); pts = []; for (let i = 0; i < 45; i++) { pts.push({ x: -1.1 + ML.gauss(R) * .95, y: -.4 + ML.gauss(R) * .95, y1: 0 }); pts.push({ x: 1.1 + ML.gauss(R) * .95, y: .4 + ML.gauss(R) * .95, y1: 1 }); } }
+  function draw() {
+    const c = Math.cos(th * Math.PI / 180), s = Math.sin(th * Math.PI / 180); let err = 0, h = '';
+    const box = [[-4, -3], [4, -3], [4, 3], [-4, 3]], g = q => c * q[0] + s * q[1] - bb, poly = [], ln = [];
+    for (let i = 0; i < 4; i++) { const A = box[i], B = box[(i + 1) % 4], ga = g(A), gb = g(B); if (ga > 0) poly.push(A); if ((ga > 0) !== (gb > 0)) { const u = ga / (ga - gb), P = [A[0] + u * (B[0] - A[0]), A[1] + u * (B[1] - A[1])]; poly.push(P); ln.push(P); } }
+    if (poly.length > 2) h += `<polygon points="${poly.map(q => sx(q[0]) + ',' + sy(q[1])).join(' ')}" fill="#c27a1a" fill-opacity=".07"/>`;
+    if (ln.length === 2) h += `<line x1="${sx(ln[0][0])}" y1="${sy(ln[0][1])}" x2="${sx(ln[1][0])}" y2="${sy(ln[1][1])}" stroke="#1d2433" stroke-width="4"/>`;
+    pts.forEach(p => { const pr = (c * p.x + s * p.y > bb) ? 1 : 0, bad = pr !== p.y1; if (bad) err++; h += `<circle cx="${sx(p.x)}" cy="${sy(p.y)}" r="11" fill="${p.y1 ? '#c27a1a' : '#24509e'}" ${bad ? 'stroke="#b4402d" stroke-width="4"' : 'stroke="#fff" stroke-width="2"'}/>`; });
+    svg.innerHTML = h; $('cls-thv').textContent = Math.round(th) + '°'; $('cls-bv').textContent = bb.toFixed(1);
+    $('cls-th').value = Math.round(th) % 360; $('cls-b').value = Math.round(bb * 100);
+    $('cls-acc').textContent = ((1 - err / pts.length) * 100).toFixed(1) + '%'; $('cls-err').textContent = err + ' / ' + pts.length;
+  }
+  $('cls-th').oninput = e => { th = +e.target.value; draw(); };
+  $('cls-b').oninput = e => { bb = e.target.value / 100; draw(); };
+  $('cls-rs').onclick = () => { clearInterval(timer); seed = (seed * 31 + 11) % 1000; gen(); th = 20; bb = 1.5; draw(); };
+  $('cls-go').onclick = () => {
+    clearInterval(timer); let w1 = Math.cos(th * Math.PI / 180), w2 = Math.sin(th * Math.PI / 180), w0 = -bb, k = 0;
+    timer = setInterval(() => {
+      let g1 = 0, g2 = 0, g0 = 0; pts.forEach(p => { const z = w1 * p.x + w2 * p.y + w0, q = 1 / (1 + Math.exp(-z)); g1 += (q - p.y1) * p.x; g2 += (q - p.y1) * p.y; g0 += (q - p.y1); });
+      const n = pts.length; w1 -= .5 * g1 / n; w2 -= .5 * g2 / n; w0 -= .5 * g0 / n;
+      const nm = Math.hypot(w1, w2); th = (Math.atan2(w2, w1) * 180 / Math.PI + 360) % 360; bb = Math.max(-2.5, Math.min(2.5, -w0 / nm)); draw();
+      if (++k > 120) clearInterval(timer);
+    }, 40);
+  };
+  gen(); draw();
+})();
+      </script>
+    </section>
+
+    <!-- === 监督学习：回归 === -->
+    <section class="slide c" data-sec="1 · 什么是机器学习" data-title="监督学习 · 回归：拟合与最小二乘" id="s-reg">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.3 分类 · 回归 · 聚类</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:1000px">
+          <div class="flex between center"><h2 style="font-size:52px">监督学习 · <em>回归</em></h2><div class="legend"><span><i style="background:#24509e"></i>样本 (X, Y)</span><span><i style="background:#c27a1a"></i>你的直线</span></div></div>
+          <svg id="reg-s" viewBox="0 0 1000 620" style="width:1000px;height:620px;background:#fff;border:1px solid var(--rule);margin-top:16px"></svg>
+        </div>
+        <div class="grow col" style="justify-content:space-between">
+          <div>
+            <p style="font-size:28px">训练集：<b>X</b> = 特征，<b>Y</b> = 连续实数。目标：找一条让<b>误差平方和最小</b>的线。</p>
+            <div class="ctl"><label>截距 a</label><input id="reg-a" type="range" min="-300" max="600" value="400"><b id="reg-av">4.0</b></div>
+            <div class="ctl"><label>斜率 k</label><input id="reg-k" type="range" min="-100" max="200" value="-20"><b id="reg-kv">-0.2</b></div>
+            <div class="flex gap16" style="margin-top:20px"><button class="btn" id="reg-go">最小二乘（自动）</button><button class="btn ghost" id="reg-rs">新样本</button></div>
+          </div>
+          <div>
+            <div class="mrow"><span>MSE（均方误差）</span><b id="reg-mse" class="blue">–</b></div>
+            <div class="mrow"><span>最小二乘最优 MSE</span><b id="reg-best">–</b></div>
+            <p style="font-size:24px;margin-top:14px;color:var(--ink-3)">橘色虚线 = 残差；拖动滑块，让红色方块的总面积最小。</p>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P7、P13、P27（回归 / 拟合）；教学用模拟数据 Y = 1.5 + 0.8X + 噪声</div>
+      <script>
+(function () {
+  const $ = ML.$, svg = $('reg-s'); let seed = 3, xs = [], ys = [], a = 4, k = -.2, best, anim;
+  const sx = ML.scale(0, 10, 70, 970), sy = ML.scale(12, -1, 20, 580);
+  function gen() { const R = ML.rng(seed); xs = []; ys = []; for (let i = 0; i < 16; i++) { const x = .5 + 9 * (i + R() * .6) / 16; xs.push(x); ys.push(1.5 + .8 * x + ML.gauss(R) * 1.3); } const n = 16, mx = xs.reduce((s, v) => s + v) / n, my = ys.reduce((s, v) => s + v) / n; let sxy = 0, sxx = 0; xs.forEach((x, i) => { sxy += (x - mx) * (ys[i] - my); sxx += (x - mx) ** 2; }); const kk = sxy / sxx; best = { a: my - kk * mx, k: kk }; best.mse = xs.reduce((s, x, i) => s + (ys[i] - best.a - best.k * x) ** 2, 0) / n; }
+  function draw() {
+    let h = `<line x1="70" y1="${sy(0)}" x2="980" y2="${sy(0)}" stroke="#8a90a0" stroke-width="2"/><line x1="70" y1="20" x2="70" y2="${sy(0)}" stroke="#8a90a0" stroke-width="2"/>`;
+    let sse = 0;
+    xs.forEach((x, i) => { const yh = a + k * x, e = ys[i] - yh; sse += e * e; const s = Math.abs(e) * (sy(0) - sy(1)); const sg = e > 0 ? -1 : 1;
+      h += `<rect x="${sx(x)}" y="${e > 0 ? sy(ys[i]) : sy(yh)}" width="${s}" height="${Math.abs(sy(ys[i]) - sy(yh))}" fill="#b4402d" fill-opacity=".10" stroke="#b4402d" stroke-opacity=".5" stroke-width="1.5"/>`; });
+    h += `<line x1="${sx(0)}" y1="${sy(a)}" x2="${sx(10)}" y2="${sy(a + 10 * k)}" stroke="#c27a1a" stroke-width="5"/>`;
+    xs.forEach((x, i) => { h += `<line x1="${sx(x)}" y1="${sy(ys[i])}" x2="${sx(x)}" y2="${sy(a + k * x)}" stroke="#c27a1a" stroke-width="2.5" stroke-dasharray="6 5"/><circle cx="${sx(x)}" cy="${sy(ys[i])}" r="9" fill="#24509e"/>`; });
+    svg.innerHTML = h; $('reg-av').textContent = a.toFixed(1); $('reg-kv').textContent = k.toFixed(2); $('reg-a').value = Math.round(a * 100); $('reg-k').value = Math.round(k * 100);
+    $('reg-mse').textContent = (sse / xs.length).toFixed(2); $('reg-best').textContent = best.mse.toFixed(2);
+  }
+  $('reg-a').oninput = e => { a = e.target.value / 100; draw(); };
+  $('reg-k').oninput = e => { k = e.target.value / 100; draw(); };
+  $('reg-rs').onclick = () => { cancelAnimationFrame(anim); seed = (seed * 17 + 5) % 997; gen(); a = 4; k = -.2; draw(); };
+  $('reg-go').onclick = () => { cancelAnimationFrame(anim); const a0 = a, k0 = k; let t = 0; (function f() { t += .03; const u = 1 - Math.pow(1 - Math.min(t, 1), 3); a = a0 + (best.a - a0) * u; k = k0 + (best.k - k0) * u; draw(); if (t < 1) anim = requestAnimationFrame(f); })(); };
+  gen(); draw();
+})();
+      </script>
+    </section>
+
+    <!-- === 无监督：聚类 === -->
+    <section class="slide c" data-sec="1 · 什么是机器学习" data-title="无监督学习 · 聚类：没有 Y，数据分几类？" id="s-clu">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.3 分类 · 回归 · 聚类</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:1000px">
+          <div class="flex between center"><h2 style="font-size:52px">无监督学习 · <em>聚类</em></h2><div class="hint">k-means 算法 · 没有标签 Y</div></div>
+          <svg id="clu-s" viewBox="0 0 1000 620" style="width:1000px;height:620px;background:#fff;border:1px solid var(--rule);margin-top:16px"></svg>
+        </div>
+        <div class="grow col" style="justify-content:space-between">
+          <div>
+            <p style="font-size:28px">训练集只有 <b>X</b>，没有 Y。“分几类”本身就是需要<b>判断</b>的问题。</p>
+            <div class="ctl"><label>类数 k</label><input id="clu-k" type="range" min="1" max="8" value="3"><b id="clu-kv">3</b></div>
+            <div class="flex gap16" style="margin-top:20px;flex-wrap:wrap"><button class="btn" id="clu-step">迭代一步</button><button class="btn ghost" id="clu-run">自动运行</button><button class="btn ghost" id="clu-rs">重新初始化</button></div>
+            <div class="mrow" style="margin-top:20px"><span>簇内平方和 SSE</span><b id="clu-sse" class="blue">–</b></div>
+          </div>
+          <div>
+            <div class="hint" style="margin-bottom:6px">肘部图：最优 SSE 随 k 变化</div>
+            <svg id="clu-e" viewBox="0 0 640 220" style="width:640px;height:220px;background:#fff;border:1px solid var(--rule)"></svg>
+            <p style="font-size:24px;margin-top:10px;color:var(--ink-3)">k 增大 SSE 必降，要找<b>下降变缓的拐点</b>。原稿：“可能是 5 类”。</p>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P8（聚类）；教学用模拟数据（5 个高斯簇）</div>
+      <script>
+(function () {
+  const $ = ML.$, svg = $('clu-s'), pal = ['#24509e', '#c27a1a', '#1f7a72', '#b4402d', '#7a5aa6', '#4a5263', '#9a8a1a', '#d06a9a'];
+  const R0 = ML.rng(21), C = [[-2.6, 1.4], [0, 2.1], [2.8, 1.2], [-1.8, -1.6], [2.2, -1.8]], P = [];
+  C.forEach(c => { for (let i = 0; i < 40; i++) P.push([c[0] + ML.gauss(R0) * .55, c[1] + ML.gauss(R0) * .55]); });
+  const sx = ML.scale(-4.5, 4.5, 20, 980), sy = ML.scale(3.5, -3, 20, 600);
+  let k = 3, cen = [], asg = [], seed = 5, timer;
+  function assign() { asg = P.map(p => { let b = 0, bd = 1e9; cen.forEach((c, j) => { const d = (p[0] - c[0]) ** 2 + (p[1] - c[1]) ** 2; if (d < bd) { bd = d; b = j; } }); return b; }); }
+  function update() { let ch = false; cen = cen.map((c, j) => { const m = P.filter((_, i) => asg[i] === j); if (!m.length) return c; const n = [m.reduce((s, p) => s + p[0], 0) / m.length, m.reduce((s, p) => s + p[1], 0) / m.length]; if (Math.abs(n[0] - c[0]) > 1e-6 || Math.abs(n[1] - c[1]) > 1e-6) ch = true; return n; }); return ch; }
+  const sse = () => P.reduce((s, p, i) => s + (p[0] - cen[asg[i]][0]) ** 2 + (p[1] - cen[asg[i]][1]) ** 2, 0);
+  function init() { const R = ML.rng(seed); cen = []; for (let j = 0; j < k; j++) { const p = P[Math.floor(R() * P.length)]; cen.push([p[0], p[1]]); } assign(); draw(); }
+  function draw() {
+    let h = ''; P.forEach((p, i) => h += `<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="9" fill="${pal[asg[i]]}" fill-opacity=".75"/>`);
+    cen.forEach((c, j) => h += `<path d="M${sx(c[0]) - 16} ${sy(c[1])}h32M${sx(c[0])} ${sy(c[1]) - 16}v32" stroke="#1d2433" stroke-width="7"/><path d="M${sx(c[0]) - 16} ${sy(c[1])}h32M${sx(c[0])} ${sy(c[1]) - 16}v32" stroke="${pal[j]}" stroke-width="3"/>`);
+    svg.innerHTML = h; $('clu-kv').textContent = k; $('clu-sse').textContent = sse().toFixed(1); elbow();
+  }
+  const best = []; (function () { const sv = { cen, asg }; for (let kk = 1; kk <= 8; kk++) { let b = 1e9; for (let s = 0; s < 12; s++) { const R = ML.rng(100 + s * 7 + kk); cen = []; for (let j = 0; j < kk; j++) { const p = P[Math.floor(R() * P.length)]; cen.push([p[0], p[1]]); } assign(); for (let it = 0; it < 40; it++) { if (!update()) break; assign(); } b = Math.min(b, sse()); } best.push(b); } })();
+  function elbow() {
+    const e = $('clu-e'), mx = best[0], x = ML.scale(1, 8, 50, 610), y = ML.scale(0, mx, 190, 20); let h = `<line x1="50" y1="190" x2="620" y2="190" stroke="#8a90a0"/>`, d = '';
+    best.forEach((v, i) => { d += (i ? 'L' : 'M') + x(i + 1) + ' ' + y(v); h += `<text x="${x(i + 1)}" y="212" text-anchor="middle" font-size="18" fill="#8a90a0">${i + 1}</text>`; });
+    h += `<path d="${d}" fill="none" stroke="#24509e" stroke-width="3"/>`; best.forEach((v, i) => h += `<circle cx="${x(i + 1)}" cy="${y(v)}" r="${i + 1 === k ? 10 : 5}" fill="${i + 1 === k ? '#c27a1a' : '#24509e'}"/>`); e.innerHTML = h;
+  }
+  $('clu-k').oninput = e => { k = +e.target.value; clearInterval(timer); init(); };
+  $('clu-step').onclick = () => { update(); assign(); draw(); };
+  $('clu-rs').onclick = () => { clearInterval(timer); seed = seed * 13 + 3; init(); };
+  $('clu-run').onclick = () => { clearInterval(timer); timer = setInterval(() => { const ch = update(); assign(); draw(); if (!ch) clearInterval(timer); }, 500); };
+  init();
+})();
+      </script>
+    </section>
+
+    <!-- === 其他学习范式 === -->
+    <section class="slide c" data-sec="1 · 什么是机器学习" data-title="其他学习范式与本课程的位置">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 其他学习范式</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:62px">学习范式 = <em>标签从哪来</em></h2>
+        <div class="flex gap32 st" style="margin-top:44px">
+          <div class="card b grow"><div class="n">监督学习</div><h3>有 Y</h3><p>分类（Y 离散）· 回归（Y 连续）</p><p class="mono" style="font-size:22px;margin-top:10px">本讲 · L4 · L5.2</p></div>
+          <div class="card t grow"><div class="n">无监督学习</div><h3>无 Y</h3><p>聚类 · 降维 · 异常检测</p><p class="mono" style="font-size:22px;margin-top:10px">本讲：聚类</p></div>
+          <div class="card o grow"><div class="n">半监督 · PU</div><h3>少量 Y</h3><p>只有少量标签；或只有“正例 + 未标注”</p></div>
+          <div class="card g grow"><div class="n">强化学习</div><h3>奖励信号</h3><p>通过试错与延迟奖励学策略</p><p class="mono" style="font-size:22px;margin-top:10px">L6.2</p></div>
+        </div>
+        <div class="flex gap32 st" style="margin-top:32px">
+          <div class="card g grow"><div class="n">主动学习</div><p>让模型挑“最值得标注”的样本，省标注成本</p></div>
+          <div class="card g grow"><div class="n">迁移学习</div><p>把一个任务学到的知识用到另一个任务</p></div>
+          <div class="card g grow"><div class="n">元学习</div><p>学习“如何学习”，快速适应新任务</p></div>
+        </div>
+        <p class="reveal d6" style="margin-top:34px;font-size:27px;color:var(--ink-2)">2026 视角：大模型预训练本质上是<b>自监督学习</b>——标签来自数据自身（下一个词），这是 AI 4.0（L7）的基础。⚠ 课堂补充，未单列文献。</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P9（其他学习范式）；自监督补充为课堂判断</div>
+    </section>
+
+    <!-- === 章节 Part 2 === -->
+    <section class="slide c chapter" data-sec="2 · 泛化" data-title="Part 2 · 泛化：训练集全对为什么还不够">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 5.1</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">02</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 2</div>
+        <h2 class="reveal d2">泛化与<em>过拟合</em></h2>
+        <div class="s reveal d3">训练集上的好成绩，不等于对新样本也好</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>2.1</b>插值游戏</div>
+        <div><b>2.2</b>内样本与外样本误差</div>
+        <div><b>2.3</b>训练 / 测试框架</div>
+        <div><b>2.4</b>交叉验证</div>
+      </div>
+    </section>
+
+    <!-- === 插值游戏 === -->
+    <section class="slide c" data-sec="2 · 泛化" data-title="游戏：1, 3, ?, 7" id="s-game">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.1 插值游戏</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:1000px">
+          <div class="flex between center"><h2 style="font-size:60px">游戏：<em>1, 3, ?, 7</em></h2><div class="mono" style="font-size:44px;color:var(--ink)" id="gm-seq">1, 3, 5, 7</div></div>
+          <svg id="gm-s" viewBox="0 0 1000 560" style="width:1000px;height:560px;background:#fff;border:1px solid var(--rule);margin-top:16px"></svg>
+          <div class="ctl"><label>第 3 项 = </label><input id="gm-v" type="range" min="-20" max="30" value="5" step="1"><b id="gm-vv">5</b></div>
+        </div>
+        <div class="grow col" style="justify-content:space-between">
+          <div>
+            <p style="font-size:28px">填“5”最自然？但<b>10000</b> 也有一个三次多项式恰好穿过 4 个点。</p>
+            <div class="flex gap16" style="margin:18px 0;flex-wrap:wrap"><button class="btn ghost" data-v="5">5</button><button class="btn ghost" data-v="0">0</button><button class="btn ghost" data-v="-12">−12</button><button class="btn" data-v="10000">10000</button></div>
+            <div class="mrow" style="border-top:1px solid var(--rule)"><span>穿过 4 点的三次多项式</span></div>
+            <div class="math" id="gm-f" style="font-size:34px;line-height:1.5;margin-top:10px">–</div>
+          </div>
+          <div>
+            <div class="card o"><div class="n">教训</div><p>数据有限时，<b>“穿过所有点”的函数有无穷多个</b>。选哪一个，靠的是对复杂度的约束（简单性）与样本外检验。</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P10–P13（插值运算）；Lagrange 插值由课堂计算</div>
+      <script>
+(function () {
+  const $ = ML.$, svg = $('gm-s'), X = [1, 2, 3, 4]; let v = 5;
+  function coefs(Y) { let tot = [0, 0, 0, 0]; X.forEach((xi, i) => { let p = [1]; X.forEach((xj, j) => { if (j === i) return; const q = [0, 0]; q[0] = -xj / (xi - xj); q[1] = 1 / (xi - xj); const n = new Array(p.length + 1).fill(0); p.forEach((c, a) => { n[a] += c * q[0]; n[a + 1] += c * q[1]; }); p = n; }); p.forEach((c, a) => tot[a] += c * Y[i]); }); return tot; }
+  function fmt(c) { const s = ['', 'x', 'x²', 'x³']; let o = ''; for (let a = 3; a >= 0; a--) { const val = Math.round(c[a] * 1000) / 1000; if (!val && (o || a > 0)) continue; const ab = Math.abs(val); o += (o ? (val < 0 ? ' − ' : ' + ') : (val < 0 ? '−' : '')) + (ab === 1 && a ? '' : ab) + s[a]; } return 'f(x) = ' + o; }
+  function draw() {
+    const Y = [1, 3, v, 7], c = coefs(Y), f = x => c[0] + c[1] * x + c[2] * x * x + c[3] * x * x * x;
+    let lo = Math.min(...Y), hi = Math.max(...Y); for (let x = .5; x <= 4.5; x += .05) { lo = Math.min(lo, f(x)); hi = Math.max(hi, f(x)); } const pad = (hi - lo) * .12 + 1; lo -= pad; hi += pad;
+    const sx = ML.scale(.5, 4.5, 60, 960), sy = ML.scale(hi, lo, 20, 520);
+    let h = `<line x1="60" y1="${sy(0)}" x2="980" y2="${sy(0)}" stroke="#cfcac0" stroke-width="2"/>`, d = '';
+    for (let x = .5; x <= 4.501; x += .02) d += (d ? 'L' : 'M') + sx(x) + ' ' + sy(f(x));
+    h += `<path d="${d}" fill="none" stroke="#24509e" stroke-width="4"/>`;
+    X.forEach((x, i) => { h += `<circle cx="${sx(x)}" cy="${sy(Y[i])}" r="${i === 2 ? 15 : 11}" fill="${i === 2 ? '#c27a1a' : '#1d2433'}"/><text x="${sx(x)}" y="545" text-anchor="middle" font-size="22" fill="#8a90a0">第 ${x} 项</text>`; });
+    svg.innerHTML = h; $('gm-seq').textContent = `1, 3, ${v}, 7`; $('gm-vv').textContent = v; $('gm-f').textContent = fmt(c);
+    $('gm-v').value = Math.max(-20, Math.min(30, v));
+  }
+  $('gm-v').oninput = e => { v = +e.target.value; draw(); };
+  document.querySelectorAll('#s-game [data-v]').forEach(b => b.onclick = () => { v = +b.dataset.v; draw(); });
+  draw();
+})();
+      </script>
+    </section>
+
+    <!-- === 规则越复杂，训练越好看 === -->
+    <section class="slide c" data-sec="2 · 泛化" data-title="垃圾邮件：规则变复杂，训练集 100%，全体几乎不变">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.1 插值游戏</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:58px">垃圾邮件：规则变复杂，<em>只换来训练集的好看</em></h2>
+        <p class="lede reveal d2" style="margin-top:14px;font-size:30px">只抽 10 封训练邮件，用“大写字母平均长度 capitalAve”写规则：</p>
+        <svg viewBox="0 0 1728 330" style="width:1728px;height:330px" class="reveal d3">
+          <g font-size="26">
+            <text x="0" y="62" fill="#1d2433" font-weight="700">规则 1</text>
+            <rect x="170" y="30" width="520" height="50" fill="#24509e" fill-opacity=".18" stroke="#24509e"/><rect x="690" y="30" width="520" height="50" fill="#c27a1a" fill-opacity=".25" stroke="#c27a1a"/>
+            <text x="430" y="64" text-anchor="middle" fill="#24509e">≤ 2.40 → 正常</text><text x="950" y="64" text-anchor="middle" fill="#8a5a10">&gt; 2.40 → 垃圾</text>
+            <text x="0" y="192" fill="#1d2433" font-weight="700">规则 2</text>
+            <rect x="170" y="160" width="520" height="50" fill="#24509e" fill-opacity=".18" stroke="#24509e"/>
+            <rect x="690" y="160" width="60" height="50" fill="#c27a1a" fill-opacity=".25" stroke="#c27a1a"/>
+            <rect x="750" y="160" width="140" height="50" fill="#24509e" fill-opacity=".18" stroke="#24509e"/>
+            <rect x="890" y="160" width="320" height="50" fill="#c27a1a" fill-opacity=".25" stroke="#c27a1a"/>
+            <text x="430" y="194" text-anchor="middle" fill="#24509e">&lt; 2.40 → 正常</text>
+            <text x="820" y="244" text-anchor="middle" fill="#24509e" font-size="22">2.45–2.7 → 正常</text>
+            <text x="720" y="146" text-anchor="middle" fill="#8a5a10" font-size="22">2.40–2.45 → 垃圾</text>
+            <text x="1050" y="194" text-anchor="middle" fill="#8a5a10">&gt; 2.7 → 垃圾</text>
+          </g>
+          <text x="170" y="296" font-size="22" fill="#8a90a0" font-family="var(--f-mono)">capitalAve →</text>
+        </svg>
+        <div class="flex gap32 st" style="margin-top:6px">
+          <div class="card b grow stat"><div class="n">训练集 10 封 · 规则 1 → 规则 2</div><div class="v">90%<small>→ 100%</small></div><div class="l">“完美”：内样本误差为 0</div></div>
+          <div class="card o grow stat"><div class="n">全体 4601 封 · 规则 1 → 规则 2</div><div class="v">71.7%<small>→ 73.2%</small></div><div class="l">外样本几乎没有本质提高</div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P15–P18（UCI Spambase / kernlab::spam，4601 封；10 封训练样本与 R 代码输出）</div>
+    </section>
+
+    <!-- === 过拟合交互 === -->
+    <section class="slide c" data-sec="2 · 泛化" data-title="内样本 vs 外样本误差：模型复杂度滑块" id="s-over">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.2 内样本与外样本误差</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:1000px">
+          <div class="flex between center"><h2 style="font-size:46px">复杂度越高，<em>越会“背题”</em></h2><div class="legend"><span><i style="background:#24509e"></i>训练点</span><span><i style="background:#c27a1a"></i>拟合曲线</span><span><i style="background:#1f7a72"></i>真实规律</span></div></div>
+          <svg id="ov-s" viewBox="0 0 1000 560" style="width:1000px;height:560px;background:#fff;border:1px solid var(--rule);margin-top:14px"></svg>
+          <div class="ctl"><label>多项式次数</label><input id="ov-d" type="range" min="0" max="14" value="3" style="width:420px"><b id="ov-dv">3</b><button class="btn ghost" id="ov-rs" style="margin-left:10px;white-space:nowrap">换一批样本</button></div>
+        </div>
+        <div class="grow col" style="justify-content:space-between">
+          <div>
+            <div class="hint" style="margin-bottom:6px"><span style="color:#24509e">■ 内样本误差（训练）</span> &nbsp; <span style="color:#c27a1a">■ 外样本误差（测试）</span></div>
+            <svg id="ov-e" viewBox="0 0 640 330" style="width:640px;height:330px;background:#fff;border:1px solid var(--rule)"></svg>
+          </div>
+          <div>
+            <div class="mrow"><span>训练 MSE（内样本）</span><b id="ov-tr" class="blue">–</b></div>
+            <div class="mrow"><span>测试 MSE（外样本）</span><b id="ov-te" class="ochre">–</b></div>
+            <div class="mrow"><span>状态</span><b id="ov-st" style="font-size:30px">–</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P19（In / Out of Sample Error）；教学用模拟数据 Y = sin2πX + 噪声，15 个训练点，300 个测试点</div>
+      <script>
+(function () {
+  const $ = ML.$, svg = $('ov-s'), es = $('ov-e'); let seed = 4, tr, te, d = 3, trE = [], teE = [], cs = [];
+  const sx = ML.scale(0, 1, 50, 970), sy = ML.scale(2.2, -2.2, 20, 530);
+  function gen() { tr = ML.sine(seed, 15, .3, true); te = ML.sine(seed + 999, 300, .3, false); trE = []; teE = []; cs = []; for (let k = 0; k <= 14; k++) { const c = ML.polyfit(tr.xs, tr.ys, k); cs.push(c); trE.push(Math.max(1e-6, ML.mse(c, tr.xs, tr.ys))); teE.push(ML.mse(c, te.xs, te.ys)); } }
+  function draw() {
+    const c = cs[d]; let h = '', p = '', tp = '';
+    for (let x = 0; x <= 1.0001; x += .004) { tp += (tp ? 'L' : 'M') + sx(x) + ' ' + sy(Math.sin(2 * Math.PI * x)); const y = Math.max(-3, Math.min(3, ML.polyval(c, x))); p += (p ? 'L' : 'M') + sx(x) + ' ' + sy(y); }
+    h += `<defs><clipPath id="ov-cp"><rect x="0" y="0" width="1000" height="560"/></clipPath></defs><g clip-path="url(#ov-cp)"><path d="${tp}" fill="none" stroke="#1f7a72" stroke-width="3" stroke-dasharray="8 6"/><path d="${p}" fill="none" stroke="#c27a1a" stroke-width="5"/></g>`;
+    tr.xs.forEach((x, i) => h += `<circle cx="${sx(x)}" cy="${sy(tr.ys[i])}" r="9" fill="#24509e" stroke="#fff" stroke-width="2"/>`);
+    svg.innerHTML = h;
+    es.innerHTML = ML.errChart(640, 330, [{ v: trE, c: '#24509e' }, { v: teE, c: '#c27a1a' }], d);
+    $('ov-dv').textContent = d; $('ov-tr').textContent = ML.f(trE[d] < 2e-6 ? 0 : trE[d], 3); $('ov-te').textContent = ML.f(teE[d], 3);
+    const mn = Math.min(...teE), best = teE.findIndex(v => v <= mn * 1.15); const st = $('ov-st');
+    if (d < best - 1) { st.textContent = '欠拟合'; st.style.color = '#8a90a0'; } else if (d > best + 2) { st.textContent = '过拟合'; st.style.color = '#b4402d'; } else { st.textContent = '恰当'; st.style.color = '#1f7a72'; }
+  }
+  $('ov-d').oninput = e => { d = +e.target.value; draw(); };
+  $('ov-rs').onclick = () => { seed = seed * 7 + 3; gen(); draw(); };
+  gen(); draw();
+})();
+      </script>
+    </section>
+
+    <!-- === 决策边界：树深度 === -->
+    <section class="slide c" data-sec="2 · 泛化" data-title="决策边界：树越深，边界越“碎”" id="s-tree">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.2 内样本与外样本误差</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:660px">
+          <h2 style="font-size:52px">同一道理，<em>换成分类树</em></h2>
+          <canvas id="tr-c" width="640" height="640" style="width:640px;height:640px;margin-top:16px"></canvas>
+          <div class="legend" style="margin-top:12px"><span><i style="background:#c27a1a"></i>正类</span><span><i style="background:#24509e"></i>负类</span><span class="muted">圆点 = 训练样本</span></div>
+        </div>
+        <div class="grow col" style="justify-content:space-between">
+          <div>
+            <p style="font-size:28px">分类决策树不断按特征切分空间，<b>深度</b>就是复杂度。</p>
+            <div class="ctl"><label>树深度</label><input id="tr-d" type="range" min="1" max="12" value="3" style="width:380px"><b id="tr-dv">3</b><button class="btn ghost" id="tr-rs" style="margin-left:20px">换一批样本</button></div>
+            <div class="mrow" style="margin-top:20px"><span>叶子数</span><b id="tr-lv">–</b></div>
+            <div class="mrow"><span>训练正确率</span><b id="tr-tr" class="blue">–</b></div>
+            <div class="mrow"><span>测试正确率</span><b id="tr-te" class="ochre">–</b></div>
+          </div>
+          <div>
+            <div class="hint" style="margin-bottom:6px"><span style="color:#24509e">■ 训练</span> &nbsp; <span style="color:#c27a1a">■ 测试</span> 正确率 vs 深度</div>
+            <svg id="tr-e" viewBox="0 0 900 250" style="width:900px;height:250px;background:#fff;border:1px solid var(--rule)"></svg>
+            <p style="font-size:24px;margin-top:10px;color:var(--ink-3)">训练正确率一路升到 100%，测试正确率先升后平甚至下降：深树在“记噪声”。</p>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P19（过拟合）；CART 基尼切分为课堂实现，数据为模拟的“双月牙 + 噪声”</div>
+      <script>
+(function () {
+  const $ = ML.$, cv = $('tr-c'), ctx = cv.getContext('2d'); let seed = 12, TR, TE, d = 3, accs = [];
+  function moons(seed, n) { const R = ML.rng(seed), P = []; for (let i = 0; i < n; i++) { const t = Math.PI * R(); if (i % 2) P.push({ x: 1 - Math.cos(t) + .38 * ML.gauss(R), y: .5 - Math.sin(t) + .38 * ML.gauss(R), c: 0 }); else P.push({ x: Math.cos(t) + .38 * ML.gauss(R), y: Math.sin(t) + .38 * ML.gauss(R), c: 1 }); } return P; }
+  function gini(a) { const n = a.length; if (!n) return 0; const p = a.filter(q => q.c).length / n; return 2 * p * (1 - p); }
+  function build(a, dep) {
+    const p1 = a.filter(q => q.c).length, nd = { n: a.length, p: p1 / a.length };
+    if (dep === 0 || p1 === 0 || p1 === a.length) return nd;
+    let best = null, g0 = gini(a);
+    ['x', 'y'].forEach(f => { const s = [...a].sort((u, v) => u[f] - v[f]); let lp = 0; for (let i = 0; i < s.length - 1; i++) { lp += s[i].c; if (s[i].x === s[i + 1].x && f === 'x') continue; const nl = i + 1, nr = s.length - nl, rp = p1 - lp, g = (nl * 2 * (lp / nl) * (1 - lp / nl) + nr * 2 * (rp / nr) * (1 - rp / nr)) / s.length; if (!best || g < best.g) best = { g, f, t: (s[i][f] + s[i + 1][f]) / 2 }; } });
+    if (!best || best.g >= g0 - 1e-9) return nd;
+    nd.f = best.f; nd.t = best.t; nd.l = build(a.filter(q => q[best.f] <= best.t), dep - 1); nd.r = build(a.filter(q => q[best.f] > best.t), dep - 1); return nd;
+  }
+  const pred = (nd, q) => nd.f ? pred(q[nd.f] <= nd.t ? nd.l : nd.r, q) : nd.p;
+  const leaves = nd => nd.f ? leaves(nd.l) + leaves(nd.r) : 1;
+  const acc = (T, A) => A.filter(q => (pred(T, q) > .5 ? 1 : 0) === q.c).length / A.length;
+  const X0 = -1.8, X1 = 2.8, Y0 = -1.5, Y1 = 2.0, sx = ML.scale(X0, X1, 0, 640), sy = ML.scale(Y1, Y0, 0, 640);
+  function gen() { TR = moons(seed, 70); TE = moons(seed + 77, 500); accs = []; for (let k = 1; k <= 12; k++) { const T = build(TR, k); accs.push([acc(T, TR), acc(T, TE)]); } }
+  function draw() {
+    const T = build(TR, d), G = 4; ctx.clearRect(0, 0, 640, 640);
+    for (let i = 0; i < 640; i += G) for (let j = 0; j < 640; j += G) { const x = X0 + (i + G / 2) / 640 * (X1 - X0), y = Y1 - (j + G / 2) / 640 * (Y1 - Y0), p = pred(T, { x, y }); ctx.fillStyle = p > .5 ? 'rgba(194,122,26,.22)' : 'rgba(36,80,158,.18)'; ctx.fillRect(i, j, G, G); }
+    TR.forEach(q => { ctx.beginPath(); ctx.arc(sx(q.x), sy(q.y), 8, 0, 7); ctx.fillStyle = q.c ? '#c27a1a' : '#24509e'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke(); });
+    $('tr-dv').textContent = d; $('tr-lv').textContent = leaves(T);
+    const a = accs[d - 1]; $('tr-tr').textContent = (a[0] * 100).toFixed(1) + '%'; $('tr-te').textContent = (a[1] * 100).toFixed(1) + '%';
+    const e = $('tr-e'), x = ML.scale(1, 12, 60, 870), mn = Math.min(...accs.map(v => v[1])) - .04, y = ML.scale(mn, 1.0, 215, 20); let h = '';
+    [0, 1].forEach(m => { h += `<path d="${accs.map((v, i) => (i ? 'L' : 'M') + x(i + 1) + ' ' + y(v[m])).join('')}" fill="none" stroke="${m ? '#c27a1a' : '#24509e'}" stroke-width="3.5"/>`; h += `<circle cx="${x(d)}" cy="${y(a[m])}" r="8" fill="${m ? '#c27a1a' : '#24509e'}"/>`; });
+    for (let i = 1; i <= 12; i++) h += `<text x="${x(i)}" y="240" text-anchor="middle" font-size="16" fill="#8a90a0">${i}</text>`;
+    h += `<line x1="${x(d)}" x2="${x(d)}" y1="20" y2="215" stroke="#1d2433" stroke-dasharray="5 5"/>`; e.innerHTML = h;
+  }
+  $('tr-d').oninput = e => { d = +e.target.value; draw(); };
+  $('tr-rs').onclick = () => { seed = seed * 5 + 1; gen(); draw(); };
+  gen(); draw();
+})();
+      </script>
+    </section>
+
+    <!-- === 基本框架 === -->
+    <section class="slide c" data-sec="2 · 泛化" data-title="有监督统计机器学习的基本框架" id="s-frame">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 训练 / 测试框架</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:60px">基本框架：<em>先划分，再学习，最后只考一次</em></h2>
+        <div class="reveal d2" style="margin-top:36px">
+          <div style="display:flex;height:130px;border:2px solid var(--ink)"><div id="fr-a" style="background:#24509e;color:#fff;display:flex;align-items:center;justify-content:center;font:500 30px var(--f-mono);width:60%">训练集 TRAIN 60%</div><div id="fr-b" style="background:#c27a1a;color:#fff;display:flex;align-items:center;justify-content:center;font:500 30px var(--f-mono);width:40%">测试集 TEST 40%</div></div>
+          <div class="ctl"><label>训练集比例</label><input id="fr-r" type="range" min="50" max="90" value="60" step="5" style="width:600px"><b id="fr-rv">60%</b><span class="hint" style="margin-left:24px">原稿示例 60% vs 40%；常见 70–80%</span></div>
+        </div>
+        <div class="flex gap16 st" style="margin-top:44px">
+          <div class="card g grow" style="min-height:250px"><div class="n">STEP 1</div><h3 style="font-size:38px">清洗数据</h3><p style="font-size:27px">缺失、异常、重复</p></div>
+          <div class="card b grow" style="min-height:250px"><div class="n">STEP 2</div><h3 style="font-size:38px">划分数据</h3><p style="font-size:27px">训练集 / 测试集</p></div>
+          <div class="card b grow" style="min-height:250px"><div class="n">STEP 3</div><h3 style="font-size:38px">构建特征</h3><p style="font-size:27px">只用训练集的信息</p></div>
+          <div class="card b grow" style="min-height:250px"><div class="n">STEP 4</div><h3 style="font-size:38px">训练模型</h3><p style="font-size:27px">交叉验证选超参数</p></div>
+          <div class="card o grow" style="min-height:250px"><div class="n">STEP 5</div><h3 style="font-size:38px">测试评估</h3><p style="font-size:27px">只用一次，报告样本外效果</p></div>
+        </div>
+        <p class="reveal d6" style="margin-top:40px;font-size:30px"><b class="ochre">⚠ 数据泄漏：</b>测试集的信息一旦进入特征构建或调参，测试误差就不再“无辜”，会系统性乐观。</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P20（基本框架）；数据泄漏提示为通用方法论</div>
+      <script>
+(function () { const r = ML.$('fr-r'); r.oninput = () => { const v = +r.value; ML.$('fr-a').style.width = v + '%'; ML.$('fr-b').style.width = (100 - v) + '%'; ML.$('fr-a').textContent = `训练集 TRAIN ${v}%`; ML.$('fr-b').textContent = `测试集 TEST ${100 - v}%`; ML.$('fr-rv').textContent = v + '%'; }; })();
+      </script>
+    </section>
+
+    <!-- === 交叉验证 === -->
+    <section class="slide c" data-sec="2 · 泛化" data-title="交叉验证：不碰测试集，也能选模型" id="s-cv">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 交叉验证</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:900px">
+          <h2 style="font-size:52px">K 折交叉验证：<em>轮流当考场</em></h2>
+          <div class="tabs" style="margin-top:20px"><button class="tab b" data-k="3">K = 3</button><button class="tab b on" data-k="5">K = 5</button><button class="tab b" data-k="10">K = 10</button><button class="btn ghost" id="cv-nx" style="margin-left:20px">下一折 ▶</button></div>
+          <div style="display:flex;gap:8px;margin-top:26px;height:96px" id="cv-f"></div>
+          <div class="legend" style="margin-top:14px"><span><i style="background:#24509e"></i>训练折</span><span><i style="background:#c27a1a"></i>验证折</span><span class="muted">独立的测试集始终留在旁边不动</span></div>
+          <div class="ctl" style="margin-top:26px"><label>多项式次数</label><input id="cv-d" type="range" min="0" max="12" value="3"><b id="cv-dv">3</b></div>
+          <div id="cv-bars" style="margin-top:16px"></div>
+          <div class="mrow" style="margin-top:12px"><span>K 折平均验证误差 = CV 误差</span><b id="cv-avg" class="teal">–</b></div>
+        </div>
+        <div class="grow col" style="justify-content:space-between">
+          <div>
+            <div class="hint" style="margin-bottom:6px"><span style="color:#24509e">■ 训练</span> &nbsp; <span style="color:#1f7a72">■ CV</span> &nbsp; <span style="color:#c27a1a">■ 测试</span></div>
+            <svg id="cv-e" viewBox="0 0 700 330" style="width:700px;height:330px;background:#fff;border:1px solid var(--rule)"></svg>
+          </div>
+          <div>
+            <div class="card t"><div class="n">用 CV 选模型</div><p>CV 误差最小的次数：<b id="cv-best" class="teal">–</b>；此时测试误差 <b id="cv-bt" class="ochre">–</b>。<br>只用训练集就能挑出接近最优的复杂度。</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P29（K-fold）；教学用模拟数据 Y = sin2πX + 噪声，30 个训练点，300 个测试点</div>
+      <script>
+(function () {
+  const $ = ML.$, tr = ML.sine(8, 30, .3, true), te = ML.sine(808, 300, .3, false); let K = 5, fold = 0, d = 3;
+  const idx = tr.xs.map((_, i) => i), R = ML.rng(5); for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+  function cvErr(k, dd) { const out = []; for (let f = 0; f < k; f++) { const a = [], b = []; idx.forEach((id, p) => (p % k === f ? b : a).push(id)); const c = ML.polyfit(a.map(i => tr.xs[i]), a.map(i => tr.ys[i]), dd); out.push(ML.mse(c, b.map(i => tr.xs[i]), b.map(i => tr.ys[i]))); } return out; }
+  let trE = [], teE = [], cvE = [];
+  function prep() { trE = []; teE = []; cvE = []; for (let k = 0; k <= 12; k++) { const c = ML.polyfit(tr.xs, tr.ys, k); trE.push(Math.max(1e-6, ML.mse(c, tr.xs, tr.ys))); teE.push(ML.mse(c, te.xs, te.ys)); const e = cvErr(K, k); cvE.push(e.reduce((s, v) => s + v, 0) / K); } }
+  function draw() {
+    const f = $('cv-f'); f.innerHTML = Array.from({ length: K }, (_, i) => `<div style="flex:1;background:${i === fold ? '#c27a1a' : '#24509e'};color:#fff;display:flex;align-items:center;justify-content:center;font:500 24px var(--f-mono);opacity:${i === fold ? 1 : .8};transition:all .3s">${i === fold ? '验证' : ''}</div>`).join('') + '<div style="width:8px"></div><div style="width:120px;background:#fff;border:3px dashed #8a90a0;color:#8a90a0;display:flex;align-items:center;justify-content:center;font:500 22px var(--f-mono)">TEST</div>';
+    const e = cvErr(K, d), mx = Math.max(...e, 1e-6); $('cv-bars').innerHTML = e.map((v, i) => `<div style="display:flex;align-items:center;gap:12px;height:${K > 5 ? 20 : 28}px;margin-bottom:4px"><span class="mono" style="width:70px;font-size:18px;color:${i === fold ? '#c27a1a' : '#8a90a0'}">折 ${i + 1}</span><div style="flex:1;background:var(--paper-2);height:100%"><div style="height:100%;width:${Math.min(100, v / Math.max(mx, .5) * 100)}%;background:${i === fold ? '#c27a1a' : '#8a90a0'}"></div></div><span class="mono" style="width:90px;font-size:18px;color:var(--ink-2)">${ML.f(v, 3)}</span></div>`).join('');
+    $('cv-avg').textContent = ML.f(cvE[d], 3); $('cv-dv').textContent = d;
+    const best = cvE.indexOf(Math.min(...cvE)); $('cv-best').textContent = best; $('cv-bt').textContent = ML.f(teE[best], 3);
+    $('cv-e').innerHTML = ML.errChart(700, 330, [{ v: trE, c: '#24509e' }, { v: cvE, c: '#1f7a72' }, { v: teE, c: '#c27a1a' }], d, (x, y) => `<circle cx="${x(best)}" cy="${y(cvE[best])}" r="13" fill="none" stroke="#1f7a72" stroke-width="3"/>`);
+  }
+  document.querySelectorAll('#s-cv .tab').forEach(b => b.onclick = () => { document.querySelectorAll('#s-cv .tab').forEach(x => x.classList.toggle('on', x === b)); K = +b.dataset.k; fold = 0; prep(); draw(); });
+  $('cv-nx').onclick = () => { fold = (fold + 1) % K; draw(); };
+  $('cv-d').oninput = e => { d = +e.target.value; draw(); };
+  prep(); draw();
+})();
+      </script>
+    </section>
+
+    <!-- === 章节 Part 3 === -->
+    <section class="slide c chapter" data-sec="3 · 度量" data-title="Part 3 · 怎样判断“学得好”">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 5.1</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">03</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 3</div>
+        <h2 class="reveal d2">模型的<em>度量</em></h2>
+        <div class="s reveal d3">正确率会骗人；选指标，就是选业务目标</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>3.1</b>垃圾邮件与基线</div>
+        <div><b>3.2</b>混淆矩阵与 ROC</div>
+        <div><b>3.3</b>代价与阈值</div>
+        <div><b>3.4</b>回归的度量</div>
+      </div>
+    </section>
+
+    <!-- === 基线与正确率 === -->
+    <section class="slide c" data-sec="3 · 度量" data-title="正确率是好度量吗？先看“瞎猜”基线" id="s-base">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 垃圾邮件与基线</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:760px">
+          <h2 style="font-size:54px">正确率是<em>好度量</em>吗？</h2>
+          <div class="card b" style="margin-top:26px"><div class="n">垃圾邮件数据 · 4601 封</div><p>垃圾 1813（39.4%）· 正常 2788（60.6%）</p></div>
+          <div class="flex gap16 st" style="margin-top:20px">
+            <div class="card g grow stat"><div class="n">全判“正常”</div><div class="v" style="font-size:84px">60.6<small>%</small></div></div>
+            <div class="card o grow stat"><div class="n">规则 your &gt; 0.5</div><div class="v" style="font-size:84px">75.1<small>%</small></div></div>
+          </div>
+          <p style="margin-top:22px;font-size:27px">任何模型都要<b>先打败基线</b>。而当类别极不平衡时，“全判正常”的正确率本身就高得吓人。</p>
+        </div>
+        <div class="grow col" style="justify-content:space-between">
+          <div>
+            <div class="hint">拖动：患病（正类）比例，看“高正确率”如何失效</div>
+            <div class="flex gap16" style="margin:14px 0;flex-wrap:wrap"><button class="btn ghost" data-p="39.4">垃圾邮件 39.4%</button><button class="btn ghost" data-p="1">筛查 1% ⚠</button><button class="btn ghost" data-p="0.1">欺诈 0.1% ⚠</button></div>
+            <div class="ctl"><label>正类占比 p</label><input id="bs-p" type="range" min="1" max="500" value="394" style="width:420px"><b id="bs-pv" style="min-width:130px">39.4%</b></div>
+            <div class="ctl"><label>召回率（灵敏度）</label><input id="bs-se" type="range" min="50" max="100" value="90" style="width:420px"><b id="bs-sev" style="min-width:130px">90%</b></div>
+            <div class="ctl"><label>特异度</label><input id="bs-sp" type="range" min="50" max="100" value="95" style="width:420px"><b id="bs-spv" style="min-width:130px">95%</b></div>
+          </div>
+          <div>
+            <div class="mrow"><span>“全判负类”的正确率</span><b id="bs-na">–</b></div>
+            <div class="mrow"><span>模型正确率</span><b id="bs-ac" class="blue">–</b></div>
+            <div class="mrow"><span>模型<b style="font-size:inherit;font-family:inherit"> 精确率</b>（报警中真有问题的比例）</span><b id="bs-pr" class="ochre">–</b></div>
+            <p style="font-size:23px;margin-top:12px;color:var(--ink-3)">正类越稀有，同样的模型“正确率”越高，但<b>精确率</b>断崖下跌。预设的 1% / 0.1% 为假设值。</p>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P21–P24（your&gt;0.5 规则 75.14% 与全判正常 60.6% 见 L3 复算，UCI Spambase）；p/召回/特异为假设情景 ⚠</div>
+      <script>
+(function () {
+  const $ = ML.$; let p = .394;
+  function draw() { const se = $('bs-se').value / 100, sp = $('bs-sp').value / 100, na = 1 - p, ac = p * se + (1 - p) * sp, tp = p * se, fp = (1 - p) * (1 - sp), pr = tp / (tp + fp);
+    $('bs-pv').textContent = (p * 100).toFixed(p < .01 ? 1 : 1) + '%'; $('bs-sev').textContent = Math.round(se * 100) + '%'; $('bs-spv').textContent = Math.round(sp * 100) + '%';
+    $('bs-na').textContent = (na * 100).toFixed(1) + '%'; $('bs-ac').textContent = (ac * 100).toFixed(1) + '%'; $('bs-pr').textContent = (pr * 100).toFixed(1) + '%'; }
+  $('bs-p').oninput = e => { p = e.target.value / 1000; draw(); }; $('bs-se').oninput = draw; $('bs-sp').oninput = draw;
+  document.querySelectorAll('#s-base [data-p]').forEach(b => b.onclick = () => { p = +b.dataset.p / 100; $('bs-p').value = p * 1000; draw(); });
+  draw();
+})();
+      </script>
+    </section>
+
+    <!-- === 混淆矩阵 === -->
+    <section class="slide c" data-sec="3 · 度量" data-title="混淆矩阵：一个阈值，四种结果" id="s-cm">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.2 混淆矩阵与 ROC</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:920px">
+          <h2 style="font-size:52px">混淆矩阵：<em>阈值决定四种结果</em></h2>
+          <svg id="cm-d" viewBox="0 0 920 330" style="width:920px;height:330px;background:#fff;border:1px solid var(--rule);margin-top:16px"></svg>
+          <div class="legend" style="margin-top:10px"><span><i style="background:#c27a1a"></i>垃圾邮件得分</span><span><i style="background:#24509e"></i>正常邮件得分</span><span class="muted">竖线右侧 → 判为垃圾</span></div>
+          <div class="ctl"><label>判定阈值 t</label><input id="cm-t" type="range" min="-100" max="400" value="90" style="width:500px"><b id="cm-tv">0.9</b></div>
+          <div class="ctl"><label>区分能力 d</label><input id="cm-dd" type="range" min="0" max="35" value="15" style="width:500px"><b id="cm-ddv">1.5</b></div>
+        </div>
+        <div class="grow col" style="justify-content:space-between">
+          <div>
+            <table style="font-size:26px;text-align:center"><tr><th></th><th style="text-align:center">真实：垃圾</th><th style="text-align:center">真实：正常</th></tr>
+              <tr><td>预测：垃圾</td><td style="background:#e8f2ef"><span class="mono teal" style="font-size:20px">TP 命中</span><br><b id="cm-tp" style="font-size:44px">–</b></td><td style="background:#fbeceb"><span class="mono" style="font-size:20px;color:#b4402d">FP 误杀</span><br><b id="cm-fp" style="font-size:44px">–</b></td></tr>
+              <tr><td>预测：正常</td><td style="background:#fbeceb"><span class="mono" style="font-size:20px;color:#b4402d">FN 漏判</span><br><b id="cm-fn" style="font-size:44px">–</b></td><td style="background:#e8f2ef"><span class="mono teal" style="font-size:20px">TN 放行</span><br><b id="cm-tn" style="font-size:44px">–</b></td></tr></table>
+            <div class="hint" style="margin-top:8px">每 1000 封邮件（400 封垃圾）</div>
+          </div>
+          <div>
+            <div class="mrow"><span>正确率 (TP+TN)/N</span><b id="cm-ac">–</b></div>
+            <div class="mrow"><span>灵敏度 / 召回率 TPR = TP/(TP+FN)</span><b id="cm-tpr" class="teal">–</b></div>
+            <div class="mrow"><span>特异度 TNR = TN/(TN+FP)</span><b id="cm-tnr">–</b></div>
+            <div class="mrow"><span>假阳性率 FPR = FP/(FP+TN)</span><b id="cm-fpr" class="ochre">–</b></div>
+            <div class="mrow"><span>精确率 TP/(TP+FP)</span><b id="cm-pr">–</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P25（TP / FP / FN / TN、灵敏度 / 特异度）；双正态得分为教学模拟，非真实模型</div>
+      <script>
+(function () {
+  const $ = ML.$, svg = $('cm-d'); 
+  function draw() {
+    const t = $('cm-t').value / 100, d = $('cm-dd').value / 10, N = 1000, P = 400, tpr = 1 - ML.Phi(t - d), fpr = 1 - ML.Phi(t);
+    const tp = P * tpr, fn = P - tp, fp = (N - P) * fpr, tn = N - P - fp;
+    const sx = ML.scale(-3.5, 6.5, 30, 890), sy = ML.scale(0, .72, 300, 20); let a = '', b = '', ra = '', rb = '';
+    for (let x = -3.5; x <= 6.5001; x += .05) { a += (a ? 'L' : 'M') + sx(x) + ' ' + sy(.4 * ML.phi(x - d)); b += (b ? 'L' : 'M') + sx(x) + ' ' + sy(.6 * ML.phi(x)); }
+    let h = `<line x1="30" y1="300" x2="890" y2="300" stroke="#8a90a0"/>`;
+    h += `<path d="${b} L${sx(6.5)} 300 L${sx(-3.5)} 300Z" fill="#24509e" fill-opacity=".12"/><path d="${a} L${sx(6.5)} 300 L${sx(-3.5)} 300Z" fill="#c27a1a" fill-opacity=".14"/><path d="${b}" fill="none" stroke="#24509e" stroke-width="3.5"/><path d="${a}" fill="none" stroke="#c27a1a" stroke-width="3.5"/>`;
+    h += `<line x1="${sx(t)}" x2="${sx(t)}" y1="12" y2="300" stroke="#1d2433" stroke-width="4"/><text x="${sx(t) + 10}" y="34" font-size="20" fill="#1d2433">判垃圾 →</text>`;
+    svg.innerHTML = h;
+    $('cm-tv').textContent = t.toFixed(1); $('cm-ddv').textContent = d.toFixed(1);
+    $('cm-tp').textContent = Math.round(tp); $('cm-fn').textContent = Math.round(fn); $('cm-fp').textContent = Math.round(fp); $('cm-tn').textContent = Math.round(tn);
+    const pc = v => (v * 100).toFixed(1) + '%';
+    $('cm-ac').textContent = pc((tp + tn) / N); $('cm-tpr').textContent = pc(tpr); $('cm-tnr').textContent = pc(1 - fpr); $('cm-fpr').textContent = pc(fpr); $('cm-pr').textContent = (tp + fp) > .5 ? pc(tp / (tp + fp)) : '–';
+  }
+  $('cm-t').oninput = draw; $('cm-dd').oninput = draw; draw();
+})();
+      </script>
+    </section>
+
+    <!-- === ROC 与 AUC === -->
+    <section class="slide c" data-sec="3 · 度量" data-title="ROC 曲线与 AUC：扫过所有阈值" id="s-roc">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.2 混淆矩阵与 ROC</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:700px">
+          <h2 style="font-size:52px">ROC：<em>把所有阈值画在一张图</em></h2>
+          <svg id="rc-s" viewBox="0 0 640 640" style="width:640px;height:640px;background:#fff;border:1px solid var(--rule);margin-top:14px"></svg>
+        </div>
+        <div class="grow col" style="justify-content:space-between">
+          <div>
+            <p style="font-size:28px">横轴 <b>FPR</b>（误杀率），纵轴 <b>TPR</b>（召回率）。阈值从高到低，点沿曲线从左下走到右上。</p>
+            <div class="ctl"><label>判定阈值 t</label><input id="rc-t" type="range" min="-100" max="450" value="90" style="width:480px"><b id="rc-tv">0.9</b></div>
+            <div class="ctl"><label>区分能力 d</label><input id="rc-d" type="range" min="0" max="40" value="15" style="width:480px"><b id="rc-dv">1.5</b></div>
+            <div class="flex gap16" style="margin-top:20px"><button class="btn ghost" id="rc-0">d = 0 随机猜</button><button class="btn ghost" id="rc-3">d = 3 强模型</button></div>
+          </div>
+          <div>
+            <div class="mrow"><span>当前点：FPR / TPR</span><b id="rc-pt">–</b></div>
+            <div class="mrow"><span>AUC（曲线下面积）</span><b id="rc-auc" class="blue" style="font-size:52px">–</b></div>
+            <div class="card b" style="margin-top:14px"><p style="font-size:26px"><b>AUC 的含义：</b>随机抽一封垃圾、一封正常，模型给垃圾打分更高的概率。0.5 = 抛硬币，1 = 完美。</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P26（ROC / AUC）；双正态模型 AUC = Φ(d/√2)，为教学模拟</div>
+      <script>
+(function () {
+  const $ = ML.$, svg = $('rc-s'), sx = ML.scale(0, 1, 70, 610), sy = ML.scale(1, 0, 30, 570);
+  function draw() {
+    const t = $('rc-t').value / 100, d = $('rc-d').value / 10; let h = '';
+    for (let i = 0; i <= 4; i++) h += `<line x1="70" x2="610" y1="${sy(i / 4)}" y2="${sy(i / 4)}" stroke="#eee6d8"/><line y1="30" y2="570" x1="${sx(i / 4)}" x2="${sx(i / 4)}" stroke="#eee6d8"/><text x="${sx(i / 4)}" y="600" text-anchor="middle" font-size="18" fill="#8a90a0">${i / 4}</text><text x="58" y="${sy(i / 4) + 6}" text-anchor="end" font-size="18" fill="#8a90a0">${i / 4}</text>`;
+    h += `<text x="340" y="632" text-anchor="middle" font-size="20" fill="#4a5263">FPR（假阳性率）</text><text transform="translate(20 300) rotate(-90)" text-anchor="middle" font-size="20" fill="#4a5263">TPR（召回率）</text>`;
+    h += `<line x1="${sx(0)}" y1="${sy(0)}" x2="${sx(1)}" y2="${sy(1)}" stroke="#8a90a0" stroke-dasharray="8 6" stroke-width="2.5"/>`;
+    let p = `M${sx(0)} ${sy(0)}`, a = `M${sx(0)} ${sy(0)}`; for (let u = 6; u >= -4; u -= .05) { const x = 1 - ML.Phi(u), y = 1 - ML.Phi(u - d); p += `L${sx(x)} ${sy(y)}`; }
+    h += `<path d="${p} L${sx(1)} ${sy(1)} L${sx(1)} ${sy(0)}Z" fill="#24509e" fill-opacity=".10"/><path d="${p}" fill="none" stroke="#24509e" stroke-width="5"/>`;
+    const fpr = 1 - ML.Phi(t), tpr = 1 - ML.Phi(t - d);
+    h += `<circle cx="${sx(fpr)}" cy="${sy(tpr)}" r="13" fill="#c27a1a" stroke="#fff" stroke-width="3"/>`;
+    svg.innerHTML = h; $('rc-tv').textContent = t.toFixed(1); $('rc-dv').textContent = d.toFixed(1);
+    $('rc-pt').textContent = fpr.toFixed(2) + ' / ' + tpr.toFixed(2); $('rc-auc').textContent = ML.Phi(d / Math.SQRT2).toFixed(3);
+  }
+  $('rc-t').oninput = draw; $('rc-d').oninput = draw;
+  $('rc-0').onclick = () => { $('rc-d').value = 0; draw(); }; $('rc-3').onclick = () => { $('rc-d').value = 30; draw(); };
+  draw();
+})();
+      </script>
+    </section>
+
+    <!-- === 真实数据 ROC === -->
+    <section class="slide c" data-sec="3 · 度量" data-title="真实数据：不同特征的单变量规则 ROC" id="s-sroc">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.2 混淆矩阵与 ROC</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:700px">
+          <h2 style="font-size:50px">真实数据：<em>哪个特征更会分</em></h2>
+          <svg id="sr-s" viewBox="0 0 640 640" style="width:640px;height:640px;background:#fff;border:1px solid var(--rule);margin-top:14px"></svg>
+        </div>
+        <div class="grow col" style="justify-content:space-between">
+          <div>
+            <p style="font-size:27px">UCI Spambase 全部 4601 封。规则“<b>特征 &gt; t → 垃圾</b>”，扫描 t 得到一条 ROC。</p>
+            <div class="tabs" id="sr-tabs" style="flex-wrap:wrap;margin:14px 0"></div>
+            <div class="ctl"><label>阈值位置</label><input id="sr-t" type="range" min="0" max="40" value="10" style="width:480px"><b id="sr-tv" style="min-width:110px">–</b></div>
+          </div>
+          <div>
+            <table style="font-size:24px"><thead><tr><th>特征</th><th>AUC</th><th style="width:300px"></th></tr></thead><tbody id="sr-tb"></tbody></table>
+            <div class="mrow" style="margin-top:10px"><span>当前阈值：FPR / TPR</span><b id="sr-pt">–</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> L3 复算数据（UCI Spambase = kernlab::spam，4601 封 / 1813 垃圾）；AUC 为各特征阈值网格上的梯形积分，近似值 ⚠</div>
+      <script>
+(function () {
+  const $ = ML.$, svg = $('sr-s'), sx = ML.scale(0, 1, 70, 610), sy = ML.scale(1, 0, 30, 570), keys = Object.keys(ML.spamLabel); let f = 'your', i = 5;
+  $('sr-tabs').innerHTML = keys.map(k => `<button class="tab b ${k === f ? 'on' : ''}" data-f="${k}" style="font-size:21px;padding:12px 18px">${ML.spamLabel[k]}</button>`).join('');
+  const roc = {}; keys.forEach(k => roc[k] = ML.spamRoc(k));
+  $('sr-tb').innerHTML = keys.map(k => `<tr><td>${ML.spamLabel[k]}</td><td class="mono" id="sr-a-${k}">${roc[k].auc.toFixed(3)}</td><td><div class="bar"><i style="width:${(roc[k].auc - .5) * 200}%;background:#24509e"></i></div></td></tr>`).join('');
+  function draw() {
+    const R = roc[f], pts = R.pts; $('sr-t').max = pts.length - 1; i = Math.min(i, pts.length - 1); $('sr-t').value = i; let h = '';
+    for (let q = 0; q <= 4; q++) h += `<line x1="70" x2="610" y1="${sy(q / 4)}" y2="${sy(q / 4)}" stroke="#eee6d8"/><line y1="30" y2="570" x1="${sx(q / 4)}" x2="${sx(q / 4)}" stroke="#eee6d8"/><text x="${sx(q / 4)}" y="600" text-anchor="middle" font-size="18" fill="#8a90a0">${q / 4}</text><text x="58" y="${sy(q / 4) + 6}" text-anchor="end" font-size="18" fill="#8a90a0">${q / 4}</text>`;
+    h += `<text x="340" y="632" text-anchor="middle" font-size="20" fill="#4a5263">FPR</text><text transform="translate(20 300) rotate(-90)" text-anchor="middle" font-size="20" fill="#4a5263">TPR</text><line x1="${sx(0)}" y1="${sy(0)}" x2="${sx(1)}" y2="${sy(1)}" stroke="#8a90a0" stroke-dasharray="8 6" stroke-width="2.5"/>`;
+    keys.forEach(k => { if (k === f) return; h += `<path d="M${sx(0)} ${sy(0)}${roc[k].pts.slice().reverse().map(p => 'L' + sx(p.fpr) + ' ' + sy(p.tpr)).join('')}L${sx(1)} ${sy(1)}" fill="none" stroke="#cfcac0" stroke-width="3"/>`; });
+    h += `<path d="M${sx(0)} ${sy(0)}${pts.slice().reverse().map(p => 'L' + sx(p.fpr) + ' ' + sy(p.tpr)).join('')}L${sx(1)} ${sy(1)}" fill="none" stroke="#24509e" stroke-width="5"/>`;
+    const p = pts[i]; h += `<circle cx="${sx(p.fpr)}" cy="${sy(p.tpr)}" r="13" fill="#c27a1a" stroke="#fff" stroke-width="3"/>`;
+    svg.innerHTML = h; $('sr-tv').textContent = 't=' + p.t; $('sr-pt').textContent = p.fpr.toFixed(2) + ' / ' + p.tpr.toFixed(2);
+    document.querySelectorAll('#sr-tb tr').forEach((tr, q) => tr.style.fontWeight = keys[q] === f ? 700 : 400);
+  }
+  $('sr-t').oninput = e => { i = +e.target.value; draw(); };
+  document.querySelectorAll('#sr-tabs .tab').forEach(b => b.onclick = () => { document.querySelectorAll('#sr-tabs .tab').forEach(x => x.classList.toggle('on', x === b)); f = b.dataset.f; draw(); });
+  draw();
+})();
+      </script>
+    </section>
+
+    <!-- === 代价与阈值 === -->
+    <section class="slide c" data-sec="3 · 度量" data-title="代价不对称：最优阈值随业务而变" id="s-cost">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.3 代价与阈值</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:1000px">
+          <h2 style="font-size:52px">度量要服从<em>业务代价</em></h2>
+          <svg id="co-s" viewBox="0 0 1000 540" style="width:1000px;height:540px;background:#fff;border:1px solid var(--rule);margin-top:14px"></svg>
+          <div class="legend" style="margin-top:12px"><span><i style="background:#24509e"></i>平均代价曲线</span><span><i style="background:#c27a1a"></i>代价最优阈值</span><span><i style="background:#8a90a0"></i>正确率最优阈值</span></div>
+        </div>
+        <div class="grow col" style="justify-content:space-between">
+          <div>
+            <p style="font-size:27px">漏判一封垃圾，代价 = 1；<b>误杀一封正常邮件</b>（可能是客户的订单），代价 = <b class="ochre">c</b>。</p>
+            <div class="tabs" id="co-tabs" style="flex-wrap:wrap;margin:12px 0"></div>
+            <div class="ctl"><label>误杀代价 c</label><input id="co-c" type="range" min="0" max="30" value="5" style="width:420px"><b id="co-cv" style="color:var(--ochre)">×5</b></div>
+          </div>
+          <div>
+            <div class="mrow"><span>正确率最优阈值</span><b id="co-ta">–</b></div>
+            <div class="mrow"><span>代价最优阈值</span><b id="co-tc" class="ochre">–</b></div>
+            <div class="mrow"><span>代价最优时：误杀 / 漏判（封）</span><b id="co-fp">–</b></div>
+            <div class="card o" style="margin-top:14px"><p style="font-size:25px">c 越大，阈值越要<b>保守</b>，宁可漏判，也别误杀。<b>指标不是技术选择，是业务选择。</b></p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 承接 L3 代价不对称案例；真实数据 UCI Spambase；代价参数为教学假设 ⚠</div>
+      <script>
+(function () {
+  const $ = ML.$, svg = $('co-s'), keys = Object.keys(ML.spamLabel); let f = 'char!', c = 5;
+  $('co-tabs').innerHTML = keys.map(k => `<button class="tab b ${k === f ? 'on' : ''}" data-f="${k}" style="font-size:21px;padding:12px 18px">${ML.spamLabel[k]}</button>`).join('');
+  function draw() {
+    const R = ML.spamRoc(f).pts, N = SPAM_N.spam + SPAM_N.ham, cost = R.map(p => (p.fn + c * p.fp) / N), errs = R.map(p => (p.fn + p.fp) / N);
+    const ib = cost.indexOf(Math.min(...cost)), ia = errs.indexOf(Math.min(...errs)), mx = Math.max(...cost) * 1.05, sx = ML.scale(0, R.length - 1, 70, 970), sy = ML.scale(0, mx, 480, 20);
+    let h = `<line x1="70" x2="980" y1="480" y2="480" stroke="#8a90a0"/>`; for (let q = 0; q <= 4; q++) h += `<line x1="70" x2="980" y1="${sy(mx * q / 4)}" y2="${sy(mx * q / 4)}" stroke="#eee6d8"/><text x="60" y="${sy(mx * q / 4) + 6}" text-anchor="end" font-size="16" fill="#8a90a0">${(mx * q / 4).toFixed(2)}</text>`;
+    R.forEach((p, q) => { if (q % Math.ceil(R.length / 10) === 0) h += `<text x="${sx(q)}" y="506" text-anchor="middle" font-size="16" fill="#8a90a0">${p.t}</text>`; });
+    h += `<text x="520" y="532" text-anchor="middle" font-size="18" fill="#4a5263">阈值 t（特征 &gt; t 判垃圾）· 纵轴：每封邮件的平均代价</text>`;
+    h += `<path d="${cost.map((v, q) => (q ? 'L' : 'M') + sx(q) + ' ' + sy(v)).join('')}" fill="none" stroke="#24509e" stroke-width="4"/>`;
+    h += `<line x1="${sx(ia)}" x2="${sx(ia)}" y1="20" y2="480" stroke="#8a90a0" stroke-width="3" stroke-dasharray="8 6"/><line x1="${sx(ib)}" x2="${sx(ib)}" y1="20" y2="480" stroke="#c27a1a" stroke-width="4"/><circle cx="${sx(ib)}" cy="${sy(cost[ib])}" r="11" fill="#c27a1a"/>`;
+    svg.innerHTML = h; $('co-cv').textContent = '×' + c; $('co-ta').textContent = 't = ' + R[ia].t; $('co-tc').textContent = 't = ' + R[ib].t; $('co-fp').textContent = R[ib].fp + ' / ' + R[ib].fn;
+  }
+  $('co-c').oninput = e => { c = +e.target.value; draw(); };
+  document.querySelectorAll('#co-tabs .tab').forEach(b => b.onclick = () => { document.querySelectorAll('#co-tabs .tab').forEach(x => x.classList.toggle('on', x === b)); f = b.dataset.f; draw(); });
+  draw();
+})();
+      </script>
+    </section>
+
+    <!-- === 回归度量 === -->
+    <section class="slide c" data-sec="3 · 度量" data-title="回归的度量：MSE、RMSE、MAE" id="s-rm">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.4 回归的度量</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:900px">
+          <h2 style="font-size:52px">回归的度量：<em>误差的平均大小</em></h2>
+          <div class="flex gap48" style="margin:22px 0 0">
+            <div class="math">MSE = <span class="frac"><span>1</span><span>N</span></span> ∑<sub style="font-size:.5em">i=1</sub><sup style="font-size:.5em">N</sup> (Y<sub>i</sub> − Ŷ<sub>i</sub>)²</div>
+          </div>
+          <div class="math" style="margin-top:6px">RMSE = √MSE &nbsp;&nbsp; MAE = <span class="frac"><span>1</span><span>N</span></span> ∑ | Y<sub>i</sub> − Ŷ<sub>i</sub> |</div>
+          <svg id="rm-s" viewBox="0 0 900 420" style="width:900px;height:420px;background:#fff;border:1px solid var(--rule);margin-top:18px"></svg>
+        </div>
+        <div class="grow col" style="justify-content:space-between">
+          <div>
+            <p style="font-size:27px">直线固定不动；拖动<b>最右边那个点</b>的偏离量，观察哪个指标对异常值更敏感。</p>
+            <div class="ctl"><label>异常点偏离</label><input id="rm-o" type="range" min="0" max="120" value="0" style="width:420px"><b id="rm-ov" style="min-width:100px">0.0</b></div>
+          </div>
+          <div>
+            <div class="mrow"><span>MSE（单位：Y²）</span><b id="rm-mse" class="blue">–</b></div>
+            <div class="mrow"><span>RMSE（与 Y 同单位）</span><b id="rm-rmse" class="blue">–</b></div>
+            <div class="mrow"><span>MAE</span><b id="rm-mae" class="teal">–</b></div>
+            <div class="card b" style="margin-top:14px"><p style="font-size:25px">平方放大大误差：MSE / RMSE <b>惩罚异常值</b>；MAE 更稳健。选哪个，看业务上“大错”是否更不可接受。</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P28（MSE、RMSE 公式）；MAE 为补充；教学用模拟数据</div>
+      <script>
+(function () {
+  const $ = ML.$, svg = $('rm-s'), R = ML.rng(9), xs = [], e0 = []; for (let i = 0; i < 12; i++) { xs.push(.5 + i * .85); e0.push(ML.gauss(R) * .8); }
+  const sx = ML.scale(0, 10, 50, 880), sy = ML.scale(-2, 26, 400, 20), f = x => 1.5 + 1.0 * x;
+  function draw() {
+    const o = $('rm-o').value / 10, e = e0.slice(); e[11] += o; let h = `<line x1="50" x2="880" y1="${sy(0)}" y2="${sy(0)}" stroke="#cfcac0"/><line x1="${sx(0)}" y1="${sy(f(0))}" x2="${sx(10)}" y2="${sy(f(10))}" stroke="#c27a1a" stroke-width="4"/>`, s2 = 0, s1 = 0;
+    xs.forEach((x, i) => { const y = f(x) + e[i]; s2 += e[i] ** 2; s1 += Math.abs(e[i]); const sz = Math.abs(e[i]) * (sy(0) - sy(1));
+      h += `<rect x="${sx(x)}" y="${e[i] > 0 ? sy(y) : sy(f(x))}" width="${sz}" height="${Math.abs(sy(y) - sy(f(x)))}" fill="#b4402d" fill-opacity=".10" stroke="#b4402d" stroke-opacity=".5"/><circle cx="${sx(x)}" cy="${sy(y)}" r="${i === 11 ? 11 : 8}" fill="${i === 11 ? '#b4402d' : '#24509e'}"/>`; });
+    svg.innerHTML = h; const n = xs.length; $('rm-ov').textContent = o.toFixed(1); $('rm-mse').textContent = (s2 / n).toFixed(2); $('rm-rmse').textContent = Math.sqrt(s2 / n).toFixed(2); $('rm-mae').textContent = (s1 / n).toFixed(2);
+  }
+  $('rm-o').oninput = draw; draw();
+})();
+      </script>
+    </section>
+
+    <!-- === 章节 Part 4 === -->
+    <section class="slide c chapter" data-sec="4 · 2026 与落地" data-title="Part 4 · 机器学习在 2026 年的位置">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 5.1</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">04</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 4</div>
+        <h2 class="reveal d2">ML 在 <em>2026</em> 年的位置</h2>
+        <div class="s reveal d3">大模型时代，经典机器学习还有用吗？落地要问哪五件事？</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>4.1</b>“实现的时候，就是线性回归”</div>
+        <div><b>4.2</b>表格数据：树与基础模型</div>
+        <div><b>4.3</b>项目落地五问</div>
+      </div>
+    </section>
+
+    <!-- === 推文 === -->
+    <section class="slide c" data-sec="4 · 2026 与落地" data-title="融资时叫 AI，实现时是线性回归">
+      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.1 实现的时候</div><div class="pg"></div>
+      <div class="body flex gap48 center">
+        <div style="width:880px"><figure class="contain reveal d2" style="height:420px"><img src="assets/p30_1.png" alt="Baron Schwartz 的推文"></figure></div>
+        <div class="grow col gap24">
+          <h2 class="reveal d1" style="font-size:58px">名字在变，<em>方法论不变</em></h2>
+          <div class="st col gap16">
+            <div class="card b"><p style="font-size:27px">无论叫 ML 还是 AI，<b>划分数据 · 选指标 · 样本外检验</b>是同一套。</p></div>
+            <div class="card o"><p style="font-size:27px">在企业里，先上<b>简单、可解释的基线</b>（逻辑回归 / 树），再谈复杂模型。⚠ 课堂建议，非统计结论。</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P30（推文截图：Baron Schwartz @xaprb，2017-11-15，图源 ProgrammerHumor.io）</div>
+    </section>
+
+    <!-- === 树 vs 深度学习 === -->
+    <section class="slide c" data-sec="4 · 2026 与落地" data-title="表格数据：树模型 vs 深度学习" id="s-tab">
+      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.2 表格数据</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:58px">表格数据上，<em>树模型为何难以被取代</em></h2>
+        <p class="lede reveal d2" style="margin-top:14px;font-size:30px">Grinsztajn 等（NeurIPS 2022）：45 个数据集、约 1 万样本量级的中等规模表格数据，树模型（XGBoost、随机森林）仍优于深度网络。作者给出三点原因：</p>
+        <div class="flex gap32 st" style="margin-top:34px">
+          <div class="card b grow" style="min-height:300px"><div class="n">原因 1</div><h3>对无用特征更稳健</h3><p>表格里常有大量信息量很低的列；MLP 受其干扰更大。</p></div>
+          <div class="card t grow" style="min-height:300px"><div class="n">原因 2</div><h3>擅长不规则目标函数</h3><p>树学的是分段常数函数，神经网络偏好平滑函数。</p></div>
+          <div class="card o grow" style="min-height:300px"><div class="n">原因 3</div><h3>特征不可随意旋转</h3><p>表格每列有独立含义；MLP 旋转不变，树逐特征切分。</p></div>
+        </div>
+        <p class="reveal d6" style="margin-top:28px;font-size:26px;color:var(--ink-3)">这是 2022 年的结论，下一页看 2025–2026 的变化。</p>
+      </div>
+      <div class="src"><b>参考</b> R3（NeurIPS 2022 Datasets &amp; Benchmarks）；呼应本讲分类树演示</div>
+    </section>
+
+    <!-- === 表格基础模型时间线 === -->
+    <section class="slide c" data-sec="4 · 2026 与落地" data-title="2025–2026：表格基础模型与工具链" id="s-tfm">
+      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.2 表格数据</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:58px">新变化：<em>“预训练”进入表格数据</em></h2>
+        <div class="tl reveal d2" style="margin-top:44px" id="tf-tl">
+          <button data-i="0" class="on">2022-10<small>NeurIPS：树仍占优</small></button>
+          <button data-i="1">2025-01<small>TabPFN 发表于 Nature</small></button>
+          <button data-i="2">2025-11<small>TabPFN-2.5</small></button>
+          <button data-i="3">2026-06<small>scikit-learn 1.9</small></button>
+        </div>
+        <div class="flex gap32" style="margin-top:36px">
+          <div class="card b grow" style="min-height:420px" id="tf-card"></div>
+          <div class="card g" style="width:560px;min-height:420px"><div class="n">⚠ 怎么读这些结论</div><p style="font-size:27px">TabPFN（Nature）为同行评议；2.5 版的基准结果来自<b>开发方技术报告</b>，应视为自报。论文自述：数据更大、回归更“不平滑”时，XGBoost / CatBoost / AutoGluon 仍可能更好。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R1（Nature, 2025-01）；R2（Prior Labs, arXiv:2511.08667 v2, 2026-02）；R3；R4（scikit-learn 1.9, 2026-06）</div>
+      <script>
+(function () {
+  const D = [
+    ['2022 · 基准研究', '树模型在中等规模表格数据上仍优于深度学习', '“神经网络不是万能的”：表格数据有自己的归纳偏置。'],
+    ['2025-01 · TabPFN', '表格基础模型：一次前向传播完成预测', '在最多 1 万样本、500 特征的数据上，默认设置约 2.8 秒（分类）即胜过调参 4 小时的强基线集成；模型在数百万个合成数据集上预训练，推理时靠“上下文学习”，不用再梯度训练。'],
+    ['2025-11 · TabPFN-2.5', '规模扩到 5 万样本、2000 特征', '开发方称其在一次前向传播中超过调参后的 XGBoost / CatBoost，并追平调参 4 小时的 AutoGluon 1.4 集成（TabArena 基准）。'],
+    ['2026-06 · scikit-learn 1.9', '经典工具链仍在演进', '新增（实验性）训练回调与进度条，更多估计器支持 GPU / Array API，树与线性模型继续完善；最新补丁版 1.9.1 于 2026-09 发布。']
+  ];
+  const card = document.getElementById('tf-card'), bt = document.querySelectorAll('#tf-tl button');
+  function set(i) { bt.forEach((b, k) => b.classList.toggle('on', k === i)); card.innerHTML = `<div class="n">${D[i][0]}</div><h3 style="font-size:46px;margin-bottom:22px">${D[i][1]}</h3><p style="font-size:31px">${D[i][2]}</p>`; }
+  bt.forEach((b, k) => b.onclick = () => set(k)); set(0);
+})();
+      </script>
+    </section>
+
+    <!-- === 落地五问 === -->
+    <section class="slide c" data-sec="4 · 2026 与落地" data-title="项目落地五问">
+      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.3 项目落地五问</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:60px">管理者的<em>落地五问</em></h2>
+        <div class="flex gap16 st" style="margin-top:44px;align-items:stretch">
+          <div class="card b grow"><div class="n">Q1</div><h3 style="font-size:34px">Y 是什么？</h3><p style="font-size:25px">预测目标是否对应真实业务价值，且能拿到标签？</p></div>
+          <div class="card b grow"><div class="n">Q2</div><h3 style="font-size:34px">X 从哪来？</h3><p style="font-size:25px">预测时刻能获得吗？会不会泄漏未来信息？</p></div>
+          <div class="card t grow"><div class="n">Q3</div><h3 style="font-size:34px">基线是什么？</h3><p style="font-size:25px">“全判多数类”或现有规则是多少？必须先打败它。</p></div>
+          <div class="card o grow"><div class="n">Q4</div><h3 style="font-size:34px">指标与代价？</h3><p style="font-size:25px">误杀与漏判各值多少钱？阈值怎么定？</p></div>
+          <div class="card g grow"><div class="n">Q5</div><h3 style="font-size:34px">上线后呢？</h3><p style="font-size:25px">数据分布变化时，如何监控并重训？</p></div>
+        </div>
+        <div class="flex center gap24 reveal d6" style="margin-top:50px;font:500 28px var(--f-mono);color:var(--ink-2)"><span class="pill">问题</span><span class="muted">→</span><span class="pill">数据</span><span class="muted">→</span><span class="pill">样本外检验</span><span class="muted">→</span><span class="pill fill">业务价值</span></div>
+      </div>
+      <div class="src"><b>参考</b> 本讲 Part 2–3 方法论归纳；Q5 为通用实践建议 ⚠</div>
+    </section>
+
+    <!-- === 总结 === -->
+    <section class="slide c" data-sec="总结" data-title="小结：学习 = 泛化">
+      <div class="toprule"></div><div class="tag"><b>总结</b> · 小结</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:64px">小结：<em>学习，就是泛化</em></h2>
+        <div class="flex gap16 st" style="margin-top:44px;align-items:stretch">
+          <div class="card b grow"><div class="n">PART 1</div><h3 style="font-size:34px">预测问题</h3><p style="font-size:25px">从样本学 f，目标是总体上的新样本。分类 / 回归 / 聚类。</p></div>
+          <div class="card t grow"><div class="n">PART 2</div><h3 style="font-size:34px">泛化</h3><p style="font-size:25px">内样本误差可以为 0；用测试集与交叉验证防过拟合。</p></div>
+          <div class="card o grow"><div class="n">PART 3</div><h3 style="font-size:34px">度量</h3><p style="font-size:25px">先看基线；混淆矩阵 · ROC · 代价；回归看 MSE / RMSE。</p></div>
+          <div class="card g grow"><div class="n">PART 4</div><h3 style="font-size:34px">2026</h3><p style="font-size:25px">树与基础模型并存；落地先问 Y、X、基线、代价。</p></div>
+        </div>
+        <div class="quote reveal d5" style="margin-top:56px;font-size:46px">在训练集上记住答案，不是学习；<br>在没见过的数据上做对，才是。</div>
+      </div>
+      <div class="src"><b>参考</b> 本讲 Part 1–4</div>
+    </section>
+
+    <section class="slide c" data-sec="总结" data-title="课后思考与延伸">
+      <div class="toprule"></div><div class="tag"><b>总结</b> · 课后思考</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div class="grow col gap24">
+          <h2 class="reveal d1" style="font-size:60px">课后<em>思考题</em></h2>
+          <div class="st col gap16">
+            <div class="card b"><div class="n">思考 1</div><p style="font-size:27px">你所在行业里，哪个预测任务的“误杀 / 漏判”代价最不对称？阈值该怎么定？</p></div>
+            <div class="card t"><div class="n">思考 2</div><p style="font-size:27px">一个模型在历史数据上准确率 99%，你会追问哪三个问题？</p></div>
+            <div class="card o"><div class="n">思考 3</div><p style="font-size:27px">客户流失预测里，“全判不流失”的基线正确率是多少？为什么不能直接用正确率？</p></div>
+          </div>
+        </div>
+        <div style="width:620px" class="col gap16 reveal d3">
+          <div class="card g"><div class="n">下一讲</div><h3 style="font-size:40px">L5.2 · 机器学习方法</h3><p style="font-size:26px">逻辑回归、决策树、朴素贝叶斯的原理与实践。</p></div>
+          <div class="card g"><div class="n">延伸阅读</div><p style="font-size:25px">R1 Nature：TabPFN<br>R3 NeurIPS 2022 表格数据基准<br>R4 scikit-learn 1.9 发布说明</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 下一讲名称按课程规划（Lecture_5.2.pptx）；其余见参考文献</div>
+    </section>
+
+    <!-- === 参考文献 === -->
+    <section class="slide c" data-sec="附录" data-title="参考文献">
+      <div class="toprule"></div><div class="tag"><b>附录</b> · 参考文献</div><div class="pg"></div>
+      <div class="body"><h2 class="reveal d1" style="font-size:52px;margin-bottom:18px">参考文献 <em>R1–R5</em></h2>
+        <div style="font:400 20px/1.55 var(--f-mono);color:var(--ink-2)">
+          <p style="font:inherit;margin:0 0 12px"><b>R1</b> Hollmann et al.：Accurate predictions on small data with a tabular foundation model, Nature, 2025-01 — nature.com/articles/s41586-024-08328-6</p>
+          <p style="font:inherit;margin:0 0 12px"><b>R2</b> Prior Labs：TabPFN-2.5 model report, arXiv:2511.08667 (v2, 2026-02-05) — arxiv.org/abs/2511.08667；priorlabs.ai/technical-reports/tabpfn-2-5-model-report</p>
+          <p style="font:inherit;margin:0 0 12px"><b>R3</b> Grinsztajn, Oyallon, Varoquaux：Why do tree-based models still outperform deep learning on typical tabular data? NeurIPS 2022 Datasets &amp; Benchmarks — papers.nips.cc/paper_files/paper/2022/hash/0378c7692da36807bdec87ab043cdadc-Abstract-Datasets_and_Benchmarks.html</p>
+          <p style="font:inherit;margin:0 0 12px"><b>R4</b> scikit-learn 1.9 release（2026-06）与 1.9.1（2026-09-11）— blog.scikit-learn.org/updates/release-1-9/；scikit-learn.org/stable/whats_new/v1.9.html</p>
+          <p style="font:inherit;margin:0 0 12px"><b>R5</b> UCI Machine Learning Repository：Spambase（= R 包 kernlab::spam，4601 封 / 1813 垃圾），数值由 L3 复算</p>
+          <p style="font:inherit;margin:0 0 12px"><b>P</b> 原 PPT：Materials/Lecture_5.1_ML.pptx（P4–P5 定义、P9 范式、P10–P13 插值游戏、P15–P18 规则实验、P19–P20 框架、P21–P26 分类度量、P28 回归度量、P29 K 折、P30 推文）</p>
+          <p style="font:inherit;margin:0 0 12px"><b>注</b> 交互页中的模拟数据（苹果、回归点、聚类、sin 曲线、双月牙、双正态得分）均为教学合成，非真实研究结果；真实数据仅 Spambase。</p>
+        </div></div>
+    </section>
+
+  </div>
+</div>
+
+<!-- 底部控制条（舞台之外） -->
+<div class="deck-controls">
+  <button id="bPrev" title="上一页 ←">◀</button>
+  <button id="bOutline" title="目录 O">OUTLINE</button>
+  <span id="counter"></span>
+  <button id="bNext" title="下一页 →">▶</button>
+</div>
+
+<!-- 目录浮层：由各页 data-title / data-sec 自动生成 -->
+<div id="outline"><div class="close">ESC ✕</div></div>
+
+<!-- 侧边导航栏 -->
+<div id="sbTab" title="导航栏 S">导航</div>
+<aside id="sidebar"><div class="sbh"><b>Lecture 5.1 · AI 2.0 <span>机器学习</span></b><button id="sbClose">关闭 ✕</button></div><div class="sbl" id="sbList"></div></aside>
+
+<script>
+/* === 舞台缩放：整体等比缩放到窗口，保持 16:9 === */
+const stage = document.getElementById('stage');
+function fit() {
+  const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+  stage.style.transform = `translate(${(innerWidth - 1920 * s) / 2}px, ${(innerHeight - 1080 * s) / 2}px) scale(${s})`;
+}
+addEventListener('resize', fit); fit();
+
+/* === 翻页状态 === */
+const slides = [...document.querySelectorAll('.slide')];
+const counter = document.getElementById('counter');
+let cur = 0;
+slides.forEach((s, k) => { const p = s.querySelector('.pg'); if (p) p.textContent = `${String(k + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`; });
+function show(i) {
+  cur = Math.max(0, Math.min(slides.length - 1, i));
+  slides.forEach((s, k) => { s.classList.toggle('active', k === cur); s.classList.toggle('visible', k === cur); });
+  counter.textContent = `${cur + 1} / ${slides.length}`;
+  history.replaceState(null, '', '#' + (cur + 1));
+  document.querySelectorAll('#outline a').forEach((a, k) => a.classList.toggle('cur', +a.dataset.i === cur));
+  if (window.syncSidebar) syncSidebar();
+}
+
+/* === 目录（Outline）=== */
+const ol = document.getElementById('outline');
+(function buildOutline() {
+  const secs = []; let last = null;
+  slides.forEach((s, k) => {
+    const sec = s.dataset.sec; if (!sec) return;
+    if (!last || last.name !== sec) { last = { name: sec, items: [] }; secs.push(last); }
+    last.items.push({ i: k, t: s.dataset.title || '' });
+  });
+  let h = '<h1>Lecture 5.1 · AI 2.0 <span>机器学习</span></h1>';
+  secs.forEach(sc => {
+    h += `<div class="sec"><h4>${sc.name}</h4><div class="items">` +
+      sc.items.map(it => `<a data-i="${it.i}"><i>${String(it.i + 1).padStart(2, '0')}</i><span>${it.t}</span></a>`).join('') + '</div></div>';
+  });
+  ol.insertAdjacentHTML('beforeend', h);
+  ol.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { show(+a.dataset.i); toggleOutline(false); }));
+})();
+function toggleOutline(f) { ol.classList.toggle('open', f === undefined ? !ol.classList.contains('open') : f); }
+document.getElementById('bOutline').onclick = () => toggleOutline();
+document.getElementById('bPrev').onclick = () => show(cur - 1);
+document.getElementById('bNext').onclick = () => show(cur + 1);
+ol.querySelector('.close').onclick = () => toggleOutline(false);
+
+/* === 侧边导航栏：折叠分组，当前页高亮，可跳到任意页 === */
+const sb = document.getElementById('sidebar'), sbList = document.getElementById('sbList');
+(function buildSidebar() {
+  const secs = []; let last = null;
+  slides.forEach((s, k) => {
+    const sec = s.dataset.sec; if (!sec) return;
+    if (!last || last.name !== sec) { last = { name: sec, items: [] }; secs.push(last); }
+    last.items.push({ i: k, t: s.dataset.title || '' });
+  });
+  sbList.innerHTML = secs.map(sc => `<div class="sbs"><div class="sbt">${sc.name}<em>${sc.items.length}</em></div><div class="sbi">` +
+    sc.items.map(it => `<a data-i="${it.i}"><i>${String(it.i + 1).padStart(2, '0')}</i><span>${it.t}</span></a>`).join('') + '</div></div>').join('');
+  sbList.querySelectorAll('.sbt').forEach(t => t.addEventListener('click', () => t.parentNode.classList.toggle('open')));
+  sbList.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { show(+a.dataset.i); a.blur(); }));
+})();
+window.syncSidebar = function () {
+  sbList.querySelectorAll('a').forEach(a => a.classList.toggle('cur', +a.dataset.i === cur));
+  const c = sbList.querySelector('a.cur'); if (!c) return;
+  const g = c.closest('.sbs');
+  if (!g.classList.contains('open')) { sbList.querySelectorAll('.sbs.open').forEach(x => x.classList.remove('open')); g.classList.add('open'); }
+  if (sb.classList.contains('open')) c.scrollIntoView({ block: 'nearest' });
+};
+function toggleSidebar(f) { sb.classList.toggle('open', f === undefined ? !sb.classList.contains('open') : f); if (sb.classList.contains('open')) syncSidebar(); }
+document.getElementById('sbTab').onclick = () => toggleSidebar();
+document.getElementById('sbClose').onclick = () => toggleSidebar(false);
+document.addEventListener('mousedown', e => { if (sb.classList.contains('open') && !sb.contains(e.target) && e.target.id !== 'sbTab') toggleSidebar(false); });
+
+/* === 键盘 === */
+addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea')) return;
+  if (e.key === 'Escape') { toggleOutline(false); toggleSidebar(false); }
+  if (e.key === 's' || e.key === 'S') toggleSidebar();
+  if (e.key === 'o' || e.key === 'O') toggleOutline();
+  if (ol.classList.contains('open')) return;
+  if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); show(cur + 1); }
+  if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); show(cur - 1); }
+  if (e.key === 'Home') show(0);
+  if (e.key === 'End') show(slides.length - 1);
+});
+requestAnimationFrame(() => requestAnimationFrame(() => show((parseInt(location.hash.slice(1)) || 1) - 1)));
+</script>
+</body>
+</html>

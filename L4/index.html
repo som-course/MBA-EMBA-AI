@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 4 · AI 2.0 回归分析</title>
+
+<!-- Fonts: Noto Serif SC (中文标题) / Source Serif 4 (英文衬线) / Noto Sans SC (正文) / IBM Plex Mono (标签) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@600;700;900&family=Source+Serif+4:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+<style>
+/* === THEME ===
+   暖白纸面 + 墨色 + 唯一强调蓝；青、赭仅用于示意图 */
+:root {
+  --paper: #faf8f4;
+  --paper-2: #f2eee6;
+  --ink: #1d2433;
+  --ink-2: #4a5263;
+  --ink-3: #8a90a0;
+  --blue: #24509e;
+  --teal: #1f7a72;
+  --ochre: #c27a1a;
+  --rule: #cfcac0;
+
+  --f-serif-cn: 'Noto Serif SC', 'Source Serif 4', serif;
+  --f-serif-en: 'Source Serif 4', 'Noto Serif SC', serif;
+  --f-sans: 'Noto Sans SC', sans-serif;
+  --f-mono: 'IBM Plex Mono', monospace;
+
+  --stage-bg: #e9e5dc;
+  --slide-bg: var(--paper);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* === VIEWPORT-BASE (固定 1920×1080 舞台) === */
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-viewport { position: fixed; inset: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; background: var(--slide-bg, #fff); }
+.slide { position: absolute; inset: 0; width: 1920px; height: 1080px; overflow: hidden; display: block; visibility: hidden; opacity: 0; pointer-events: none; background: var(--slide-bg, #fff); }
+.slide.active, .slide.visible { visibility: visible; opacity: 1; pointer-events: auto; z-index: 1; }
+img, video, canvas, svg { max-width: 100%; max-height: 100%; }
+.deck-controls { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 1000; }
+@media print {
+  html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+  .deck-viewport { position: static; overflow: visible; background: #fff; }
+  .deck-stage { position: static; width: auto; height: auto; transform: none !important; background: none; }
+  .slide { position: relative; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 1920px; height: 1080px; break-after: page; page-break-after: always; }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+  .deck-controls { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+}
+
+/* === 动效：进入页面时依次浮现 === */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .9s var(--ease), transform .9s var(--ease); }
+.slide.visible .reveal { opacity: 1; transform: none; }
+.d1 { transition-delay: .10s; } .d2 { transition-delay: .25s; } .d3 { transition-delay: .40s; }
+.d4 { transition-delay: .55s; } .d5 { transition-delay: .70s; } .d6 { transition-delay: .85s; }
+
+/* === COVER 封面 === */
+.cover .toprule { position: absolute; left: 96px; right: 96px; top: 56px; height: 3px; background: var(--ink); }
+.cover .kicker {
+  position: absolute; left: 96px; top: 92px;
+  font: 500 22px/1 var(--f-mono); letter-spacing: .16em; color: var(--ink-3); text-transform: uppercase;
+}
+.cover .kicker b { color: var(--blue); font-weight: 500; }
+
+.cover .title { position: absolute; left: 96px; top: 140px; width: 980px; }
+.cover h1 { font: 900 144px/1.08 var(--f-serif-cn); color: var(--ink); letter-spacing: .02em; }
+.cover h1 span { color: var(--blue); display: block; }
+.cover .sub {
+  margin-top: 28px; font: 700 38px/1.5 var(--f-serif-cn); color: var(--ink);
+}
+
+/* 本讲结构 = outline（对应原稿"papers in this talk"） */
+.cover .outline { position: absolute; left: 96px; top: 650px; width: 940px; }
+.cover .outline .hd {
+  font: 500 18px/1 var(--f-mono); letter-spacing: .18em; color: var(--ink-3);
+  padding-bottom: 14px; border-bottom: 1px solid var(--rule); margin-bottom: 4px;
+}
+.cover .outline .row {
+  display: flex; align-items: baseline; gap: 28px; padding: 11px 0;
+  border-bottom: 1px solid var(--paper-2);
+}
+.cover .outline .no { font: 500 20px/1 var(--f-mono); letter-spacing: .12em; color: var(--blue); width: 120px; white-space: nowrap; }
+.cover .outline .en { font: 600 28px/1.2 var(--f-serif-en); color: var(--ink); }
+.cover .outline .cn { font: 400 24px/1.2 var(--f-sans); color: var(--ink-2); margin-left: auto; }
+
+/* 主讲人 + 校徽 */
+.cover .who { position: absolute; left: 96px; bottom: 56px; display: flex; align-items: center; gap: 28px; }
+.cover .who img { width: 124px; height: 124px; }
+.cover .who .name { font: 700 34px/1.2 var(--f-serif-cn); color: var(--ink); }
+.cover .who .org { font: 400 24px/1.55 var(--f-sans); color: var(--ink-2); margin-top: 6px; }
+.cover .who .meta { font: 400 20px/1.6 var(--f-mono); color: var(--ink-3); letter-spacing: .02em; }
+
+/* 右侧示意图：AI 四次浪潮 */
+.cover .fig { position: absolute; left: 1120px; top: 190px; width: 704px; height: 760px; }
+.fig svg { width: 100%; height: 100%; max-width: none; max-height: none; overflow: visible; }
+.fig .curve { stroke-dasharray: 1200; stroke-dashoffset: 1200; transition: stroke-dashoffset 2.2s .5s var(--ease); }
+.slide.visible .fig .curve { stroke-dashoffset: 0; }
+.fig .node { opacity: 0; transform-box: fill-box; transform-origin: center; transform: scale(.2); transition: opacity .6s var(--ease), transform .6s var(--ease); }
+.slide.visible .fig .node { opacity: 1; transform: none; }
+.fig .n1 { transition-delay: .6s; } .fig .n2 { transition-delay: 1.0s; } .fig .n3 { transition-delay: 1.4s; } .fig .n4 { transition-delay: 1.9s; }
+.fig .lab { opacity: 0; transition: opacity .8s ease; }
+.slide.visible .fig .lab { opacity: 1; }
+.fig .l1 { transition-delay: .8s; } .fig .l2 { transition-delay: 1.2s; } .fig .l3 { transition-delay: 1.6s; } .fig .l4 { transition-delay: 2.1s; }
+.fig text { font-family: var(--f-sans); }
+.fig .ver { font-family: var(--f-mono); font-weight: 500; }
+.fig .cap { font-family: var(--f-serif-en); font-style: italic; }
+
+/* === 页码/导航（舞台之外的 UI） === */
+.deck-controls { font: 500 14px var(--f-mono); color: var(--ink-3); letter-spacing: .1em; user-select: none; }
+
+/* =====================================================
+   CONTENT SLIDES（内页通用组件）
+   ===================================================== */
+.c .toprule { position: absolute; left: 96px; right: 96px; top: 56px; height: 3px; background: var(--ink); }
+.c .tag { position: absolute; left: 96px; top: 80px; font: 500 20px/1 var(--f-mono); letter-spacing: .16em; color: var(--ink-3); text-transform: uppercase; }
+.c .tag b { color: var(--blue); font-weight: 500; }
+.c .pg  { position: absolute; right: 96px; top: 80px; font: 500 20px/1 var(--f-mono); letter-spacing: .1em; color: var(--ink-3); }
+.c .body { position: absolute; left: 96px; right: 96px; top: 140px; bottom: 96px; }
+.c .src { position: absolute; left: 96px; right: 96px; bottom: 34px; padding-top: 10px; border-top: 1px solid var(--rule);
+          font: 400 17px/1.45 var(--f-mono); color: var(--ink-3); letter-spacing: .01em; }
+.c .src b { color: var(--ink-2); font-weight: 500; }
+
+.c h2 { font: 900 72px/1.18 var(--f-serif-cn); color: var(--ink); letter-spacing: .01em; }
+.c h2 em { font-style: normal; color: var(--blue); }
+.c h3 { font: 700 36px/1.3 var(--f-serif-cn); color: var(--ink); }
+.c .lede { font: 400 34px/1.65 var(--f-sans); color: var(--ink-2); }
+.c .lede b, .c p b { color: var(--ink); font-weight: 700; }
+.c p { font: 400 30px/1.65 var(--f-sans); color: var(--ink-2); }
+.c .mono { font-family: var(--f-mono); }
+.c .blue { color: var(--blue); } .c .teal { color: var(--teal); } .c .ochre { color: var(--ochre); }
+.c .muted { color: var(--ink-3); }
+.c .en { font-family: var(--f-serif-en); font-style: italic; }
+
+/* 布局 */
+.c .abs { position: absolute; }
+.c .flex { display: flex; } .c .col { display: flex; flex-direction: column; }
+.c .gap16 { gap: 16px; } .c .gap24 { gap: 24px; } .c .gap32 { gap: 32px; } .c .gap48 { gap: 48px; }
+.c .grow { flex: 1; } .c .center { align-items: center; } .c .between { justify-content: space-between; }
+
+/* 图片 */
+.c figure { margin: 0; position: relative; }
+.c figure img { display: block; width: 100%; height: 100%; object-fit: cover; border: 1px solid var(--rule); background: #fff; }
+.c figure.contain img { object-fit: contain; }
+.c figcaption { margin-top: 10px; font: 400 18px/1.4 var(--f-mono); color: var(--ink-3); }
+
+/* 卡片 */
+.c .card { background: #fff; border: 1px solid var(--rule); border-top: 4px solid var(--ink); padding: 28px 30px; }
+.c .card.b { border-top-color: var(--blue); } .c .card.t { border-top-color: var(--teal); } .c .card.o { border-top-color: var(--ochre); } .c .card.g { border-top-color: var(--ink-3); }
+.c .card h3 { font-size: 34px; margin-bottom: 12px; }
+.c .card p { font-size: 27px; line-height: 1.6; }
+.c .card .n { font: 500 20px/1 var(--f-mono); letter-spacing: .14em; color: var(--ink-3); margin-bottom: 14px; }
+
+/* 大数字 */
+.c .stat .v { font: 900 120px/1 var(--f-serif-en); color: var(--blue); letter-spacing: -.02em; }
+.c .stat .v small { font-size: 52px; font-weight: 700; margin-left: 4px; }
+.c .stat .l { font: 400 26px/1.45 var(--f-sans); color: var(--ink-2); margin-top: 10px; }
+
+/* 引用 */
+.c .quote { font: 700 56px/1.4 var(--f-serif-cn); color: var(--ink); }
+.c .quote .en { display: block; margin-top: 22px; font: 400 italic 34px/1.5 var(--f-serif-en); color: var(--ink-2); }
+.c .quote-mark { font: 900 200px/0.6 var(--f-serif-en); color: var(--blue); opacity: .18; }
+
+/* 表格 */
+.c table { border-collapse: collapse; width: 100%; }
+.c th { font: 500 20px/1 var(--f-mono); letter-spacing: .12em; text-align: left; color: var(--ink-3); padding: 0 20px 14px 0; border-bottom: 2px solid var(--ink); text-transform: uppercase; }
+.c td { font: 400 27px/1.5 var(--f-sans); color: var(--ink-2); padding: 18px 20px 18px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.c td:first-child { font-weight: 700; color: var(--ink); white-space: nowrap; }
+
+/* 标签/药丸 */
+.c .pill { display: inline-block; font: 500 20px/1 var(--f-mono); letter-spacing: .08em; padding: 8px 14px; border: 1.5px solid currentColor; border-radius: 99px; }
+.c .pill.fill { color: #fff; background: var(--blue); border-color: var(--blue); }
+
+/* 章节页 */
+.chapter .big { position: absolute; left: 96px; top: 150px; font: 900 420px/1 var(--f-serif-en); color: var(--blue); opacity: .10; letter-spacing: -.04em; }
+.chapter .ttl { position: absolute; left: 96px; top: 420px; }
+.chapter .ttl .k { font: 500 24px/1 var(--f-mono); letter-spacing: .2em; color: var(--blue); margin-bottom: 26px; }
+.chapter .ttl h2 { font-size: 150px; line-height: 1.1; }
+.chapter .ttl .s { margin-top: 28px; font: 400 40px/1.5 var(--f-sans); color: var(--ink-2); }
+.chapter .subs { position: absolute; left: 96px; right: 96px; bottom: 100px; display: flex; gap: 0; border-top: 1px solid var(--rule); }
+.chapter .subs div { flex: 1; padding-top: 20px; font: 400 26px/1.4 var(--f-sans); color: var(--ink-2); }
+.chapter .subs div b { display: block; font: 500 20px/1 var(--f-mono); letter-spacing: .14em; color: var(--blue); margin-bottom: 10px; }
+
+/* 逐项浮现 */
+.st > * { opacity: 0; transform: translateY(22px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
+.slide.visible .st > * { opacity: 1; transform: none; }
+.st > *:nth-child(1) { transition-delay: .15s; } .st > *:nth-child(2) { transition-delay: .3s; } .st > *:nth-child(3) { transition-delay: .45s; }
+.st > *:nth-child(4) { transition-delay: .6s; } .st > *:nth-child(5) { transition-delay: .75s; } .st > *:nth-child(6) { transition-delay: .9s; }
+.st > *:nth-child(7) { transition-delay: 1.05s; } .st > *:nth-child(8) { transition-delay: 1.2s; }
+
+/* 交互控件 */
+.c .tabs { display: flex; gap: 12px; }
+.c .tab { font: 500 22px/1 var(--f-mono); letter-spacing: .06em; padding: 16px 24px; border: 1.5px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; transition: all .2s; }
+.c .tab:hover { background: var(--paper-2); }
+.c .tab.on { background: var(--ink); color: #fff; }
+.c .tab.b.on { background: var(--blue); border-color: var(--blue); }
+.c .hint { font: 400 20px/1 var(--f-mono); color: var(--ink-3); letter-spacing: .06em; }
+
+/* outline 浮层 */
+#outline { position: fixed; inset: 0; z-index: 2000; background: rgba(250,248,244,.97); display: none; overflow: auto; padding: 5vh 6vw; font-family: var(--f-sans); color: var(--ink); }
+#outline.open { display: block; }
+#outline h1 { font: 900 clamp(28px,3.4vw,52px)/1.2 var(--f-serif-cn); margin-bottom: 3vh; }
+#outline h1 span { color: var(--blue); }
+#outline .sec { margin-bottom: 3vh; }
+#outline .sec h4 { font: 500 clamp(12px,1vw,16px)/1 var(--f-mono); letter-spacing: .16em; color: var(--blue); border-bottom: 1px solid var(--rule); padding-bottom: 1vh; margin-bottom: 1.4vh; }
+#outline .items { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(220px,22vw,360px), 1fr)); gap: .6vh 2vw; }
+#outline a { display: flex; gap: 12px; padding: .8vh 0; color: var(--ink); text-decoration: none; font-size: clamp(14px,1.2vw,20px); line-height: 1.4; cursor: pointer; border-bottom: 1px dotted var(--rule); }
+#outline a i { font: normal 500 clamp(11px,.9vw,14px)/1.8 var(--f-mono); color: var(--ink-3); min-width: 2.2em; }
+#outline a:hover { color: var(--blue); }
+#outline a.cur { color: var(--blue); font-weight: 700; }
+#outline .close { position: fixed; right: 3vw; top: 3vh; font: 500 14px var(--f-mono); letter-spacing: .1em; color: var(--ink-3); cursor: pointer; }
+.deck-controls { display: flex; gap: 22px; align-items: center; background: rgba(250,248,244,.85); padding: 6px 16px; border-radius: 99px; }
+.deck-controls button { all: unset; cursor: pointer; color: var(--ink-2); font: 500 14px var(--f-mono); letter-spacing: .1em; }
+.deck-controls button:hover { color: var(--blue); }
+
+/* 侧边导航栏 */
+#sbTab { position: fixed; left: 0; top: 50%; transform: translateY(-50%); z-index: 1500; width: 26px; height: 96px; background: rgba(250,248,244,.9); border: 1px solid var(--rule); border-left: none; border-radius: 0 8px 8px 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font: 500 13px var(--f-mono); color: var(--ink-3); writing-mode: vertical-rl; letter-spacing: .2em; transition: opacity .25s, color .2s; opacity: .55; }
+#sbTab:hover { opacity: 1; color: var(--blue); }
+#sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 340px; z-index: 1800; background: rgba(250,248,244,.98); border-right: 1px solid var(--rule); box-shadow: 6px 0 24px rgba(29,36,51,.08); transform: translateX(-102%); transition: transform .3s cubic-bezier(.16,1,.3,1); display: flex; flex-direction: column; font-family: var(--f-sans); color: var(--ink); }
+#sidebar.open { transform: none; }
+#sidebar .sbh { padding: 18px 20px 12px; border-bottom: 1px solid var(--rule); display: flex; align-items: center; justify-content: space-between; }
+#sidebar .sbh b { font: 900 17px var(--f-serif-cn); } #sidebar .sbh b span { color: var(--blue); }
+#sidebar .sbh button { all: unset; cursor: pointer; font: 500 12px var(--f-mono); color: var(--ink-3); letter-spacing: .1em; }
+#sidebar .sbh button:hover { color: var(--blue); }
+#sidebar .sbl { overflow-y: auto; flex: 1; padding: 6px 0 24px; }
+#sidebar .sbs > .sbt { display: flex; align-items: center; gap: 8px; padding: 11px 20px; cursor: pointer; font: 500 12px var(--f-mono); letter-spacing: .1em; color: var(--blue); border-top: 1px solid var(--rule); user-select: none; }
+#sidebar .sbs:first-child > .sbt { border-top: none; }
+#sidebar .sbt:before { content: '▸'; font-size: 11px; transition: transform .2s; }
+#sidebar .sbs.open > .sbt:before { transform: rotate(90deg); }
+#sidebar .sbt em { margin-left: auto; font-style: normal; color: var(--ink-3); }
+#sidebar .sbi { display: none; }
+#sidebar .sbs.open .sbi { display: block; }
+#sidebar .sbi a { display: flex; gap: 10px; padding: 7px 20px 7px 34px; font-size: 14px; line-height: 1.4; color: var(--ink-2); cursor: pointer; text-decoration: none; border-left: 3px solid transparent; }
+#sidebar .sbi a i { font: normal 500 11px/1.9 var(--f-mono); color: var(--ink-3); min-width: 1.9em; }
+#sidebar .sbi a:hover { background: #f0ece3; color: var(--ink); }
+#sidebar .sbi a.cur { color: var(--blue); font-weight: 700; border-left-color: var(--blue); background: #eef2fa; }
+@media print { #sbTab, #sidebar { display: none !important; } }
+
+/* === L2 扩展组件 === */
+.c .chip { display: inline-block; font: 500 24px/1 var(--f-sans); padding: 14px 20px; background: #fff; border: 1px solid var(--rule); border-left: 4px solid var(--blue); color: var(--ink); }
+.c .chips { display: flex; flex-wrap: wrap; gap: 14px; }
+.c .tl { position: relative; display: flex; gap: 0; border-top: 3px solid var(--ink); }
+.c .tl button { all: unset; cursor: pointer; flex: 1; padding: 22px 6px 0; text-align: left; position: relative; font: 500 24px/1.2 var(--f-mono); color: var(--ink-3); transition: color .2s; }
+.c .tl button:before { content: ''; position: absolute; left: 0; top: -12px; width: 20px; height: 20px; border-radius: 50%; background: var(--paper); border: 3px solid var(--ink-3); transition: all .2s; }
+.c .tl button small { display: block; margin-top: 8px; font: 400 19px/1.35 var(--f-sans); color: var(--ink-3); padding-right: 10px; }
+.c .tl button:hover { color: var(--blue); }
+.c .tl button.on { color: var(--blue); }
+.c .tl button.on:before { background: var(--blue); border-color: var(--blue); transform: scale(1.3); }
+.c .tl button.on small { color: var(--ink); font-weight: 700; }
+.c .bignum { font: 900 150px/1 var(--f-serif-en); color: var(--blue); letter-spacing: -.03em; }
+.c .bignum small { font-size: 58px; margin-left: 6px; }
+.c .arrow { font: 500 56px/1 var(--f-mono); color: var(--ink-3); align-self: center; }
+.c input[type=range] { width: 100%; accent-color: var(--blue); height: 6px; }
+.c .kv { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--rule); font: 400 26px/1.3 var(--f-sans); color: var(--ink-2); }
+.c .kv b { font: 700 40px/1 var(--f-serif-en); color: var(--ink); }
+.c .kv b.pos { color: var(--teal); } .c .kv b.neg { color: #b4402d; }
+.c figure.crop img { object-fit: cover; }
+.c .bar { height: 26px; background: var(--paper-2); position: relative; }
+.c .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--blue); transition: width .3s; }
+
+/* === L4 扩展 === */
+.cover .outline { top: 618px; }
+.cover .outline .row { padding: 7px 0; }
+.cover .who { bottom: 44px; }
+.c .arrow { font: 500 44px/1 var(--f-mono); color: var(--ink-3); }
+</style>
+</head>
+<body>
+
+<div class="deck-viewport">
+  <div class="deck-stage" id="stage">
+<script>
+/* L4 公共小工具（非幻灯片）：SVG 创建、可复现随机数、线性回归、交互辅助 */
+window.$ = id => document.getElementById(id);
+window.NS = 'http://www.w3.org/2000/svg';
+window.mk = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in (attrs || {})) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+window.rng = seed => () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+window.randn = r => () => { let u = 0, v = 0; while (!u) u = r(); v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+window.ols = pts => { const n = pts.length, mx = pts.reduce((a, p) => a + p[0], 0) / n, my = pts.reduce((a, p) => a + p[1], 0) / n; let sxy = 0, sxx = 0; pts.forEach(p => { sxy += (p[0] - mx) * (p[1] - my); sxx += (p[0] - mx) ** 2; }); const b1 = sxx ? sxy / sxx : 0; return [my - b1 * mx, b1]; };
+window.TL = function (id, did, data, def) { const box = $(id), det = $(did); data.forEach((d, i) => { const b = document.createElement('button'); b.innerHTML = d[0] + '<small>' + d[1] + '</small>'; b.onclick = () => { box.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); det.innerHTML = '<div class="n">' + d[0] + '</div><h3 style="font-size:44px">' + d[2] + '</h3><p style="font-size:28px;margin-top:12px">' + d[3] + '</p>'; }; box.appendChild(b); if (i === (def || 0)) b.click(); }); };
+/* 通用标签页：TABS(容器id, [[标签, 回调]], 默认) */
+window.TABS = function (id, items, def) { const box = $(id); items.forEach((it, i) => { const b = document.createElement('button'); b.className = 'tab b'; b.textContent = it[0]; b.onclick = () => { box.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === b)); it[1](i); }; box.appendChild(b); if (i === (def || 0)) b.click(); }); };
+/* 系数表：COEF(容器id, [[名,估计,p,备注]], 条形满刻度, 点击回调, 小数位) */
+window.COEF = function (id, rows, scale, cb, dp) { const t = $(id); dp = dp === undefined ? 3 : dp; t.innerHTML = '<tr><th>变量</th><th>系数</th><th>p 值</th><th style="width:330px">大小</th></tr>';
+  rows.forEach((r, i) => { const tr = document.createElement('tr'); tr.style.cursor = 'pointer'; const w = Math.min(1, Math.abs(r[1]) / scale) * 150, neg = r[1] < 0, td = 'padding:5px 10px 5px 0;font-size:20px;';
+    tr.innerHTML = '<td style="' + td + '">' + r[0] + '</td><td style="' + td + 'font-family:var(--f-mono)">' + r[1].toFixed(dp) + '</td><td style="' + td + 'font-family:var(--f-mono)">' + r[2] + '</td><td style="padding:5px 0"><div style="width:310px;height:16px;position:relative"><div style="position:absolute;left:155px;top:0;bottom:0;width:1px;background:var(--ink-3)"></div><i style="position:absolute;top:2px;height:12px;background:' + (neg ? '#b4402d' : 'var(--blue)') + ';' + (neg ? 'right:155px' : 'left:155px') + ';width:' + w + 'px"></i></div></td>';
+    tr.onclick = () => { t.querySelectorAll('tr').forEach(x => x.style.background = ''); tr.style.background = '#eef2fa'; cb(r, i); }; t.appendChild(tr); });
+  return i => t.querySelectorAll('tr')[i + 1].click(); };
+</script>
+
+    <!-- === SLIDE 1 · 封面 === -->
+    <section class="slide cover" data-sec="开场" data-title="封面">
+      <div class="toprule"></div>
+      <div class="kicker reveal d1"><b>Lecture 4</b> &nbsp;·&nbsp; 人工智能产业实践 &nbsp;·&nbsp; MBA / EMBA</div>
+      <div class="title">
+        <h1 class="reveal d2">AI 2.0<span>回归分析</span></h1>
+        <p class="sub reveal d3">把业务问题，<br>变成数据可分析的问题</p>
+      </div>
+      <div class="outline reveal d4">
+        <div class="hd">IN THIS LECTURE</div>
+        <div class="row"><span class="no">PART 1</span><span class="en">Regression: Y ~ X</span><span class="cn">回归分析是什么</span></div>
+        <div class="row"><span class="no">PART 2</span><span class="en">Linear Regression</span><span class="cn">线性回归精要</span></div>
+        <div class="row"><span class="no">PART 3</span><span class="en">Case: Beijing Housing</span><span class="cn">北京二手房定价</span></div>
+        <div class="row"><span class="no">PART 4</span><span class="en">Five Regressions → ML</span><span class="cn">回归五式与机器学习</span></div>
+      </div>
+      <div class="who reveal d5">
+        <img src="assets/logo-xjtu-red.png" alt="西安交通大学校徽">
+        <div>
+          <div class="name">常象宇 <span style="font-family:var(--f-serif-en);font-weight:600;font-size:28px;color:var(--ink-2)">Xiangyu Chang</span></div>
+          <div class="org">西安交通大学 管理学院</div>
+          <div class="meta">xiangyuchang@xjtu.edu.cn</div>
+        </div>
+      </div>
+      <div class="fig reveal d3">
+        <svg viewBox="0 0 704 760" aria-label="散点与回归线">
+          <line x1="40" y1="640" x2="684" y2="640" stroke="#1d2433" stroke-width="3"/>
+          <line x1="40" y1="640" x2="40" y2="120" stroke="#1d2433" stroke-width="3"/>
+          <g id="cvPts"></g>
+          <line class="curve" x1="60" y1="560" x2="660" y2="190" stroke="#24509e" stroke-width="6" stroke-linecap="round"/>
+          <text class="cap" x="360" y="720" text-anchor="middle" font-size="30" fill="#1d2433">Y = β₀ + β₁X + ε</text>
+          <text class="ver" x="48" y="104" font-size="22" fill="#8a90a0">Y 价值</text>
+          <text class="ver" x="684" y="676" text-anchor="end" font-size="22" fill="#8a90a0">X 业务知识</text>
+        </svg>
+      </div>
+      <script>(function(){const g=$('cvPts'),r=rng(7),n=randn(r);for(let i=0;i<34;i++){const x=70+i*17.2+ (r()-.5)*10,y=560-(x-60)*0.617+n()*46;const c=mk('circle',{cx:x,cy:Math.max(130,Math.min(630,y)),r:8,fill:i%3?'#1f7a72':'#c27a1a','fill-opacity':.75},g);c.setAttribute('class','node');c.style.transitionDelay=(.3+i*.03)+'s';}})();</script>
+    </section>
+
+    <!-- === SLIDE 2 · 四个问题 === -->
+    <section class="slide c" data-sec="开场" data-title="本讲要回答四个问题">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 4</b> · 开场</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:68px">本讲要回答<em>四个问题</em></h2>
+        <div class="flex gap24 st" style="margin-top:50px">
+          <div class="card b grow" style="min-height:440px"><div class="n">PART 1</div><h3 style="font-size:42px;margin-bottom:20px">什么是<br>回归分析？</h3><p style="font-size:25px">Y 是价值，X 是业务知识；回归研究二者的相关关系。</p></div>
+          <div class="card t grow" style="min-height:440px"><div class="n">PART 2</div><h3 style="font-size:42px;margin-bottom:20px">线性回归<br>怎么算？</h3><p style="font-size:25px">最小二乘：让“平均而言”的误差最小。</p></div>
+          <div class="card o grow" style="min-height:440px"><div class="n">PART 3</div><h3 style="font-size:42px;margin-bottom:20px">它如何<br>解释房价？</h3><p style="font-size:25px">北京 16210 套二手房：学区、地铁、城区各值多少钱。</p></div>
+          <div class="card g grow" style="min-height:440px"><div class="n">PART 4</div><h3 style="font-size:42px;margin-bottom:20px">回归之后<br>是什么？</h3><p style="font-size:25px">回归五式；从“解释”走向“预测”，进入机器学习。</p></div>
+        </div>
+        <div class="flex center gap24 reveal d5" style="margin-top:46px;font:500 30px var(--f-mono);color:var(--ink-2)">
+          <span class="pill">AI 1.0 规则</span><span class="muted">→</span><span class="pill fill">AI 2.0 从数据学习</span><span class="muted">→</span><span class="pill">AI 3.0 深度</span><span class="muted">→</span><span class="pill">AI 4.0 大模型</span>
+          <span style="margin-left:24px;font:400 26px var(--f-sans);color:var(--ink-3)">回归，是 AI 2.0 最朴素的起点</span>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P2、P18、P58（课程路线 AI 1.0 → 4.0 见 Lecture 1）</div>
+    </section>
+
+    <!-- === SLIDE 3 · 章节 Part 1 === -->
+    <section class="slide c chapter" data-sec="1 · 回归分析是什么" data-title="Part 1 · 回归分析是什么">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 4</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">01</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 1</div>
+        <h2 class="reveal d2">回归分析<em>是什么</em></h2>
+        <div class="s reveal d3">Y 是价值，X 是业务知识，回归研究二者之间的关系</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>1.1</b>XY 的相关关系</div>
+        <div><b>1.2</b>Y 是什么：价值</div>
+        <div><b>1.3</b>X 是什么：业务知识</div>
+        <div><b>1.4</b>案例：销售 vs 广告；汽车客户价值</div>
+      </div>
+    </section>
+
+    <!-- === SLIDE 4 · 回归 = XY === -->
+    <section class="slide c" data-sec="1 · 回归分析是什么" data-title="回归分析：研究 X 与 Y 的相关关系">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.1 XY 的相关关系</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">REGRESSION</div>
+        <h2 class="reveal d2" style="font-size:72px;margin-top:10px">研究 <em>X</em> 与 <em>Y</em> 的相关关系</h2>
+        <div class="reveal d3" style="margin-top:34px">
+          <svg viewBox="-4 -34 1736 440" style="width:1728px;height:438px">
+            <g font-family="Noto Sans SC" font-size="30">
+              <g fill="#fff" stroke="#cfcac0" stroke-width="2">
+                <rect x="0" y="20" width="300" height="76"/><rect x="0" y="116" width="300" height="76"/><rect x="0" y="212" width="300" height="76"/><rect x="0" y="308" width="300" height="76"/>
+              </g>
+              <g fill="#1d2433" text-anchor="middle"><text x="150" y="68">在线时长</text><text x="150" y="164">消费记录</text><text x="150" y="260">出险记录</text><text x="150" y="356">……</text></g>
+              <text x="150" y="6" text-anchor="middle" fill="#8a90a0" font-family="IBM Plex Mono" font-size="22">X · 业务知识</text>
+              <g stroke="#24509e" stroke-width="3" fill="none" stroke-dasharray="10 8"><path d="M300 58 C 480 58, 560 200, 700 200"/><path d="M300 154 C 480 154, 560 200, 700 200"/><path d="M300 250 C 480 250, 560 200, 700 200"/><path d="M300 346 C 480 346, 560 200, 700 200"/><animate attributeName="stroke-dashoffset" from="36" to="0" dur="1.2s" repeatCount="indefinite"/></g>
+              <rect x="700" y="130" width="360" height="140" fill="#24509e"/>
+              <text x="880" y="188" text-anchor="middle" fill="#fff" font-family="Source Serif 4" font-style="italic" font-size="44">Y = f(X) + ε</text>
+              <text x="880" y="238" text-anchor="middle" fill="#cfd8ee" font-size="26">回归模型</text>
+              <path d="M1060 200 L1330 200" stroke="#24509e" stroke-width="5"/><path d="M1330 200 l-22 -14 v28z" fill="#24509e" transform="translate(32 0)"/>
+              <rect x="1400" y="130" width="328" height="140" fill="#fff" stroke="#24509e" stroke-width="4"/>
+              <text x="1564" y="186" text-anchor="middle" fill="#1d2433" font-weight="700" font-size="36">客户价值</text>
+              <text x="1564" y="236" text-anchor="middle" fill="#8a90a0" font-size="26">流失 · 逾期 · 赔付</text>
+              <text x="1564" y="106" text-anchor="middle" fill="#8a90a0" font-family="IBM Plex Mono" font-size="22">Y · 价值</text>
+            </g>
+          </svg>
+        </div>
+        <p class="reveal d5" style="margin-top:22px;font-size:34px;text-align:center"><b class="blue">把业务问题定义为数据可分析问题！</b></p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P2、P52</div>
+    </section>
+
+    <!-- === SLIDE 5 · 相关 or 因果 === -->
+    <section class="slide c" data-sec="1 · 回归分析是什么" data-title="相关，还是因果？">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.1 XY 的相关关系</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:66px">相关 <span class="muted">or</span> <em>因果</em>？</h2><div class="hint">三组“X 与 Y 同涨同落”</div></div>
+        <div class="flex gap32 st" style="margin-top:34px">
+          <div class="card g" style="padding:22px;flex:1 1 0;min-width:0"><div class="n">案例一</div>
+            <div class="flex center between" style="height:340px"><img src="assets/p03_2.jpg" style="width:40%;max-height:300px;object-fit:contain"><span class="arrow">⇄</span><img src="assets/p03_1.jpg" style="width:40%;max-height:300px;object-fit:contain"></div>
+            <h3 style="font-size:40px;margin-top:20px">父母教育程度越高，<br>孩子教育程度越高</h3></div>
+          <div class="card g" style="padding:22px;flex:1 1 0;min-width:0"><div class="n">案例二</div>
+            <div class="flex center between" style="height:340px"><img src="assets/p03_3.jpg" style="width:40%;max-height:300px;object-fit:contain"><span class="arrow">⇄</span><img src="assets/p03_4.jpg" style="width:40%;max-height:300px;object-fit:contain"></div>
+            <h3 style="font-size:40px;margin-top:20px">粉丝数越多，<br>发帖数越多</h3></div>
+          <div class="card g" style="padding:22px;flex:1 1 0;min-width:0"><div class="n">案例三</div>
+            <div class="flex center between" style="height:340px"><img src="assets/p03_5.png" style="width:40%;max-height:300px;object-fit:contain"><span class="arrow">⇄</span><img src="assets/p03_6.jpg" style="width:40%;max-height:300px;object-fit:contain"></div>
+            <h3 style="font-size:40px;margin-top:20px">风吹得越大，<br>雾霾越轻</h3></div>
+        </div>
+        <p class="reveal d5" style="margin-top:34px;font-size:32px">回归先告诉你<b>“一起变”</b>；<b class="blue">谁导致谁</b>，要靠业务知识与研究设计来回答。</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P3（图与文字）</div>
+    </section>
+
+    <!-- === SLIDE 6 · 混杂交互 === -->
+    <section class="slide c" data-sec="1 · 回归分析是什么" data-title="相关不是因果：混杂因素演示（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.1 XY 的相关关系</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:1020px">
+          <h2 class="reveal d1" style="font-size:54px">冰淇淋销量 ↔ 溺水人数</h2>
+          <div class="flex gap16 reveal d2" style="margin:20px 0" id="cfTabs"></div>
+          <svg id="cfSvg" viewBox="0 0 1020 560" style="width:1020px;height:560px;background:#fff;border:1px solid var(--rule)"></svg>
+        </div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="card b reveal d3"><div class="n">回归线斜率（溺水 ~ 冰淇淋）</div><div class="bignum" id="cfSlope" style="font-size:96px">—</div></div>
+          <p id="cfNote" class="reveal d4" style="font-size:27px"></p>
+          <div class="flex gap16 reveal d5" style="font-size:22px;font-family:var(--f-mono)"><span style="color:#1f7a72">● 凉爽</span><span style="color:#c27a1a">● 温暖</span><span style="color:#b4402d">● 炎热</span></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 教学模拟数据（虚构；经典混杂示例）；原 PPT P3 的相关/因果问题</div>
+      <script>(function(){const r=rng(11),n=randn(r),P=[];for(let g=0;g<3;g++)for(let i=0;i<34;i++)P.push({g,x:18+g*22+n()*6.5,y:2+g*3.4+n()*1.25});
+        const cols=['#1f7a72','#c27a1a','#b4402d'],svg=$('cfSvg'),X=v=>70+(v-5)*(900/80),Y=v=>510-(v-0)*(470/14);
+        function draw(mode){svg.innerHTML='';mk('line',{x1:60,y1:510,x2:980,y2:510,stroke:'#1d2433','stroke-width':2},svg);mk('line',{x1:60,y1:510,x2:60,y2:30,stroke:'#1d2433','stroke-width':2},svg);
+          [['冰淇淋日销量（X）',520,548,'middle'],['',0,0,'']].forEach(t=>{const e=mk('text',{x:t[1],y:t[2],'text-anchor':t[3],'font-size':22,fill:'#4a5263','font-family':'Noto Sans SC'},svg);e.textContent=t[0];});
+          const yl=mk('text',{x:70,y:28,'font-size':22,fill:'#4a5263','font-family':'Noto Sans SC'},svg);yl.textContent='溺水人数（Y）';
+          P.forEach(p=>mk('circle',{cx:X(p.x),cy:Y(p.y),r:7,fill:cols[p.g],'fill-opacity':.8},svg));
+          const line=(pts,c)=>{const [a,b]=ols(pts);const x0=Math.min(...pts.map(p=>p[0])),x1=Math.max(...pts.map(p=>p[0]));mk('line',{x1:X(x0),y1:Y(a+b*x0),x2:X(x1),y2:Y(a+b*x1),stroke:c,'stroke-width':6,'stroke-linecap':'round'},svg);return b;};
+          let s;if(mode===0){s=line(P.map(p=>[p.x,p.y]),'#24509e');$('cfNote').innerHTML='整体看：冰淇淋卖得越多，溺水越多，斜率明显为正。<br><b>但冰淇淋不会让人溺水。</b>';}
+          else{const ss=[0,1,2].map(g=>line(P.filter(p=>p.g===g).map(p=>[p.x,p.y]),cols[g]));s=ss.reduce((a,b)=>a+b,0)/3;$('cfNote').innerHTML='把<b>气温</b>（共同原因）固定后，每组内部的斜率接近 0。<br><b>控制了混杂因素，相关消失。</b>';}
+          $('cfSlope').textContent=(s>=0?'+':'')+s.toFixed(2);}
+        TABS('cfTabs',[['① 不控制气温',()=>draw(0)],['② 控制气温（按组回归）',()=>draw(1)]]);})();</script>
+    </section>
+
+    <!-- === SLIDE · Y 是什么 === -->
+    <section class="slide c" data-sec="1 · 回归分析是什么" data-title="Y 是什么？价值！">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 Y 是什么：价值</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">DEFINE Y</div>
+        <h2 class="reveal d2" style="font-size:70px;margin-top:10px">Y 是什么？<em>价值！</em></h2>
+        <div class="flex gap32 st" style="margin-top:40px">
+          <div class="card b grow" style="padding:22px"><figure class="contain" style="height:300px"><img src="assets/p04_1.png" style="border:none"></figure><h3 style="margin-top:16px">客户流失</h3><p style="font-size:30px">Y = 流失与否（0/1）</p></div>
+          <div class="card t grow" style="padding:22px"><figure class="contain" style="height:300px"><img src="assets/p04_2.jpg" style="border:none"></figure><h3 style="margin-top:16px">征信</h3><p style="font-size:30px">Y = 是否逾期（0/1）</p></div>
+          <div class="card o grow" style="padding:22px"><figure class="contain" style="height:300px"><img src="assets/p04_3.jpg" style="border:none"></figure><h3 style="margin-top:16px">保险</h3><p style="font-size:30px">Y = 赔付金额（连续）</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P4</div>
+    </section>
+
+    <!-- === SLIDE 9 · 价值三表现 === -->
+    <section class="slide c" data-sec="1 · 回归分析是什么" data-title="什么是价值？收入、支出、风险">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 Y 是什么：价值</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">VALUE</div>
+        <h2 class="reveal d2" style="font-size:66px;margin-top:10px">价值，就是<em>业务的核心诉求</em></h2>
+        <div class="flex gap32 st" style="margin-top:40px">
+          <div class="card b grow" style="padding:22px"><figure class="contain" style="height:300px"><img src="assets/p06_1.png" style="border:none"></figure><h3 style="margin-top:14px">收入</h3><p style="font-size:26px">销售额 · 客单价 · 复购</p></div>
+          <div class="card t grow" style="padding:22px"><figure class="contain" style="height:300px"><img src="assets/p06_2.png" style="border:none"></figure><h3 style="margin-top:14px">支出</h3><p style="font-size:26px">获客成本 · 赔付 · 运营成本</p></div>
+          <div class="card o grow" style="padding:22px"><figure class="contain" style="height:300px"><img src="assets/p06_3.jpg" style="border:none"></figure><h3 style="margin-top:14px">风险</h3><p style="font-size:26px">违约 · 流失 · 欺诈</p></div>
+        </div>
+        <p class="reveal d5" style="margin-top:28px;font-size:30px">选对 Y，就是选对了<b>这个模型要为谁、为什么服务</b>。</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P5–P6（三类价值）；每类下的例子为课堂补充</div>
+    </section>
+
+    <!-- === SLIDE 10 · X 是什么 === -->
+    <section class="slide c" data-sec="1 · 回归分析是什么" data-title="X 是什么？业务知识！">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.3 X 是什么：业务知识</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">DEFINE X</div>
+        <h2 class="reveal d2" style="font-size:70px;margin-top:10px">X 是什么？<em>业务知识！</em></h2>
+        <div class="flex gap32 st" style="margin-top:40px">
+          <div class="card b grow" style="padding:22px"><figure class="contain" style="height:240px"><img src="assets/p07_1.png" style="border:none"></figure><h3 style="margin-top:14px;font-size:32px">客户流失</h3><p style="font-size:28px;margin-top:6px">在线时长<br>活跃程度<br>朋友个数 …</p></div>
+          <div class="card t grow" style="padding:22px"><figure class="contain" style="height:240px"><img src="assets/p07_2.jpg" style="border:none"></figure><h3 style="margin-top:14px;font-size:32px">征信</h3><p style="font-size:28px;margin-top:6px">消费记录<br>工作背景<br>教育程度 …</p></div>
+          <div class="card o grow" style="padding:22px"><figure class="contain" style="height:240px"><img src="assets/p07_3.jpg" style="border:none"></figure><h3 style="margin-top:14px;font-size:32px">保险</h3><p style="font-size:28px;margin-top:6px">出险记录<br>驾驶习惯<br>汽车状况 …</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P7（客户关系管理、征信、出险理赔都是业务问题；把业务问题变成数据问题 = 说清楚 Y 和 X）</div>
+    </section>
+
+    <!-- === SLIDE 11 · Y-X 配对（交互）=== -->
+    <section class="slide c" data-sec="1 · 回归分析是什么" data-title="练习：给业务问题定义 Y 与 X（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.3 X 是什么：业务知识</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">业务问题 → <em>Y 与 X</em></h2><div class="hint">选一个场景，再点“揭晓”</div></div>
+        <div class="flex gap16 reveal d2" id="yxTabs" style="margin-top:28px"></div>
+        <div class="flex gap32 reveal d3" style="margin-top:28px">
+          <div class="card b grow" style="min-height:430px"><div class="n">业务问题</div><h3 id="yxQ" style="font-size:44px"></h3><p id="yxS" style="margin-top:14px;font-size:27px"></p>
+            <button class="tab b" id="yxBtn" style="margin-top:34px">揭晓 Y 与 X ▸</button></div>
+          <div class="col grow gap16" style="min-width:760px">
+            <div class="card t" style="min-height:190px"><div class="n">Y · 价值（核心诉求）</div><h3 id="yxY" style="font-size:40px"></h3></div>
+            <div class="card o" style="min-height:230px"><div class="n">X · 业务知识（候选）</div><div class="chips" id="yxX" style="margin-top:6px"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P4、P7、P53–P57 的场景改编；各场景的 Y/X 为教学示例</div>
+      <script>(function(){const D=[['电信客户流失','要不要给老客户打挽留电话？','是否在下月流失（0/1）',['在线时长','月消费','好友个数','投诉次数','合约剩余月数']],['信用卡风控','要不要给这位申请人放款？','未来 12 月是否逾期（0/1）',['消费记录','工作背景','教育程度','收入','历史负债']],['车险定价','这份保单该收多少保费？','次年赔付金额（连续）',['出险记录','驾驶习惯','汽车状况','车龄','里程']],['航班延误','要不要提前通知旅客改签？','是否延误（0/1）',['天气','机型','目的地','时段','前序航班状态']]];
+        let k=0,sh=false;const T=$('yxTabs');
+        function ren(){const d=D[k];$('yxQ').textContent=d[0];$('yxS').textContent=d[1];$('yxY').textContent=sh?d[2]:'？？？';$('yxX').innerHTML=sh?d[3].map(x=>'<span class="chip">'+x+'</span>').join(''):'<span class="chip" style="color:var(--ink-3)">？？？</span>';$('yxBtn').textContent=sh?'隐藏 ◂':'揭晓 Y 与 X ▸';}
+        D.forEach((d,i)=>{const b=document.createElement('button');b.className='tab b';b.textContent=d[0];b.onclick=()=>{k=i;sh=false;T.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));ren();};T.appendChild(b);if(!i)b.classList.add('on');});
+        $('yxBtn').onclick=()=>{sh=!sh;ren();};ren();})();</script>
+    </section>
+
+    <!-- === SLIDE 12 · 销售 vs 广告 === -->
+    <section class="slide c" data-sec="1 · 回归分析是什么" data-title="案例：销售（Y）vs 广告（X）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 案例：销售 vs 广告</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:760px"><figure class="contain reveal d3" style="height:640px"><img src="assets/p08_1.jpg" style="border:none;background:transparent"></figure></div>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">AD ROI</div>
+          <h2 class="reveal d2" style="font-size:60px">钱花在<em>哪里</em>，<br>销售才会涨？</h2>
+          <div class="flex gap24 center reveal d3" style="margin-top:6px"><img src="assets/p08_3.png" style="height:80px"><img src="assets/p08_4.png" style="height:64px"><img src="assets/p08_2.jpg" style="height:96px"></div>
+          <div class="card b reveal d4"><p style="font-size:28px"><b>Y</b>：销售业绩　<b>X</b>：各渠道广告投入<br>回归系数 = <b>每多投 1 元，销售平均多多少</b>，即各渠道的投资回报率（ROI）。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P8、P9、P20</div>
+    </section>
+
+    <!-- === SLIDE 13 · 广告 ROI 计算器 === -->
+    <section class="slide c" data-sec="1 · 回归分析是什么" data-title="模型设定：连续型 X——广告预算与销售（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 案例：销售 vs 广告</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:1000px">
+          <h2 class="reveal d1" style="font-size:44px;white-space:nowrap">销售 = <em>基准</em> + β₁·央视 + β₂·百度 + β₃·腾讯 + ε</h2>
+          <div class="col gap24 reveal d2" style="margin-top:34px" id="adSl"></div>
+          <div class="reveal d3" style="margin-top:30px"><div class="bar" style="height:40px"><i id="adBar" style="background:var(--blue)"></i></div></div>
+          <p class="hint" style="margin-top:16px">拖动滑块（单位：百万元）：系数为教学假设值，不是真实投放数据</p>
+        </div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="card b reveal d3"><div class="n">预测销售额（百万元）</div><div class="bignum" id="adY" style="font-size:110px"></div></div>
+          <div class="card g reveal d4"><div class="n">每渠道：多投 1 元 → 销售平均增加</div>
+            <div class="kv"><span>央视 β₁</span><b id="b1">0.8</b></div><div class="kv"><span>百度 β₂</span><b id="b2">2.4</b></div><div class="kv"><span>腾讯 β₃</span><b id="b3">1.5</b></div></div>
+          <p class="reveal d5" style="font-size:25px"><b>其他条件不变</b>时，把预算从低 ROI 渠道挪给高 ROI 渠道，预测销售上升。</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P9、P20（模型设定：连续型 X）；系数 0.8 / 2.4 / 1.5 为教学假设</div>
+      <script>(function(){const B=[0.8,2.4,1.5],nm=['央视','百度','腾讯'],v=[40,30,30],base=50,box=$('adSl');
+        function up(){const y=base+B.reduce((a,b,i)=>a+b*v[i],0);$('adY').textContent=y.toFixed(0);$('adBar').style.width=Math.min(100,y/3)+'%';}
+        nm.forEach((n,i)=>{const d=document.createElement('div');d.innerHTML='<div class="kv" style="border:none;padding:0"><span>'+n+' 广告投入 X<sub>'+(i+1)+'</sub></span><b id="av'+i+'">'+v[i]+'</b></div><input type="range" min="0" max="100" value="'+v[i]+'">';d.querySelector('input').oninput=e=>{v[i]=+e.target.value;$('av'+i).textContent=v[i];up();};box.appendChild(d);});up();})();</script>
+    </section>
+
+    <!-- === SLIDE 14 · 案例章节：客户价值 === -->
+    <section class="slide c" data-sec="1 · 回归分析是什么" data-title="案例：某品牌轿车客户价值分析">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 案例：汽车客户价值</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">CASE STUDY</div>
+        <h2 class="reveal d2" style="font-size:78px;margin-top:10px">某品牌轿车<br><em>客户价值分析</em></h2>
+        <div class="flex gap48 center reveal d3" style="margin-top:44px"><figure class="contain" style="height:260px;width:560px"><img src="assets/p13_1.png" style="border:none;background:transparent"></figure>
+          <div class="col gap16"><p style="font-size:34px">问题：<b>客户对 4S 店，值多少钱？</b></p><p style="font-size:34px">方法：用回归找出<b>哪些因素重要、有多重要</b>。</p></div></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P10–P17</div>
+    </section>
+
+    <!-- === SLIDE 15 · 客户价值树（交互）=== -->
+    <section class="slide c" data-sec="1 · 回归分析是什么" data-title="客户价值：谁的价值？哪一类？（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 案例：汽车客户价值</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">客户价值 = <em>谁</em>的价值？</h2><div class="hint">点击视角，展开其构成</div></div>
+        <div class="flex gap24 reveal d2" id="cvT" style="margin-top:30px"></div>
+        <div class="flex gap32 reveal d3" style="margin-top:30px">
+          <div class="card b" style="width:520px;min-height:380px"><div class="n">视角</div><h3 id="cvH" style="font-size:44px"></h3><p id="cvP" style="margin-top:16px;font-size:27px"></p></div>
+          <div class="col grow gap16"><div class="n mono muted" style="font-size:20px;letter-spacing:.14em">构成（点击下钻）</div><div class="flex gap16" id="cvL1" style="flex-wrap:wrap"></div><div class="flex gap16" id="cvL2" style="flex-wrap:wrap;margin-top:6px"></div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P11（客户价值 / 厂商价值 / 4S 店价值 的分解）</div>
+      <script>(function(){const D=[['客户价值','客户自己的价值','客户为这辆车一生付出的总成本与获得的效用。',[['新车购买',[]],['重购',[]],['保养维修',['保养','维修','美容']],['金融产品',['车贷','保险']]]],['厂商价值','汽车厂商的价值','关心新车销售、重购（品牌忠诚）与金融产品。',[['新车购买',[]],['重购',[]],['金融产品',['车贷','保险']]]],['4S 店价值','4S 店的价值','店的利润更多来自售后：保养、维修、美容，以及保险等金融产品。',[['保养维修',['保养','维修','美容']],['金融产品',['车贷','保险']]]]];
+        const T=$('cvT'),L1=$('cvL1'),L2=$('cvL2');
+        function sel(i){T.querySelectorAll('.tab').forEach((x,k)=>x.classList.toggle('on',k===i));const d=D[i];$('cvH').textContent=d[1];$('cvP').textContent=d[2];L2.innerHTML='';L1.innerHTML='';d[3].forEach(c=>{const b=document.createElement('button');b.className='tab';b.style.cssText='font-size:28px;padding:20px 28px;font-family:var(--f-sans)';b.textContent=c[0]+(c[1].length?' ▾':'');b.onclick=()=>{L1.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));L2.innerHTML=c[1].map(t=>'<span class="chip">'+t+'</span>').join('');};L1.appendChild(b);});}
+        D.forEach((d,i)=>{const b=document.createElement('button');b.className='tab b';b.style.cssText='font-size:28px;padding:20px 30px;font-family:var(--f-sans)';b.textContent=d[0];b.onclick=()=>sel(i);T.appendChild(b);});sel(2);})();</script>
+    </section>
+
+    <!-- === SLIDE 16 · Y 与 X（车/人/店）=== -->
+    <section class="slide c" data-sec="1 · 回归分析是什么" data-title="Y = 下一期保养花费；X = 车、人、店（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 案例：汽车客户价值</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:56px">Y = <em>客户保养价值</em>（下一期保养花费）</h2></div>
+        <div class="flex gap48 reveal d2" style="margin-top:30px">
+          <div style="width:560px"><figure class="contain" style="height:360px"><img src="assets/p12_1.png" style="border:none;background:transparent"></figure>
+            <div class="card b" style="margin-top:20px;padding:20px 26px"><p style="font-size:26px">Y：下一期的保养花费（连续）<br>X：来自三个层面的业务知识</p></div></div>
+          <div class="grow"><div class="tabs" id="cxTabs"></div>
+            <div class="card b" style="margin-top:20px;min-height:520px"><div class="flex gap32 center"><figure class="contain" style="width:420px;height:300px"><img id="cxImg" src="" style="border:none;background:transparent"></figure><div class="grow"><div class="n" id="cxN"></div><h3 id="cxH" style="font-size:48px"></h3></div></div><div class="chips" id="cxC" style="margin-top:26px"></div></div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P12–P15</div>
+      <script>(function(){const D=[['X：车','assets/p13_1.png','车辆特征',['车价','车型','里程','车龄','……']],['X：人','assets/p14_1.jpg','客户特征',['年龄','性别','保养次数、花费','……']],['X：店','assets/p15_1.jpg','4S 店特征',['店内环境','店内促销','定期维系','……']]];
+        TABS('cxTabs',D.map(d=>[d[0],()=>{$('cxImg').src=d[1];$('cxN').textContent='X 的来源';$('cxH').textContent=d[2];$('cxC').innerHTML=d[3].map(x=>'<span class="chip">'+x+'</span>').join('');}]));})();</script>
+    </section>
+
+    <!-- === SLIDE 17 · 回归结果表（交互）=== -->
+    <section class="slide c" data-sec="1 · 回归分析是什么" data-title="回归分析结果：一张表，读懂每个变量（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 案例：汽车客户价值</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:1020px">
+          <h2 class="reveal d1" style="font-size:50px">回归结果 <span class="pill" style="font-size:22px;vertical-align:middle">调整 R² = 36.37%</span></h2>
+          <div class="reveal d2" style="margin-top:22px"><table id="rgT" style="font-size:22px"><tr><th>变量</th><th>估计值</th><th>P 值</th><th style="width:380px">大小</th></tr></table></div>
+        </div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="card b reveal d3"><div class="n">点击左侧任一行</div><h3 id="rgH" style="font-size:38px"></h3><p id="rgP" style="font-size:25px;margin-top:10px"></p></div>
+          <div class="card g reveal d4"><p style="font-size:24px">读法：<b>P 值小</b> → 该变量与 Y 的关系不太可能只是偶然；<b>估计值</b> → 其他条件不变，X 多 1 单位，Y 平均变化多少。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P16（⚠ 车型各项应为相对某一基准车型的差异，基准未在原稿说明；变量量纲不同，系数大小不可直接比较）</div>
+      <script>(function(){const R=[['常数项',-0.162,'<0.001'],['车型-A',0.001,'0.067'],['车型-B',0.260,'<0.001'],['车型-C',0.113,'0.159'],['车型-D',0.176,'0.035'],['车型-其它',-0.094,'0.273'],['当期保养总花费',0.258,'<0.001'],['当期保养总次数',0.129,'<0.001'],['当期新增里程数',0.198,'<0.001'],['累积购车数量',0.055,'<0.001'],['车价',0.143,'<0.001']];
+        const t=$('rgT');R.forEach((r,i)=>{const tr=document.createElement('tr');tr.style.cursor='pointer';const w=Math.abs(r[1])/0.3*180;const neg=r[1]<0;tr.innerHTML='<td style="padding:8px 10px 8px 0;font-size:22px">'+r[0]+'</td><td style="padding:8px 10px 8px 0;font-size:22px;font-family:var(--f-mono)">'+r[1].toFixed(3)+'</td><td style="padding:8px 10px 8px 0;font-size:22px;font-family:var(--f-mono)">'+r[2]+'</td><td style="padding:8px 0"><div style="width:380px;height:18px;position:relative"><div style="position:absolute;left:190px;top:0;bottom:0;width:1px;background:var(--ink-3)"></div><i style="position:absolute;top:2px;height:14px;background:'+(neg?'#b4402d':'var(--blue)')+';'+(neg?'right:190px':'left:190px')+';width:'+w+'px"></i></div></td>';
+          tr.onclick=()=>{t.querySelectorAll('tr').forEach(x=>x.style.background='');tr.style.background='#eef2fa';const p=r[2]==='<0.001'?0:parseFloat(r[2]);$('rgH').textContent=r[0];$('rgP').innerHTML='估计值 <b>'+r[1].toFixed(3)+'</b>，P 值 <b>'+r[2]+'</b>。'+(i===0?'这是截距：所有 X 取基准时的 Y 预测值。':(p<0.05?'统计上显著（P&lt;0.05）。':'<b>不显著</b>（P≥0.05）：证据不足以说它与 Y 有关。')+' 回答“有没有影响”。');};t.appendChild(tr);});t.querySelectorAll('tr')[7].click();})();</script>
+    </section>
+
+    <!-- === SLIDE 18 · 回归结果 → 常识？=== -->
+    <section class="slide c" data-sec="1 · 回归分析是什么" data-title="回归结果 → 常识？两个关键问题">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 案例：汽车客户价值</div><div class="pg"></div>
+      <div class="body flex gap48 center">
+        <figure class="contain reveal d3" style="width:560px;height:620px"><img src="assets/p17_1.jpg" style="border:none;background:transparent"></figure>
+        <div class="col grow gap24">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">SO WHAT?</div>
+          <h2 class="reveal d2" style="font-size:60px">看懂这张表，<br>要回答<em>两件事</em></h2>
+          <div class="col gap16 st">
+            <div class="card b"><div class="n">问题 1</div><h3>哪些变量重要？</h3><p style="font-size:26px">车型？保养？里程？——靠显著性（P 值）判断“有没有”。</p></div>
+            <div class="card t"><div class="n">问题 2</div><h3>有多重要？</h3><p style="font-size:26px">估计值是多少？误差多大？——这正是<b>线性回归精要</b>要讲的。</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P17–P19</div>
+    </section>
+
+    <!-- === SLIDE 19 · 章节 Part 2 === -->
+    <section class="slide c chapter" data-sec="2 · 线性回归精要" data-title="Part 2 · 线性回归精要">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 4</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">02</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 2</div>
+        <h2 class="reveal d2">线性回归<em>精要</em></h2>
+        <div class="s reveal d3">模型设定 · 最小二乘 · 读懂回归报表</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>2.1</b>模型设定：连续型 X</div>
+        <div><b>2.2</b>模型设定：离散型 X</div>
+        <div><b>2.3</b>最小二乘：几何与数学</div>
+        <div><b>2.4</b>典型回归报表与显著性</div>
+      </div>
+    </section>
+
+    <!-- === SLIDE 20 · 模型设定：连续型 X === -->
+    <section class="slide c" data-sec="2 · 线性回归精要" data-title="模型设定：连续型 X（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.1 模型设定：连续型 X</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">模型设定：<em>连续型 X</em></h2><div class="hint">点击公式中的各项</div></div>
+        <div class="reveal d2 flex center gap16" id="fmC" style="margin-top:46px;font:italic 600 66px/1 var(--f-serif-en);flex-wrap:nowrap;white-space:nowrap">
+          <span class="fm" data-k="y">Y<sub>i</sub></span><span>=</span><span class="fm" data-k="b0">β<sub>0</sub></span><span>+</span><span class="fm" data-k="b1">β<sub>1</sub>X<sub>i1</sub></span><span>+</span><span class="fm" data-k="b2">β<sub>2</sub>X<sub>i2</sub></span><span>+</span><span class="fm" data-k="b3">β<sub>3</sub>X<sub>i3</sub></span><span>+</span><span class="fm" data-k="e">ε<sub>i</sub></span>
+        </div>
+        <style>#fmC .fm{cursor:pointer;padding:10px 16px;border-bottom:5px solid transparent;transition:all .2s}#fmC .fm:hover{border-color:var(--ink-3)}#fmC .fm.on{color:var(--blue);border-color:var(--blue);background:#eef2fa}</style>
+        <div class="card b reveal d3" style="margin-top:52px;min-height:290px"><div class="n" id="fmN"></div><h3 id="fmH" style="font-size:46px"></h3><p id="fmP" style="font-size:29px;margin-top:12px"></p></div>
+        <p class="reveal d4" style="margin-top:20px;font-size:26px">例：销售业绩 = 基准 + 央视投入·β₁ + 百度投入·β₂ + 腾讯投入·β₃ + 误差</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P20（模型设定：连续型 X）</div>
+      <script>(function(){const D={y:['被解释变量 Y','第 i 个观测的结果','客户价值、销售额、房价……就是业务的核心诉求。'],b0:['截距 β₀','基准水平','所有 X = 0 时，Y 的平均水平（如无广告时的“基准”销售）。'],b1:['斜率 β₁（对 X₁）','X₁ 多 1 单位，Y 平均变多少','<b>在其他 X 不变的条件下</b>。对广告：β₁ 就是该渠道的投资回报率。'],b2:['斜率 β₂（对 X₂）','同理，对 X₂','每个渠道各有自己的系数，可以比较“谁更划算”。'],b3:['斜率 β₃（对 X₃）','同理，对 X₃','系数的符号表示方向，大小表示强度（需注意量纲）。'],e:['误差 ε','模型解释不了的部分','天气、口碑、竞争对手……未纳入的一切因素与随机波动。']};
+        const box=$('fmC');function sel(k){box.querySelectorAll('.fm').forEach(x=>x.classList.toggle('on',x.dataset.k===k));$('fmN').textContent=D[k][0];$('fmH').textContent=D[k][1];$('fmP').innerHTML=D[k][2];}
+        box.querySelectorAll('.fm').forEach(x=>x.onclick=()=>sel(x.dataset.k));sel('b1');})();</script>
+    </section>
+
+    <!-- === SLIDE 21 · 离散型 X：哑变量编码 === -->
+    <section class="slide c" data-sec="2 · 线性回归精要" data-title="模型设定：离散型 X——哑变量编码（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.2 模型设定：离散型 X</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:56px">离散型 X：<em>星期几效应</em></h2><div class="hint">点击某一天，看它的 Z 编码</div></div>
+        <div class="flex gap16 reveal d2" style="margin-top:30px" id="dwB"></div>
+        <div class="reveal d3" style="margin-top:34px"><table id="dwT" style="text-align:center"></table></div>
+        <div class="flex gap24 reveal d4" style="margin-top:34px">
+          <div class="card b grow" style="padding:20px 28px"><div class="n">第一步</div><p style="font-size:27px">选择<b>基准</b>：星期天</p></div>
+          <div class="card t grow" style="padding:20px 28px"><div class="n">第二步</div><p style="font-size:27px">定义 Z₁…Z₆：是该日则 1，否则 0</p></div>
+          <div class="card o grow" style="padding:20px 28px"><div class="n">为什么只要 6 个</div><p style="font-size:27px">基准日是“全 0”；再加第 7 个会与截距共线</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P21（星期几效应：基准 = 星期天；Z₁–Z₆）</div>
+      <script>(function(){const N=['星期日（基准）','星期一','星期二','星期三','星期四','星期五','星期六'];let k=0;const B=$('dwB'),T=$('dwT');
+        function ren(){let h='<tr><th style="text-align:center">今天是</th>'+[1,2,3,4,5,6].map(i=>'<th style="text-align:center">Z<sub>'+i+'</sub></th>').join('')+'</tr><tr><td style="font-size:30px">'+N[k]+'</td>'+[1,2,3,4,5,6].map(i=>'<td style="font:700 44px var(--f-serif-en);color:'+(i===k?'var(--blue)':'var(--ink-3)')+'">'+(i===k?1:0)+'</td>').join('')+'</tr>';T.innerHTML=h;B.querySelectorAll('.tab').forEach((x,i)=>x.classList.toggle('on',i===k));}
+        N.forEach((n,i)=>{const b=document.createElement('button');b.className='tab b';b.textContent=n.replace('（基准）','');b.onclick=()=>{k=i;ren();};B.appendChild(b);});ren();})();</script>
+    </section>
+
+    <!-- === SLIDE 22 · 星期效应：模型与效应图 === -->
+    <section class="slide c" data-sec="2 · 线性回归精要" data-title="每一天比星期天多卖多少？（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.2 模型设定：离散型 X</div><div class="pg"></div>
+      <div class="body">
+        <div class="reveal d1" style="font:italic 600 46px/1.2 var(--f-serif-en);white-space:nowrap">Y<sub>i</sub> = β<sub>0</sub> + <span class="muted">β₁X<sub>i1</sub> + β₂X<sub>i2</sub> + β₃X<sub>i3</sub></span> + <span class="blue">γ₁Z<sub>1</sub> + … + γ₆Z<sub>6</sub></span> + ε<sub>i</sub></div>
+        <div class="flex gap32 reveal d2" style="margin-top:24px">
+          <div style="width:1000px"><svg id="dwS" viewBox="0 0 1000 520" style="width:1000px;height:520px;background:#fff;border:1px solid var(--rule)"></svg></div>
+          <div class="col grow gap16" id="dwSl" style="justify-content:center"></div>
+        </div>
+        <p class="reveal d4" style="margin-top:16px;font-size:24px">γ<sub>j</sub> = “第 j 天”<b>相对基准（星期天）</b>的平均差异，其他 X 不变。拖动滑块修改 γ。</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P21–P22；γ 的数值为教学假设</div>
+      <script>(function(){const N=['日（基准）','一','二','三','四','五','六'],g=[0,0.2,-0.25,0,0.6,1.2,1.2],b0=10,svg=$('dwS'),sl=$('dwSl');
+        function draw(){svg.innerHTML='';const base=330,sc=70;mk('line',{x1:60,y1:base,x2:980,y2:base,stroke:'#1d2433','stroke-width':2},svg);
+          mk('line',{x1:60,y1:base-b0*0+0,x2:60,y2:20,stroke:'#1d2433','stroke-width':2},svg);
+          const t0=mk('text',{x:70,y:46,'font-size':22,fill:'#8a90a0','font-family':'IBM Plex Mono'},svg);t0.textContent='相对星期天的效应 γ';
+          g.forEach((v,i)=>{const x=110+i*130,h=v*sc*1.3;mk('rect',{x:x,y:v>=0?base-h:base,width:80,height:Math.abs(h),fill:i===0?'#8a90a0':(v>=0?'#24509e':'#b4402d')},svg);
+            const t=mk('text',{x:x+40,y:v>=0?base-h-12:base-h+34,'text-anchor':'middle','font-size':26,fill:'#1d2433','font-family':'IBM Plex Mono'},svg);t.textContent=(v>0?'+':'')+v.toFixed(2);
+            const l=mk('text',{x:x+40,y:base+(v<0?-14:34)*(v<0?-1:1)+ (v<0?0:0),'text-anchor':'middle','font-size':26,fill:'#4a5263','font-family':'Noto Sans SC'},svg);l.setAttribute('y',480);l.textContent=N[i];});
+          mk('line',{x1:60,y1:base,x2:980,y2:base,stroke:'#1d2433','stroke-width':2},svg);}
+        N.slice(1).forEach((n,j)=>{const i=j+1,d=document.createElement('div');d.innerHTML='<div class="kv" style="padding:8px 0;font-size:24px"><span>γ<sub>'+i+'</sub> 星期'+n+'</span><b id="gv'+i+'" style="font-size:30px">'+g[i].toFixed(2)+'</b></div><input type="range" min="-2" max="2" step="0.05" value="'+g[i]+'">';d.querySelector('input').oninput=e=>{g[i]=+e.target.value;$('gv'+i).textContent=g[i].toFixed(2);draw();};sl.appendChild(d);});draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 23 · 最小二乘：几何（可拖动）=== -->
+    <section class="slide c" data-sec="2 · 线性回归精要" data-title="最小二乘：几何图解（可拖动散点）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 最小二乘：几何与数学</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:1120px">
+          <div class="flex between center"><h2 class="reveal d1" style="font-size:50px">最小二乘：<em>大家好，才是真的好</em></h2></div>
+          <svg id="lsS" viewBox="0 0 1120 640" style="width:1120px;height:640px;background:#fff;border:1px solid var(--rule);margin-top:14px;touch-action:none"></svg>
+          <div class="hint" style="margin-top:10px">拖动任意散点；点击散点选中，观察 ε = Y − β₀ − β₁X</div>
+        </div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="card b reveal d3" style="padding:20px 26px"><div class="n" style="color:var(--blue)">蓝色：最小二乘线</div><div class="kv" style="border:none;padding:4px 0"><span>残差平方和</span><b id="sseO">—</b></div><p style="font-size:22px">不穿过任何一点，却让<b>整体误差最小</b>。</p></div>
+          <div class="card o reveal d4" style="padding:20px 26px"><div class="n" style="color:var(--ochre)">赭色：恰好穿过两点的线</div><div class="kv" style="border:none;padding:4px 0"><span>残差平方和</span><b id="sseT">—</b></div><p style="font-size:22px">“穿过点”看似精确，对其余点却很差。</p></div>
+          <div class="card g reveal d5" style="padding:20px 26px"><div class="n">被选中的点</div><div class="kv" style="border:none;padding:4px 0"><span>ε = Y − β₀ − β₁X</span><b id="epsV">—</b></div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P23（散点、残差线段、最小二乘线 vs 穿过两点的线）；数据为教学模拟</div>
+      <script>(function(){const r=rng(5),n=randn(r),P=[];for(let i=0;i<13;i++){const x=0.8+i*0.72+(r()-.5)*.4;P.push([x,1.6+0.62*x+n()*1.5]);}
+        const svg=$('lsS'),X=v=>70+v*(1000/10),Y=v=>580-v*(540/10);let sel=6,drag=-1;
+        function draw(){svg.innerHTML='';mk('line',{x1:60,y1:580,x2:1090,y2:580,stroke:'#1d2433','stroke-width':2},svg);mk('line',{x1:60,y1:580,x2:60,y2:20,stroke:'#1d2433','stroke-width':2},svg);
+          let t=mk('text',{x:1090,y:618,'text-anchor':'end','font-size':22,fill:'#4a5263','font-family':'Noto Sans SC'},svg);t.textContent='X 广告投入';t=mk('text',{x:72,y:34,'font-size':22,fill:'#4a5263','font-family':'Noto Sans SC'},svg);t.textContent='Y 销售收入';
+          const [a,b]=ols(P);const s=P.slice().sort((p,q)=>p[0]-q[0]);const p1=s[1],p2=s[s.length-2],b2=(p2[1]-p1[1])/(p2[0]-p1[0]),a2=p1[1]-b2*p1[0];
+          const ln=(a,b,c,w,d)=>mk('line',{x1:X(0),y1:Y(a),x2:X(10),y2:Y(a+b*10),stroke:c,'stroke-width':w,'stroke-dasharray':d||'','stroke-linecap':'round'},svg);
+          ln(a2,b2,'#c27a1a',5,'14 8');ln(a,b,'#24509e',7);
+          P.forEach((p,i)=>{const yh=a+b*p[0];if(i===sel){mk('line',{x1:X(p[0]),y1:Y(p[1]),x2:X(p[0]),y2:Y(yh),stroke:'#b4402d','stroke-width':5},svg);}});
+          P.forEach((p,i)=>{const c=mk('circle',{cx:X(p[0]),cy:Y(p[1]),r:i===sel?15:11,fill:i===sel?'#b4402d':'#1f7a72','fill-opacity':.9,stroke:'#fff','stroke-width':2,style:'cursor:grab'},svg);c.onpointerdown=e=>{drag=i;sel=i;c.setPointerCapture(e.pointerId);draw();e.preventDefault();};});
+          const sse=(a,b)=>P.reduce((m,p)=>m+(p[1]-a-b*p[0])**2,0);$('sseO').textContent=sse(a,b).toFixed(1);$('sseT').textContent=sse(a2,b2).toFixed(1);
+          $('epsV').textContent=(P[sel][1]-a-b*P[sel][0]).toFixed(2);}
+        svg.onpointermove=e=>{if(drag<0)return;const rc=svg.getBoundingClientRect(),k=1120/rc.width,x=((e.clientX-rc.left)*k-70)/100,y=(580-(e.clientY-rc.top)*k)/54;P[drag]=[Math.max(0.2,Math.min(9.8,x)),Math.max(0.2,Math.min(9.8,y))];draw();};
+        svg.onpointerup=svg.onpointerleave=()=>{drag=-1;};draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 24 · 最小二乘：数学表达（逐步）=== -->
+    <section class="slide c" data-sec="2 · 线性回归精要" data-title="最小二乘：数学表达（逐步展开）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 最小二乘：几何与数学</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:56px">最小二乘：<em>数学表达</em></h2><div class="flex gap16"><button class="tab" id="mlP">◂ 上一步</button><button class="tab b on" id="mlN">下一步 ▸</button></div></div>
+        <div class="reveal d2" id="mlF" style="margin-top:18px;height:260px;display:flex;align-items:center;justify-content:center"></div>
+        <div class="card b reveal d3" style="margin-top:10px;min-height:200px"><div class="n" id="mlK"></div><h3 id="mlH" style="font-size:42px"></h3><p id="mlD" style="font-size:28px;margin-top:10px"></p></div>
+        <div class="bar" style="margin-top:22px"><i id="mlB"></i></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P24（依次出现 Yᵢ → β₀+β₁Xᵢ → 残差 → 平方 → 求和 → 最小二乘估计）；平方为上角标，min 的参数写在正下方</div>
+      <script>(function(){
+        /* SVG 公式：角标位置用坐标写死，避免 HTML sub/sup 被行高挤扁 */
+        function svg(inner, w){
+          return '<svg viewBox="0 0 '+w+' 140" width="'+Math.min(1680,w*1.05)+'" height="250" style="max-width:100%;overflow:visible" aria-hidden="true">'
+            +'<style>.m{font:italic 600 54px Source Serif 4, Noto Serif SC, serif;fill:#1d2433}'
+            +'.s{font:italic 500 24px Source Serif 4, Noto Serif SC, serif;fill:#1d2433}'
+            +'.t{font:italic 500 22px Source Serif 4, Noto Serif SC, serif;fill:#1d2433}</style>'
+            +inner+'</svg>';
+        }
+        function Yi(x,y){return '<text class="m" x="'+x+'" y="'+y+'">Y</text><text class="s" x="'+(x+34)+'" y="'+(y+18)+'">i</text>';}
+        function b0(x,y){return '<text class="m" x="'+x+'" y="'+y+'">β</text><text class="s" x="'+(x+28)+'" y="'+(y+18)+'">0</text>';}
+        function b1(x,y){return '<text class="m" x="'+x+'" y="'+y+'">β</text><text class="s" x="'+(x+28)+'" y="'+(y+18)+'">1</text>';}
+        function Xi(x,y){return '<text class="m" x="'+x+'" y="'+y+'">X</text><text class="s" x="'+(x+34)+'" y="'+(y+18)+'">i</text>';}
+        function pred(x,y){return b0(x,y)+'<text class="m" x="'+(x+52)+'" y="'+y+'">+</text>'+b1(x+90,y)+Xi(x+142,y);}
+        function resid(x,y){return Yi(x,y)+'<text class="m" x="'+(x+52)+'" y="'+y+'">− (</text>'+pred(x+120,y)+'<text class="m" x="'+(x+330)+'" y="'+y+'">)</text>';}
+        function sq(x,y){ /* [ resid ]²   ² 明确上移 */ 
+          return '<text class="m" x="'+x+'" y="'+y+'">[</text>'+resid(x+30,y)
+            +'<text class="m" x="'+(x+390)+'" y="'+y+']</text>'
+            +'<text class="s" x="'+(x+418)+'" y="'+(y-28)+'">2</text>';}
+        function sumOp(x,y){
+          return '<text class="t" x="'+(x+10)+'" y="'+(y-38)+'">n</text>'
+            +'<text class="m" x="'+x+'" y="'+y+'">Σ</text>'
+            +'<text class="t" x="'+(x-6)+'" y="'+(y+36)+'">i = 1</text>';}
+        function minOp(x,y){
+          return '<text class="m" x="'+x+'" y="'+y+'">min</text>'
+            +'<text class="t" x="'+(x-8)+'" y="'+(y+34)+'">β</text><text class="t" x="'+(x+10)+'" y="'+(y+42)+'" font-size="16">0</text>'
+            +'<text class="t" x="'+(x+24)+'" y="'+(y+34)+'">,</text>'
+            +'<text class="t" x="'+(x+36)+'" y="'+(y+34)+'">β</text><text class="t" x="'+(x+54)+'" y="'+(y+42)+'" font-size="16">1</text>';}
+        function bh(x,y,k){return '<text class="m" x="'+x+'" y="'+y+'">β̂</text><text class="s" x="'+(x+36)+'" y="'+(y+18)+'">'+k+'</text>';}
+        const y0=78;
+        const S=[
+          ['1 / 6','真实值', svg(Yi(40,y0), 120), '第 i 个客户（或第 i 天）的真实结果。'],
+          ['2 / 6','模型的预测', svg(pred(40,y0), 360), '给定 β，用 X 算出的预测值（直线上的点）。'],
+          ['3 / 6','残差', svg(resid(20,y0), 420), '真实值与预测值的差，即图中的垂直线段，有正有负。'],
+          ['4 / 6','平方', svg(sq(20,y0), 500), '平方作用在<strong>整个残差</strong>上：正负不再抵消，并更重地惩罚大误差。'],
+          ['5 / 6','对所有观测求和', svg(sumOp(30,y0)+sq(110,y0), 620), '把 n 个观测的平方残差加总，得到残差平方和。'],
+          ['6 / 6','最小二乘估计', svg(minOp(20,y0)+sumOp(130,y0)+sq(210,y0)
+            +'<text class="m" x="700" y="'+y0+'">⟹</text>'+bh(780,y0,'0')+'<text class="m" x="840" y="'+y0+'">,</text>'+bh(870,y0,'1'), 980),
+            '最小化残差平方和，得到的 β̂₀、β̂₁ 即最小二乘估计。']
+        ];
+        let k=0;
+        function ren(){
+          const s=S[k];
+          $('mlF').innerHTML=s[2];
+          $('mlK').textContent='STEP '+s[0];
+          $('mlH').textContent=s[1];
+          $('mlD').innerHTML=s[3];
+          $('mlB').style.width=((k+1)/6*100)+'%';
+        }
+        $('mlN').onclick=()=>{k=Math.min(5,k+1);ren();};
+        $('mlP').onclick=()=>{k=Math.max(0,k-1);ren();};
+        ren();
+      })();</script>
+    </section>
+
+    <!-- === SLIDE 25 · 典型回归报表（交互）=== -->
+    <section class="slide c" data-sec="2 · 线性回归精要" data-title="线性回归：典型报表怎么读（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 典型回归报表与显著性</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:1040px">
+          <h2 class="reveal d1" style="font-size:50px">典型报表：<em>每一列回答一个问题</em></h2>
+          <div class="flex gap16 reveal d2" style="margin:20px 0" id="rpTabs"></div>
+          <table id="rpT" class="reveal d3" style="font-size:22px"></table>
+        </div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="card b reveal d3" style="min-height:300px"><div class="n" id="rpN"></div><h3 id="rpH" style="font-size:38px"></h3><p id="rpP" style="font-size:25px;margin-top:10px"></p></div>
+          <div class="card g reveal d4"><p style="font-size:24px"><b>t = 估计值 ÷ 标准误差</b>；|t| 大、P 值小，说明该系数“离 0 足够远”。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P25（Excel 输出；示例数据，非真实业务数据）；SE 在表中已四舍五入，故 t 与“估计值÷SE”略有出入</div>
+      <script>(function(){const R=[['Intercept',1.07,0.27,3.88,'<0.001'],['X1',0.96,0.02,39.71,'<0.001'],['X2',2.00,0.02,82.07,'<0.001'],['X3',1.52,0.02,63.64,'<0.001'],['Z2',0.20,0.23,0.85,'0.40'],['Z3',-0.25,0.23,-1.08,'0.28'],['Z4',0.01,0.23,0.06,'0.95'],['Z5',0.58,0.23,2.50,'0.01'],['Z6',1.17,0.23,5.01,'<0.001'],['Z7',1.20,0.23,5.14,'<0.001']];
+        const C=[['估计量','Estimate','估计量（β̂）','由最小二乘得到的系数：X 变化 1 单位，Y 平均变化多少（红绿箭头：正→绿，负→红）。'],['标准误差','Std. Error','标准误差（SE）','估计的“不确定度”：样本不同，估计会波动多大。SE 越小，估计越稳。'],['t 统计量','t value','检验统计量（t）','估计值是 SE 的多少倍。|t| ≳ 2，通常意味着离 0 够远。'],['P 值','Pr(>|t|)','显著性水平（P 值）','若真实系数为 0，仍得到这么极端结果的概率。P&lt;0.05 常被视作“显著”。']];
+        const T=$('rpT');let c=0,rw=1;
+        function ren(){let h='<tr><th>变量</th>'+C.map((x,i)=>'<th style="'+(i===c?'color:var(--blue);border-bottom-color:var(--blue)':'')+'">'+x[0]+'<br><span style="font-size:16px;text-transform:none;letter-spacing:0">('+x[1]+')</span></th>').join('')+'</tr>';
+          R.forEach((r,j)=>{const v=[r[1].toFixed(2),r[2].toFixed(2),r[3].toFixed(2),r[4]];h+='<tr data-j="'+j+'" style="cursor:pointer;'+(j===rw?'background:#eef2fa':'')+'"><td style="padding:7px 10px 7px 0;font-size:22px">'+r[0]+'</td>'+v.map((x,i)=>'<td style="padding:7px 10px 7px 0;font-size:22px;font-family:var(--f-mono);'+(i===c?'color:var(--blue);font-weight:700':'')+'">'+x+(i===0?(r[1]>0.005?' <span style="color:var(--teal)">▲</span>':(r[1]<-0.005?' <span style="color:#b4402d">▼</span>':'')):'')+'</td>').join('')+'</tr>';});T.innerHTML=h;
+          T.querySelectorAll('tr[data-j]').forEach(tr=>tr.onclick=()=>{rw=+tr.dataset.j;ren();});
+          const r=R[rw];$('rpN').textContent='当前列 · '+C[c][0]+' ｜ 当前行 · '+r[0];$('rpH').textContent=C[c][2];
+          const sig=r[4]==='<0.001'||parseFloat(r[4])<0.05;$('rpP').innerHTML=C[c][3]+'<br><br><b>'+r[0]+'</b>：'+(sig?'显著 ✓':'<span style="color:#b4402d">不显著 ✗（与 0 无法区分）</span>')+'。';
+          $('rpTabs').querySelectorAll('.tab').forEach((x,i)=>x.classList.toggle('on',i===c));}
+        C.forEach((x,i)=>{const b=document.createElement('button');b.className='tab b';b.textContent=x[0];b.onclick=()=>{c=i;ren();};$('rpTabs').appendChild(b);});ren();})();</script>
+    </section>
+
+    <!-- === SLIDE 26 · 噪声与显著性模拟 === -->
+    <section class="slide c" data-sec="2 · 线性回归精要" data-title="噪声越大，估计越不可靠：R²、SE、t 联动（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 典型回归报表与显著性</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:1020px">
+          <h2 class="reveal d1" style="font-size:52px">同一条真线，<em>不同的噪声</em></h2>
+          <svg id="nsS" viewBox="0 0 1020 560" style="width:1020px;height:560px;background:#fff;border:1px solid var(--rule);margin-top:16px"></svg>
+          <div class="flex gap24 center reveal d3" style="margin-top:18px"><span class="mono muted" style="font-size:22px">噪声 σ</span><input type="range" id="nsR" min="0.3" max="6" step="0.1" value="1.5" style="width:600px"><span class="mono blue" id="nsV" style="font-size:26px">1.5</span><button class="tab" id="nsN">重新抽样</button></div>
+        </div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="card b reveal d3"><div class="kv" style="border:none"><span>真实斜率</span><b>1.00</b></div><div class="kv"><span>估计斜率 β̂₁</span><b id="nsB">—</b></div><div class="kv"><span>标准误差 SE</span><b id="nsE">—</b></div><div class="kv"><span>t 值</span><b id="nsT">—</b></div><div class="kv"><span>R²</span><b id="nsR2">—</b></div></div>
+          <div class="card g reveal d4" id="nsC" style="min-height:130px"><p style="font-size:25px"></p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 教学模拟（n=30，真实斜率 1，随机种子可重抽）；显著性以 |t| > 2.05（自由度 28，5% 水平）近似</div>
+      <script>(function(){let seed=3;const svg=$('nsS');function run(){const r=rng(seed),n=randn(r),s=+$('nsR').value,P=[];for(let i=0;i<30;i++){const x=r()*10;P.push([x,2+1*x+n()*s]);}
+          const [a,b]=ols(P),m=P.reduce((q,p)=>q+p[1],0)/30,mx=P.reduce((q,p)=>q+p[0],0)/30;const sse=P.reduce((q,p)=>q+(p[1]-a-b*p[0])**2,0),sst=P.reduce((q,p)=>q+(p[1]-m)**2,0),sxx=P.reduce((q,p)=>q+(p[0]-mx)**2,0);const se=Math.sqrt(sse/28/sxx),t=b/se,r2=1-sse/sst;
+          svg.innerHTML='';mk('line',{x1:60,y1:520,x2:990,y2:520,stroke:'#1d2433','stroke-width':2},svg);mk('line',{x1:60,y1:520,x2:60,y2:20,stroke:'#1d2433','stroke-width':2},svg);
+          const X=v=>60+v*88,Y=v=>520-(v+8)*(480/40);mk('line',{x1:X(0),y1:Y(2),x2:X(10),y2:Y(12),stroke:'#8a90a0','stroke-width':3,'stroke-dasharray':'10 8'},svg);
+          P.forEach(p=>mk('circle',{cx:X(p[0]),cy:Math.max(25,Math.min(515,Y(p[1]))),r:8,fill:'#1f7a72','fill-opacity':.8},svg));
+          mk('line',{x1:X(0),y1:Y(a),x2:X(10),y2:Y(a+b*10),stroke:'#24509e','stroke-width':6,'stroke-linecap':'round'},svg);
+          $('nsB').textContent=b.toFixed(2);$('nsE').textContent=se.toFixed(2);$('nsT').textContent=t.toFixed(1);$('nsR2').textContent=(r2*100).toFixed(0)+'%';$('nsV').textContent=s.toFixed(1);
+          $('nsC').querySelector('p').innerHTML=Math.abs(t)>2.05?'<b>显著</b>：|t|&gt;2.05，斜率明显异于 0。':'<b style="color:#b4402d">不显著</b>：噪声太大，数据不足以确认存在关系。';}
+        $('nsR').oninput=run;$('nsN').onclick=()=>{seed+=7;run();};run();})();</script>
+    </section>
+
+    <!-- === SLIDE 27(插) · 显著 ≠ 重要（交互）=== -->
+    <section class="slide c" data-sec="2 · 线性回归精要" data-title="统计显著 ≠ 业务重要：样本量的魔力（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 典型回归报表与显著性</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:1000px">
+          <h2 class="reveal d1" style="font-size:52px">效应<em>不变</em>，样本量变大……</h2>
+          <div class="card g reveal d2" style="margin-top:26px;padding:22px 30px"><p style="font-size:26px">设定：每多投 1 元广告，销售只多 <b>0.02 元</b>（β = 0.02，业务上几乎可以忽略）；噪声 σ = 1，X 标准差 = 1。</p></div>
+          <div class="flex gap24 center reveal d3" style="margin-top:40px"><span class="mono muted" style="font-size:22px">样本量 n</span><input type="range" id="snR" min="2" max="6" step="0.02" value="2.5" style="width:620px"><span class="mono blue" id="snV" style="font-size:30px"></span></div>
+          <div class="reveal d4" style="margin-top:34px"><div class="kv" style="border:none"><span>t = β ÷ SE ≈ 0.02·√n</span><b id="snT">—</b></div><div class="bar" style="height:34px"><i id="snB"></i></div><div class="flex between hint" style="margin-top:6px"><span>0</span><span>|t| = 1.96（5% 显著线）</span><span>t = 8</span></div></div>
+        </div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="card b reveal d3" id="snC" style="min-height:300px"><div class="n">判断</div><h3 id="snH" style="font-size:44px"></h3><p id="snP" style="font-size:25px;margin-top:10px"></p></div>
+          <div class="card g reveal d5"><p style="font-size:23px"><b>显著性只回答“有没有”，不回答“有多重要”。</b>商业决策还需看<b>效应大小</b>与成本收益。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R5 Wasserstein &amp; Lazar（美国统计学会 P 值声明，2016）；原 PPT P17 的“有多重要？”；简化公式 SE ≈ σ/(√n·sd(X)) 为教学近似</div>
+      <script>(function(){function up(){const n=Math.round(Math.pow(10,+$('snR').value)),t=0.02*Math.sqrt(n);$('snV').textContent=n.toLocaleString();$('snT').textContent=t.toFixed(2);$('snB').style.width=Math.min(100,t/8*100)+'%';$('snB').style.background=t>1.96?'var(--blue)':'#aab4cf';
+          $('snH').textContent=t>1.96?'“显著”':'“不显著”';$('snP').innerHTML=t>1.96?'n = '+n.toLocaleString()+' 时，0.02 的微小效应也能显著（|t|&gt;1.96）。<br><b>但它仍然微不足道。</b>':'样本量太小，连 0.02 都无法与 0 区分——这不代表“没有效应”，只是证据不足。';}
+        $('snR').oninput=up;up();})();</script>
+    </section>
+
+    <!-- === SLIDE 27 · 章节 Part 3 === -->
+    <section class="slide c chapter" data-sec="3 · 案例：北京二手房" data-title="Part 3 · 案例：北京二手房定价">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 4</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">03</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 3</div>
+        <h2 class="reveal d2">买房难，<em>难于上青天？</em></h2>
+        <div class="s reveal d3">北京二手房房价影响因素分析：一个完整的回归案例</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>3.1</b>问题、数据与描述性分析</div>
+        <div><b>3.2</b>线性模型与对数线性模型</div>
+        <div><b>3.3</b>交互模型与预测</div>
+        <div><b>3.4</b>结论与 2026 回访</div>
+      </div>
+    </section>
+
+    <!-- === SLIDE 28 · 题目 === -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="题目：买房难，难于上青天？">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 问题、数据与描述性分析</div><div class="pg"></div>
+      <div class="body flex gap48 center">
+        <figure class="reveal d3" style="width:900px;height:640px"><img src="assets/p26_1.jpg" style="object-fit:cover"></figure>
+        <div class="col grow gap24">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">CASE · 北京</div>
+          <h2 class="reveal d2" style="font-size:66px">北京二手房<br><em>房价影响因素</em>分析</h2>
+          <p class="reveal d4" style="font-size:30px">什么因素决定了每平米的价格？<br><b>每个因素值多少钱？</b></p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P26</div>
+    </section>
+
+    <!-- === SLIDE 29 · 数据科学一般过程（交互）=== -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="数据科学的一般过程：本案例的位置（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 问题、数据与描述性分析</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:760px">
+          <h2 class="reveal d1" style="font-size:50px">12 步，走一遍<em>房价案例</em></h2>
+          <div class="flex gap16 reveal d2" style="margin-top:20px"><figure class="contain" style="width:340px;height:310px"><img src="assets/p28_1.png" style="border:none;background:transparent"></figure>
+            <div class="card b grow" style="padding:18px 24px"><div class="n" id="dsN"></div><h3 id="dsH" style="font-size:34px"></h3><p id="dsP" style="font-size:24px;margin-top:8px"></p></div></div>
+          <div class="hint" style="margin-top:14px">点击右侧步骤，对应到本案例</div>
+        </div>
+        <div class="col grow reveal d3" id="dsL" style="gap:6px"></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P27–P28（数据科学一般过程，Lecture 3 已讲）；各步在本案例中的对应为课堂补充 ⚠</div>
+      <script>(function(){const S=[['Define the question','定义问题','什么因素影响北京二手房的单位面积房价？'],['Define the ideal data set','理想数据集','每套房的价格 + 内部因素 + 区位因素。'],['Determine what data you can access','可获取的数据','某二手房中介网站的在售房源信息。'],['Obtain the data','获取数据','16210 套，北京城六区。'],['Clean the data','清洗数据','把“厅数”处理成“是否有客厅”等。'],['Exploratory data analysis','探索性分析','直方图、箱线图、散点图（3.1）。'],['Modeling','数据建模','线性 → 对数线性 → 交互模型（3.2–3.3）。'],['Interpret results','结果解释','每个系数“值多少钱 / 贵百分之几”。'],['Challenge results','挑战结果','为什么石景山的学区系数是负的？'],['Synthesize / write up','综合与记录','结论与建议。'],['Create reproducible code','整理代码','可复现的分析脚本。'],['Make paper / product','报告或产品','房价预测、购房参考。']];
+        const L=$('dsL');S.forEach((s,i)=>{const b=document.createElement('button');b.className='tab';b.style.cssText='text-align:left;font:500 22px/1.2 var(--f-sans);padding:12px 18px';b.innerHTML='<span class="mono blue" style="margin-right:12px">'+String(i+1).padStart(2,'0')+'</span>'+s[1]+' <span class="muted" style="font:400 15px var(--f-mono)">'+s[0]+'</span>';b.onclick=()=>{L.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));$('dsN').textContent='STEP '+(i+1)+' · '+s[0];$('dsH').textContent=s[1];$('dsP').textContent=s[2];};L.appendChild(b);});L.children[5].click();})();</script>
+    </section>
+
+    <!-- === SLIDE 30 · 背景 === -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="背景：什么因素在影响北京房价？">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 问题、数据与描述性分析</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">BACKGROUND</div>
+        <h2 class="reveal d2" style="font-size:62px;margin-top:10px">北京：最发达、也最具代表性的<em>房地产市场</em>之一</h2>
+        <div class="flex gap32 st" style="margin-top:46px">
+          <div class="card b grow" style="min-height:330px"><div class="n">问题 1</div><h3 style="font-size:42px">什么因素<br>影响房价？</h3></div>
+          <div class="card t grow" style="min-height:330px"><div class="n">问题 2</div><h3 style="font-size:42px">价格上的巨大差异<br>是怎样产生的？</h3></div>
+          <div class="card o grow" style="min-height:330px"><div class="n">数据</div><div class="bignum" style="font-size:96px;color:var(--ochre)">16210</div><p style="font-size:26px">套在售二手房 · 北京城内六区</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P29</div>
+    </section>
+
+    <!-- === SLIDE 31 · 路线图 === -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="分析路线图">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 问题、数据与描述性分析</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:62px">本案例的<em>分析路线</em></h2>
+        <div class="flex gap16 st" style="margin-top:46px;align-items:stretch">
+          <div class="card g grow"><div class="n">01 数据</div><h3>来源与说明</h3><p style="font-size:24px">变量、取值范围</p></div>
+          <div class="card b grow"><div class="n">02 描述</div><h3>描述性分析</h3><p style="font-size:24px">区位：城区、地铁、学区<br>内部：卧室、客厅、面积、楼层</p></div>
+          <div class="card t grow"><div class="n">03 建模</div><h3>三个模型</h3><p style="font-size:24px">① 线性 ② 对数线性<br>③ 带交叉项（城区×学区）</p></div>
+          <div class="card o grow"><div class="n">04 预测</div><h3>预测</h3><p style="font-size:24px">给定一套房，估计其单价</p></div>
+          <div class="card g grow"><div class="n">05 结论</div><h3>结论与建议</h3><p style="font-size:24px">未来研究方向</p></div>
+        </div>
+        <p class="reveal d5" style="margin-top:46px;font-size:30px">每一步都在回答：<b>我该先看什么？下一步为什么要换模型？</b></p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P30</div>
+    </section>
+
+    <!-- === SLIDE 32 · 数据来源 === -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="数据来源和说明">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 问题、数据与描述性分析</div><div class="pg"></div>
+      <div class="body flex gap48 center">
+        <div class="col gap24" style="width:640px">
+          <div class="card b reveal d2" style="padding:36px"><div class="n">样本量 n</div><div class="bignum" style="font-size:150px">16210</div></div>
+          <div class="chips reveal d3"><span class="chip">来源：某二手房中介网站</span><span class="chip">北京在售二手房</span><span class="chip">城内六区</span></div>
+        </div>
+        <div class="col grow gap16">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">DATA</div>
+          <h2 class="reveal d2" style="font-size:56px">在售房源的<em>挂牌价</em>，<br>不等于成交价</h2>
+          <div class="card o reveal d4"><div class="n">用数据前先问</div><p style="font-size:26px">① 价格是挂牌价还是成交价？<br>② 数据采于何时？<br>③ 平台是否覆盖全部房源？<br>——这些都会影响结论如何推广。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P31；挂牌价/成交价、采集时间为课堂提醒（原稿未标注数据时间 ⚠）</div>
+    </section>
+
+    <!-- === SLIDE 33 · 变量表 === -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="变量说明：1 个因变量，7 个自变量">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 问题、数据与描述性分析</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:50px;margin-bottom:16px">因变量 <em>Y</em>：单位面积房价　自变量 <em>X</em>：内部 + 区位</h2>
+        <table class="reveal d2" style="font-size:22px">
+          <tr><th>类型</th><th>变量</th><th>说明</th><th>取值范围 / 备注</th></tr>
+          <tr><td style="font-size:22px;padding:11px 14px 11px 0"><span class="pill fill" style="font-size:16px">Y</span></td><td style="font-size:22px;padding:11px 14px 11px 0">单位面积房价</td><td style="font-size:22px;padding:11px 14px 11px 0">万元 / ㎡</td><td style="font-size:22px;padding:11px 0">1.83 ~ 14.98 <span class="ochre">⚠</span></td></tr>
+          <tr><td style="font-size:22px;padding:11px 14px 11px 0;color:var(--teal)">内部因素</td><td style="font-size:22px;padding:11px 14px 11px 0">房屋面积</td><td style="font-size:22px;padding:11px 14px 11px 0">㎡</td><td style="font-size:22px;padding:11px 0">30.06 ~ 299.00</td></tr>
+          <tr><td style="font-size:22px;padding:11px 14px 11px 0;color:var(--teal)">内部因素</td><td style="font-size:22px;padding:11px 14px 11px 0">卧室数</td><td style="font-size:22px;padding:11px 14px 11px 0">个</td><td style="font-size:22px;padding:11px 0">1 ~ 5</td></tr>
+          <tr><td style="font-size:22px;padding:11px 14px 11px 0;color:var(--teal)">内部因素</td><td style="font-size:22px;padding:11px 14px 11px 0">厅数 → 是否有客厅</td><td style="font-size:22px;padding:11px 14px 11px 0">0 ~ 3；建模时处理为 0/1</td><td style="font-size:22px;padding:11px 0">——</td></tr>
+          <tr><td style="font-size:22px;padding:11px 14px 11px 0;color:var(--teal)">内部因素</td><td style="font-size:22px;padding:11px 14px 11px 0">所属楼层</td><td style="font-size:22px;padding:11px 14px 11px 0">定性，3 水平（相对楼层）</td><td style="font-size:22px;padding:11px 0">低 / 中 / 高</td></tr>
+          <tr><td style="font-size:22px;padding:11px 14px 11px 0;color:var(--ochre)">区位因素</td><td style="font-size:22px;padding:11px 14px 11px 0">所属城区</td><td style="font-size:22px;padding:11px 14px 11px 0">定性，6 水平</td><td style="font-size:22px;padding:11px 0">朝阳 东城 丰台 海淀 石景山 西城</td></tr>
+          <tr><td style="font-size:22px;padding:11px 14px 11px 0;color:var(--ochre)">区位因素</td><td style="font-size:22px;padding:11px 14px 11px 0">是否邻近地铁</td><td style="font-size:22px;padding:11px 14px 11px 0">0/1</td><td style="font-size:22px;padding:11px 0">82.89% 邻近地铁</td></tr>
+          <tr><td style="font-size:22px;padding:11px 14px 11px 0;color:var(--ochre)">区位因素</td><td style="font-size:22px;padding:11px 14px 11px 0">是否学区房</td><td style="font-size:22px;padding:11px 14px 11px 0">0/1</td><td style="font-size:22px;padding:11px 0">30.22% 是学区房</td></tr>
+        </table>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P32；⚠ 变量表给出房价取值范围 1.83~14.98，下一页描述统计为最小 1.40、最大 14.99，两处不一致，原稿未说明</div>
+    </section>
+
+    <!-- === SLIDE 34 · 因变量 === -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="因变量：单位面积房价的分布">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 问题、数据与描述性分析</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <figure class="contain reveal d3" style="width:800px;height:650px"><img src="assets/p33_1.png" style="border:none"></figure>
+        <div class="col grow gap16" style="justify-content:center">
+          <h2 class="reveal d1" style="font-size:50px">均值 6.12，<em>右偏</em></h2>
+          <div class="card b reveal d2" style="padding:18px 28px"><div class="kv" style="border:none;padding:6px 0"><span>均值</span><b>6.12</b></div><div class="kv" style="padding:6px 0"><span>中位数</span><b>5.74</b></div><div class="kv" style="padding:6px 0"><span>最小值</span><b>1.40</b></div><div class="kv" style="padding:6px 0"><span>最大值</span><b>14.99</b></div><p style="font-size:20px;margin-top:6px">单位：万元 / ㎡</p></div>
+          <div class="card g reveal d3" style="padding:16px 24px"><p style="font-size:23px"><b>最低</b>：丰台东山坡三里，两居，100.83 ㎡<br><b>最高</b>：西城金融街，三室一厅，77.40 ㎡</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P33（直方图为原稿图）；均值 &gt; 中位数 → 右偏</div>
+    </section>
+
+    <!-- === SLIDE 35 · 区位因素 1：城区 === -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="区位因素 ①：城区梯队">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 问题、数据与描述性分析</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <figure class="contain reveal d3" style="width:840px;height:660px"><img src="assets/p34_1.png" style="border:none"></figure>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:24px;letter-spacing:.14em">位置 1 / 2</div>
+          <h2 class="reveal d2" style="font-size:50px">各城区单价<em>差异很大</em></h2>
+          <div class="col gap16 st">
+            <div class="card b" style="padding:16px 24px"><div class="n">第一梯队</div><h3 style="font-size:32px">西城 · 海淀 · 东城</h3></div>
+            <div class="card t" style="padding:16px 24px"><div class="n">第二梯队</div><h3 style="font-size:32px">朝阳 · 丰台 · 石景山</h3></div>
+            <div class="card g" style="padding:16px 24px"><p style="font-size:23px"><b>猜想</b>：与城区的资源禀赋有关——学区资源、交通便利程度等。</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P34（箱线图为原稿图）</div>
+    </section>
+
+    <!-- === SLIDE 36 · 区位因素 2：学区地铁 === -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="区位因素 ②：学区房、地铁房">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 问题、数据与描述性分析</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <figure class="contain reveal d3" style="width:900px;height:640px"><img src="assets/p35_1.png" style="border:none"></figure>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:24px;letter-spacing:.14em">位置 2 / 2</div>
+          <h2 class="reveal d2" style="font-size:50px"><em>学区房、地铁房</em><br>单价更高</h2>
+          <div class="flex gap16 st"><div class="card b grow" style="padding:18px 24px"><div class="n">占比</div><div class="bignum" style="font-size:72px">30%</div><p style="font-size:22px">学区房</p></div><div class="card t grow" style="padding:18px 24px"><div class="n">占比</div><div class="bignum" style="font-size:72px;color:var(--teal)">83%</div><p style="font-size:22px">邻近地铁</p></div></div>
+          <p class="reveal d5" style="font-size:24px">箱线图里，橙色（是）整体高于蓝色（否）。</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P35（图），P32（占比 30.22% / 82.89%）</div>
+    </section>
+
+    <!-- === SLIDE 37 · 内部因素 1 === -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="内部因素 ①：卧室数、厅数、楼层">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 问题、数据与描述性分析</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:48px">房屋内部：<em>差别没有位置大</em></h2>
+        <figure class="contain reveal d3" style="height:300px;margin-top:20px"><img src="assets/p36_1.png" style="border:none"></figure>
+        <div class="flex gap24 st" style="margin-top:22px">
+          <div class="card g grow" style="padding:18px 26px"><div class="n">卧室数</div><p style="font-size:25px">不同卧室数，单价差异<b>不明显</b></p></div>
+          <div class="card b grow" style="padding:18px 26px"><div class="n">厅数</div><p style="font-size:25px">厅数越少，单价越高；0 厅仅占 5%，不少是“房价逆天”的胡同四合院</p></div>
+          <div class="card g grow" style="padding:18px 26px"><div class="n">楼层</div><p style="font-size:25px">不同楼层，单价差异<b>不明显</b></p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P36（箱线图：卧室数 / 厅数 / 楼层）</div>
+    </section>
+
+    <!-- === SLIDE 38 · 内部因素 2 === -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="内部因素 ②：面积与单价">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 问题、数据与描述性分析</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <figure class="contain reveal d3" style="width:740px;height:680px"><img src="assets/p37_1.png" style="border:none"></figure>
+        <div class="col grow gap16" style="justify-content:center">
+          <h2 class="reveal d1" style="font-size:50px">面积与单价：<br><em>弱负相关</em></h2>
+          <div class="card b reveal d2" style="padding:18px 28px"><div class="n">相关系数</div><div class="bignum" style="font-size:80px">−0.07</div><p style="font-size:22px">显著，但很弱</p></div>
+          <div class="card o reveal d3" style="padding:18px 28px"><p style="font-size:25px">同等面积，单价波动很大（尤其 100 ㎡ 以下）。<br><b>猜测</b>：还有别的因素在起作用——学区？地铁？</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P37（散点图为原稿图）</div>
+    </section>
+
+    <!-- === SLIDE 39 · 小结 === -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="描述性分析小结：候选因素">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 问题、数据与描述性分析</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:60px">可能影响单价的<em>因素</em></h2>
+        <div class="flex gap32 st" style="margin-top:46px">
+          <div class="card o grow" style="min-height:420px"><div class="n">区位因素</div><h3 style="font-size:44px;margin-bottom:20px">位置，位置，位置</h3><div class="chips"><span class="chip">城区</span><span class="chip">地铁</span><span class="chip">学区</span></div></div>
+          <div class="card t grow" style="min-height:420px"><div class="n">内部因素</div><h3 style="font-size:44px;margin-bottom:20px">房子本身</h3><div class="chips"><span class="chip">卧室数</span><span class="chip">是否有客厅</span><span class="chip">面积</span><span class="chip">楼层</span></div></div>
+        </div>
+        <p class="reveal d5" style="margin-top:34px;font-size:30px">描述分析只能<b>一个一个地看</b>；回归能<b class="blue">同时控制</b>多个因素。</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P38</div>
+    </section>
+
+    <!-- === SLIDE 40 · 线性模型（交互）=== -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="模型 ①：线性回归——每个因素值多少钱（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.2 线性模型与对数线性模型</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:940px">
+          <h2 class="reveal d1" style="font-size:44px">线性模型 <span class="pill" style="font-size:20px;vertical-align:middle">Y = 单位面积房价 · 调整 R² = 0.5901</span></h2>
+          <table id="m1T" class="reveal d2" style="margin-top:12px"></table>
+        </div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="card b reveal d3" style="min-height:330px"><div class="n">控制其他因素不变时</div><h3 id="m1H" style="font-size:36px"></h3><p id="m1P" style="font-size:25px;margin-top:10px"></p></div>
+          <div class="card g reveal d4" style="padding:16px 24px"><p style="font-size:22px">基准组：<b>石景山区</b>（城区）、<b>高层</b>（楼层）。系数 = 相对基准的<b>平均差异（万元/㎡）</b>。点击一行查看解读。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P39–P40；⚠ 原稿解读页写“西城比石景山高 3.75 万”，而系数表为 3.705，此处按表中 3.705</div>
+      <script>(function(){const R=[['截距项',3.315,'<.0001'],['城区-丰台',0.131,'0.001'],['城区-朝阳',0.875,'<.0001'],['城区-东城',2.443,'<.0001'],['城区-海淀',2.191,'<.0001'],['城区-西城',3.705,'<.0001'],['学区房',1.183,'<.0001'],['地铁房',0.672,'0.001'],['楼层-中层',0.152,'<.0001'],['楼层-低层',0.198,'<.0001'],['有客厅',0.163,'<.0001'],['卧室数',0.111,'<.0001'],['房间面积',-0.002,'<.0001']];
+        const T={'截距项':['截距','石景山、非学区、非地铁、高层、无客厅、0 卧室、0 ㎡ 时的“基准”值，本身无直接业务含义。'],'城区-西城':['西城 vs 石景山','石景山最低，<b>西城最高</b>：同等条件下平均每平米高 <b>3.705 万元</b>。'],'学区房':['学区房','比非学区房平均高 <b>1.183 万元/㎡</b>。'],'地铁房':['地铁房','比非地铁房平均高 <b>0.672 万元/㎡</b>（6720 元）。'],'有客厅':['有客厅','有客厅的房子单价更高，平均高 0.163 万元/㎡。'],'卧室数':['卧室数','每多一间卧室，单价平均增加 <b>0.111 万元</b>（1110 元）。'],'房间面积':['房屋面积','面积每多 1 ㎡，单价平均下降 0.002 万元；<b>面积大，单价反而低</b>。']};
+        const go=COEF('m1T',R,3.8,(r)=>{const t=T[r[0]]||[r[0],r[0].indexOf('楼层')>=0?'相对“高层”：'+r[0].slice(3)+'的单价平均高 <b>'+r[1]+' 万元/㎡</b>——高层最低。':'相对石景山，平均高 <b>'+r[1]+' 万元/㎡</b>。'];$('m1H').textContent=t[0];$('m1P').innerHTML=t[1];});go(5);})();</script>
+    </section>
+
+    <!-- === SLIDE 41 · 为什么取对数（交互）=== -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="为什么对房价取对数？异方差演示（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.2 线性模型与对数线性模型</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:1020px">
+          <h2 class="reveal d1" style="font-size:50px">价格越高，<em>波动越大</em></h2>
+          <div class="flex gap16 reveal d2" id="lgT" style="margin:18px 0"></div>
+          <svg id="lgS" viewBox="0 0 1020 560" style="width:1020px;height:560px;background:#fff;border:1px solid var(--rule)"></svg>
+        </div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="card b reveal d3"><div class="n" id="lgN"></div><h3 id="lgH" style="font-size:38px"></h3><p id="lgP" style="font-size:25px;margin-top:10px"></p></div>
+          <div class="card g reveal d4"><p style="font-size:23px"><b>异方差</b>：误差的大小随 X 变化。普通最小二乘的点估计仍可用，但标准误、p 值会失真。对数变换常能让波动“均匀”。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P49（“对数线性模型可克服异方差”）；模拟数据（非原案例数据），仅示意</div>
+      <script>(function(){const r=rng(21),n=randn(r),P=[];for(let i=0;i<150;i++){const x=r()*10,ly=0.5+0.2*x+n()*0.22;P.push([x,Math.exp(ly),ly]);}
+        const svg=$('lgS');function draw(m){svg.innerHTML='';mk('line',{x1:60,y1:520,x2:990,y2:520,stroke:'#1d2433','stroke-width':2},svg);mk('line',{x1:60,y1:520,x2:60,y2:20,stroke:'#1d2433','stroke-width':2},svg);
+          const yv=p=>m?p[2]:p[1],ymax=m?2.9:19,ymin=m?0:0;const X=v=>60+v*90,Y=v=>520-(v-ymin)/(ymax-ymin)*480;
+          P.forEach(p=>mk('circle',{cx:X(p[0]),cy:Y(yv(p)),r:6,fill:'#1f7a72','fill-opacity':.65},svg));
+          const pts=P.map(p=>[p[0],yv(p)]),[a,b]=ols(pts);mk('line',{x1:X(0),y1:Y(a),x2:X(10),y2:Y(a+b*10),stroke:'#24509e','stroke-width':6},svg);
+          const t=mk('text',{x:72,y:36,'font-size':22,fill:'#4a5263','font-family':'Noto Sans SC'},svg);t.textContent=m?'ln(单价)':'单价';
+          const s1=Math.sqrt(pts.filter(p=>p[0]<3).reduce((q,p)=>q+(p[1]-a-b*p[0])**2,0)/pts.filter(p=>p[0]<3).length),s2=Math.sqrt(pts.filter(p=>p[0]>7).reduce((q,p)=>q+(p[1]-a-b*p[0])**2,0)/pts.filter(p=>p[0]>7).length);
+          $('lgN').textContent=m?'取对数后':'原尺度';$('lgH').textContent=m?'带状均匀':'喇叭口形';$('lgP').innerHTML='左段（X&lt;3）残差标准差 <b>'+s1.toFixed(2)+'</b>；右段（X&gt;7）<b>'+s2.toFixed(2)+'</b>，右/左 = <b>'+(s2/s1).toFixed(1)+'×</b>。'+(m?'<br>波动基本一致。':'<br>价格高时波动大得多。');}
+        TABS('lgT',[['① 原尺度 Y',()=>draw(0)],['② ln(Y)',()=>draw(1)]]);})();</script>
+    </section>
+
+    <!-- === SLIDE 42 · 对数线性模型 === -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="模型 ②：对数线性回归（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.2 线性模型与对数线性模型</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:940px">
+          <h2 class="reveal d1" style="font-size:44px">对数线性模型 <span class="pill" style="font-size:20px;vertical-align:middle">Y = ln(房价) · 调整 R² = 0.6079</span></h2>
+          <table id="m2T" class="reveal d2" style="margin-top:12px"></table>
+        </div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="card b reveal d3" style="min-height:330px"><div class="n">系数 → “贵百分之几”</div><h3 id="m2H" style="font-size:36px"></h3><p id="m2P" style="font-size:25px;margin-top:10px"></p></div>
+          <div class="card g reveal d4" style="padding:16px 24px"><p style="font-size:21px">表中系数为原表的 ×10⁻¹ 标度（即 6.270 → 0.627）。基准同前：石景山、高层。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P41–P42；⚠ 原稿把系数直接读作百分比（如“西城贵 62.70%”）；精确换算为 e^β−1，见下页；⚠ 本表楼层系数与线性模型表完全相同（0.152 / 0.198），疑为原稿复制，建议核对</div>
+      <script>(function(){const R=[['截距项',12.360,'<.0001'],['城区-丰台',0.441,'<.0001'],['城区-朝阳',2.057,'<.0001'],['城区-东城',4.577,'<.0001'],['城区-海淀',4.320,'<.0001'],['城区-西城',6.270,'<.0001'],['学区房',1.719,'<.0001'],['地铁房',1.282,'<.0001'],['楼层-中层',0.152,'<.0001'],['楼层-低层',0.198,'<.0001'],['有客厅',0.275,'0.001'],['卧室数',0.140,'<.0001'],['房间面积',-0.003,'<.0001']];
+        const go=COEF('m2T',R,6.5,(r,i)=>{const b=r[1]/10;$('m2H').textContent=r[0];$('m2P').innerHTML=i===0?'对数尺度的截距，不直接解读。':'系数 β = <b>'+b.toFixed(4)+'</b>：<br>近似解读（原稿）：贵 <b>'+(b*100).toFixed(2)+'%</b>；<br>精确解读：<b>e<sup>β</sup>−1 = '+((Math.exp(b)-1)*100).toFixed(2)+'%</b>。'+(Math.abs(b)>0.15?'<br><span class="ochre">β 较大时，两者差距明显。</span>':'<br>β 较小时，两者相近。');},2);go(5);})();</script>
+    </section>
+
+    <!-- === SLIDE 43 · 系数→百分比（交互）=== -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="对数模型：系数 β 与“贵百分之几”（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.2 线性模型与对数线性模型</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:1020px">
+          <h2 class="reveal d1" style="font-size:50px">“β ≈ 增长率”<em>只在 β 很小时</em>成立</h2>
+          <svg id="pcS" viewBox="0 0 1020 540" style="width:1020px;height:540px;background:#fff;border:1px solid var(--rule);margin-top:16px"></svg>
+          <div class="flex gap24 center reveal d3" style="margin-top:16px"><span class="mono muted" style="font-size:22px">β</span><input type="range" id="pcR" min="0" max="0.8" step="0.005" value="0.627" style="width:700px"><span class="mono blue" id="pcV" style="font-size:26px"></span></div>
+        </div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="card g reveal d3"><div class="n">近似：100·β</div><div class="bignum" id="pcA" style="font-size:80px;color:var(--ink-3)"></div></div>
+          <div class="card b reveal d4"><div class="n">精确：100·(e<sup>β</sup> − 1)</div><div class="bignum" id="pcB" style="font-size:80px"></div></div>
+          <p class="reveal d5" style="font-size:23px">取 β = 0.627（西城 vs 石景山）：近似 62.7%，<b>精确 87.2%</b>。</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 数学恒等式 e^β−1；系数取自原 PPT P41–P42（对数线性模型，西城 = 0.627）</div>
+      <script>(function(){const svg=$('pcS');function draw(){const b=+$('pcR').value;svg.innerHTML='';mk('line',{x1:70,y1:500,x2:990,y2:500,stroke:'#1d2433','stroke-width':2},svg);mk('line',{x1:70,y1:500,x2:70,y2:20,stroke:'#1d2433','stroke-width':2},svg);
+          const X=v=>70+v/0.8*900,Y=v=>500-v/1.25*470;let d1='',d2='';for(let i=0;i<=80;i++){const v=i*0.01;d1+=(i?'L':'M')+X(v)+' '+Y(v);d2+=(i?'L':'M')+X(v)+' '+Y(Math.exp(v)-1);}
+          mk('path',{d:d1,fill:'none',stroke:'#8a90a0','stroke-width':4,'stroke-dasharray':'10 8'},svg);mk('path',{d:d2,fill:'none',stroke:'#24509e','stroke-width':6},svg);
+          mk('line',{x1:X(b),y1:500,x2:X(b),y2:Y(Math.exp(b)-1),stroke:'#c27a1a','stroke-width':3},svg);mk('circle',{cx:X(b),cy:Y(b),r:9,fill:'#8a90a0'},svg);mk('circle',{cx:X(b),cy:Y(Math.exp(b)-1),r:11,fill:'#24509e'},svg);
+          [['β（对数尺度）',990,536,'end'],['',0,0,'']].forEach(t=>{const e=mk('text',{x:t[1],y:t[2],'text-anchor':t[3],'font-size':22,fill:'#4a5263','font-family':'Noto Sans SC'},svg);e.textContent=t[0];});
+          let e=mk('text',{x:80,y:40,'font-size':22,fill:'#24509e','font-family':'IBM Plex Mono'},svg);e.textContent='— 精确 e^β − 1';e=mk('text',{x:80,y:70,'font-size':22,fill:'#8a90a0','font-family':'IBM Plex Mono'},svg);e.textContent='- - 近似 β';
+          $('pcV').textContent=b.toFixed(3);$('pcA').textContent=(b*100).toFixed(1)+'%';$('pcB').textContent=((Math.exp(b)-1)*100).toFixed(1)+'%';}
+        $('pcR').oninput=draw;draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 44 · 交互模型：概念（交互）=== -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="模型 ③：交互项——学区的价值因城区而异（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.3 交互模型与预测</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:1040px">
+          <h2 class="reveal d1" style="font-size:48px">学区溢价，<em>各城区一样吗？</em></h2>
+          <div class="flex gap16 reveal d2" id="itT" style="margin:16px 0"></div>
+          <svg id="itS" viewBox="0 0 1040 540" style="width:1040px;height:540px;background:#fff;border:1px solid var(--rule)"></svg>
+        </div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="card b reveal d3"><div class="n" id="itN"></div><h3 id="itH" style="font-size:36px"></h3><p id="itP" style="font-size:25px;margin-top:10px"></p></div>
+          <div class="card g reveal d4"><p style="font-size:23px">纵轴：相对“石景山 · 非学区房”的价格倍数（其余因素取同值）。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P43–P44 的系数（对数线性模型与交互模型）；倍数 = e^系数，由本讲系数表计算</div>
+      <script>(function(){const D=['石景山','丰台','朝阳','东城','海淀','西城'];
+        const A={b:[0,.0441,.2057,.4577,.432,.627],s:.1719},B={b:[0,.0429,.2184,.4467,.4121,.6177],s:-.18,it:[0,.2948,.278,.3706,.3876,.3638]};
+        const svg=$('itS'),X=i=>110+i*165,Y=v=>500-v/2.6*470;
+        function draw(m){svg.innerHTML='';mk('line',{x1:60,y1:500,x2:1020,y2:500,stroke:'#1d2433','stroke-width':2},svg);mk('line',{x1:60,y1:500,x2:60,y2:20,stroke:'#1d2433','stroke-width':2},svg);
+          const non=D.map((d,i)=>Math.exp((m?B:A).b[i])),sch=D.map((d,i)=>Math.exp((m?B:A).b[i]+(m?B.s+B.it[i]:A.s)));
+          [1,2].forEach(v=>{mk('line',{x1:60,y1:Y(v),x2:1020,y2:Y(v),stroke:'#e6e1d6','stroke-width':1},svg);const t=mk('text',{x:52,y:Y(v)+7,'text-anchor':'end','font-size':20,fill:'#8a90a0','font-family':'IBM Plex Mono'},svg);t.textContent=v+'×';});
+          D.forEach((d,i)=>{mk('line',{x1:X(i),y1:Y(non[i]),x2:X(i),y2:Y(sch[i]),stroke:sch[i]>=non[i]?'#c27a1a':'#b4402d','stroke-width':6},svg);mk('circle',{cx:X(i),cy:Y(non[i]),r:12,fill:'#24509e'},svg);mk('rect',{x:X(i)-12,y:Y(sch[i])-12,width:24,height:24,fill:'#c27a1a'},svg);
+            let t=mk('text',{x:X(i),y:532,'text-anchor':'middle','font-size':24,fill:'#4a5263','font-family':'Noto Sans SC'},svg);t.textContent=d;
+            t=mk('text',{x:X(i)+22,y:Y(sch[i])+4,'font-size':20,fill:'#1d2433','font-family':'IBM Plex Mono'},svg);t.textContent=((sch[i]/non[i]-1)*100>=0?'+':'')+((sch[i]/non[i]-1)*100).toFixed(0)+'%';});
+          mk('circle',{cx:560,cy:36,r:9,fill:'#24509e'},svg);let t=mk('text',{x:576,y:43,'font-size':20,fill:'#4a5263','font-family':'Noto Sans SC'},svg);t.textContent='非学区';mk('rect',{x:672,y:26,width:20,height:20,fill:'#c27a1a'},svg);t=mk('text',{x:700,y:43,'font-size':20,fill:'#4a5263','font-family':'Noto Sans SC'},svg);t.textContent='学区（标注：学区相对溢价）';
+          $('itN').textContent=m?'交互模型':'无交互：学区溢价一刀切';
+          $('itH').textContent=m?'线段长短不一':'各城区“+19%”完全平行';
+          $('itP').innerHTML=m?'学区溢价在<b>石景山为负（−16%）</b>，海淀、东城、西城约 +20%。<br>一个系数装不下所有城区。':'模型假定每个城区的学区溢价都是 e<sup>0.172</sup>−1 ≈ <b>+19%</b>。';}
+        TABS('itT',[['① 无交互（对数线性）',()=>draw(0)],['② 加入 城区×学区',()=>draw(1)]]);})();</script>
+    </section>
+
+    <!-- === SLIDE 45 · 交互模型系数 === -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="模型 ③：带交叉项的对数线性模型（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.3 交互模型与预测</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:940px">
+          <h2 class="reveal d1" style="font-size:42px">交互模型 <span class="pill" style="font-size:20px;vertical-align:middle">加入 城区×学区 · 调整 R² = 0.6108</span></h2>
+          <table id="m3T" class="reveal d2" style="margin-top:8px"></table>
+        </div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="card b reveal d3" style="min-height:330px"><div class="n">点击一行</div><h3 id="m3H" style="font-size:36px"></h3><p id="m3P" style="font-size:25px;margin-top:10px"></p></div>
+          <div class="card o reveal d4" style="padding:16px 24px"><p style="font-size:22px"><b>学区房</b>的系数变成了 <b>−1.800</b>：它只表示<b>石景山</b>（基准城区）的学区溢价。其他城区要加上交互项。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P43–P45（系数 ×10⁻¹ 标度）</div>
+      <script>(function(){const R=[['截距项',12.410,'<.0001'],['城区-丰台',0.429,'<.0001'],['城区-朝阳',2.184,'<.0001'],['城区-东城',4.467,'<.0001'],['城区-海淀',4.121,'<.0001'],['城区-西城',6.177,'<.0001'],['学区房',-1.800,'<.0001'],['地铁房',1.257,'<.0001'],['楼层-中层',0.263,'<.0001'],['楼层-低层',0.343,'<.0001'],['有客厅',0.270,'0.001'],['卧室数',0.140,'<.0001'],['房间面积',-0.003,'<.0001'],['丰台*学区',2.948,'<.0001'],['朝阳*学区',2.780,'<.0001'],['东城*学区',3.706,'<.0001'],['海淀*学区',3.876,'<.0001'],['西城*学区',3.638,'<.0001']];
+        const S={'丰台':2.948,'朝阳':2.780,'东城':3.706,'海淀':3.876,'西城':3.638};
+        const go=COEF('m3T',R,6.5,(r,i)=>{$('m3H').textContent=r[0];let p;if(r[0]==='学区房')p='石景山：学区房比非学区房 <b>低</b> e<sup>−0.18</sup>−1 = <b>−16.5%</b>。';else if(r[0].indexOf('*')>0){const d=r[0].split('*')[0],t=(R[6][1]+r[1])/10;p='在 <b>'+d+'</b>，学区溢价 = −1.800 + '+r[1].toFixed(3)+' = <b>'+(t*10).toFixed(3)+'</b>（×10⁻¹），即 <b>'+((Math.exp(t)-1)*100).toFixed(1)+'%</b>。';}else p='系数 '+r[1].toFixed(3)+'（×10⁻¹），精确百分比 = e<sup>'+(r[1]/10).toFixed(4)+'</sup>−1 = <b>'+((Math.exp(r[1]/10)-1)*100).toFixed(2)+'%</b>。';$('m3P').innerHTML=p;},2);go(6);})();</script>
+    </section>
+
+    <!-- === SLIDE 46 · 学区系数为负之谜 === -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="为什么石景山的学区系数是负的？">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.3 交互模型与预测</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:1000px">
+          <div class="mono blue reveal d1" style="font-size:24px;letter-spacing:.14em">DIAGNOSIS · 数据原因</div>
+          <h2 class="reveal d2" style="font-size:52px;margin-top:8px">各城区的<em>学区房占比</em></h2>
+          <div class="col gap16 reveal d3" id="shB" style="margin-top:26px"></div>
+          <p class="hint" style="margin-top:20px">点击某个城区，查看样本量</p>
+        </div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="card o reveal d3"><div class="n">数据原因</div><h3 style="font-size:36px">石景山：学区房只有 0.92%</h3><p style="font-size:24px;margin-top:10px">1947 套里仅约 18 套是学区房，估计很不稳定。</p></div>
+          <div class="card g reveal d4"><div class="n">客观原因</div><p style="font-size:24px">石景山的学区资源在 6 个城区中相对较差。</p></div>
+          <div class="card b reveal d5" id="shC"><p style="font-size:23px"></p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P45（样本量、学区占比）；“约 18 套”= 1947×0.92%，为本稿换算</div>
+      <script>(function(){const D=[['石景山',1947,0.92],['丰台',2947,3.18],['朝阳',2864,20.84],['东城',2783,45.81],['海淀',2919,47.48],['西城',2750,56.10]];const B=$('shB');
+        D.forEach((d,i)=>{const r=document.createElement('div');r.style.cursor='pointer';r.innerHTML='<div class="kv" style="border:none;padding:4px 0"><span>'+d[0]+'</span><b style="font-size:30px">'+d[2].toFixed(2)+'%</b></div><div class="bar" style="height:26px"><i style="width:'+d[2]/60*100+'%;background:'+(i===0?'#b4402d':'var(--blue)')+'"></i></div>';r.onclick=()=>{$('shC').querySelector('p').innerHTML='<b>'+d[0]+'</b>：样本 '+d[1]+' 套，学区房约 <b>'+Math.round(d[1]*d[2]/100)+'</b> 套。';};B.appendChild(r);});$('shC').querySelector('p').innerHTML='点击左侧城区，查看学区房套数。';})();</script>
+    </section>
+
+    <!-- === SLIDE 47 · 分城区学区房对比 === -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="分城区的学区房 vs 非学区房单价">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.3 交互模型与预测</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <figure class="contain reveal d3" style="width:960px;height:690px"><img src="assets/p46_1.png" style="border:none"></figure>
+        <div class="col grow gap16" style="justify-content:center">
+          <h2 class="reveal d1" style="font-size:50px">石景山是<em>唯一</em>“学区更低”的城区</h2>
+          <div class="card o reveal d3"><p style="font-size:25px">其余五个城区，学区房（1）箱线图整体高于非学区房（0）。</p></div>
+          <div class="card g reveal d4"><p style="font-size:23px">每格标题为城区；横轴 0 = 非学区房，1 = 学区房。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P46（图）</div>
+    </section>
+
+    <!-- === SLIDE 48 · 西城 vs 海淀（交互）=== -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="学区房房价哪家强？西城 vs 海淀（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.3 交互模型与预测</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:56px">西城 / 海淀：<em>单价之比</em></h2></div>
+        <div class="flex gap16 reveal d2" id="rtT" style="margin-top:22px"></div>
+        <div class="reveal d3" style="margin-top:34px;height:130px;display:flex;align-items:center;font:italic 600 56px/1.2 var(--f-serif-en);white-space:nowrap" id="rtF"></div>
+        <div class="flex gap32 reveal d4" style="margin-top:26px">
+          <div class="card b grow" style="min-height:260px"><div class="n" id="rtN"></div><div class="bignum" id="rtV" style="font-size:130px"></div></div>
+          <div class="card g" style="width:760px;min-height:260px"><h3 id="rtH" style="font-size:34px"></h3><p id="rtP" style="font-size:25px;margin-top:10px"></p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P47（结论：交互模型能发现更多信息）；数值由 P44 系数表重算，与原稿一致（1.215 / 1.199 / 1.228）</div>
+      <script>(function(){const xi=6.177,hd=4.121,xs=3.638,hs=3.876;const M=[['① 整体（对数线性模型）','e<sup>0.627 − 0.432</sup>',Math.exp((6.270-4.320)/10),'不区分学区：西城比海淀贵约 21.5%。','只用一个学区系数，学区与非学区的差距被“平均”掉了。'],['② 学区房（交互模型）','e<sup>(0.618 + 0.364) − (0.412 + 0.388)</sup>',Math.exp(((xi+xs)-(hd+hs))/10),'学区房：西城比海淀贵约 19.9%。','学区内部，西城与海淀的差距略小——学区溢价在海淀更高。'],['③ 非学区房（交互模型）','e<sup>0.618 − 0.412</sup>',Math.exp((xi-hd)/10),'非学区房：西城比海淀贵约 22.8%。','离开学区这张牌，西城与海淀的差距最大。']];
+        TABS('rtT',M.map((m,i)=>[m[0],()=>{$('rtF').innerHTML=m[1]+' = <span class="blue">'+m[2].toFixed(3)+'</span>';$('rtN').textContent='单价之比 西城 ÷ 海淀';$('rtV').textContent=m[2].toFixed(3);$('rtH').textContent=m[3];$('rtP').textContent=m[4];}]));})();</script>
+    </section>
+
+    <!-- === SLIDE 49 · 三模型对比（交互）=== -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="三个模型：调整 R² 与解释力（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.3 交互模型与预测</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:900px">
+          <h2 class="reveal d1" style="font-size:52px">模型一路<em>更“像”数据</em></h2>
+          <div class="col gap16 reveal d2" id="cmB" style="margin-top:30px"></div>
+        </div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="card b reveal d3" style="min-height:380px"><div class="n" id="cmN"></div><h3 id="cmH" style="font-size:38px"></h3><p id="cmP" style="font-size:25px;margin-top:10px"></p></div>
+          <div class="card g reveal d4" style="padding:16px 24px"><p style="font-size:22px">⚠ 不同因变量（房价 vs ln 房价）的 R² 不宜机械比较；这里只作“解释力”的直观参考。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P39、P41、P44（调整 R²：0.5901 / 0.6079 / 0.6108）</div>
+      <script>(function(){const M=[['① 线性模型',0.5901,'Y = 房价','系数是“相差多少万元”；波动随价格增大，误差不均匀。'],['② 对数线性',0.6079,'Y = ln 房价','系数是“贵百分之几”；缓解异方差，更贴近定价的乘法逻辑。'],['③ 交互模型',0.6108,'ln 房价 + 城区×学区','学区溢价因城区而异；解读更丰富、更贴近事实。']];
+        const B=$('cmB');M.forEach((m,i)=>{const r=document.createElement('div');r.style.cursor='pointer';r.innerHTML='<div class="kv" style="border:none;padding:4px 0"><span>'+m[0]+'</span><b>'+(m[1]*100).toFixed(2)+'%</b></div><div class="bar" style="height:36px"><i style="width:'+m[1]*100+'%"></i></div>';r.onclick=()=>{B.querySelectorAll('i').forEach((x,k)=>x.style.background=k===i?'var(--blue)':'#aab4cf');$('cmN').textContent=m[2];$('cmH').textContent=m[0]+'：调整 R² '+(m[1]*100).toFixed(2)+'%';$('cmP').textContent=m[3];};B.appendChild(r);});B.children[2].click();})();</script>
+    </section>
+
+    <!-- === SLIDE 50 · 预测计算器 === -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="预测：一家三口的学区房（交互计算器）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.3 交互模型与预测</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:900px">
+          <h2 class="reveal d1" style="font-size:46px">用模型<em>给一套房估价</em></h2>
+          <div class="col gap16 reveal d2" style="margin-top:20px">
+            <div class="flex gap16" id="pdD" style="flex-wrap:wrap"></div>
+            <div class="flex gap16" id="pdB" style="flex-wrap:wrap"></div>
+            <div class="flex gap16" id="pdF" style="flex-wrap:wrap"></div>
+            <div class="flex gap16" id="pdM" style="flex-wrap:wrap"></div>
+            <div class="flex gap16" id="pdL" style="flex-wrap:wrap"></div>
+            <div><div class="kv" style="border:none;padding:4px 0"><span>卧室数</span><b id="pdRv" style="font-size:30px">2</b></div><input type="range" id="pdR" min="1" max="5" step="1" value="2"></div>
+            <div><div class="kv" style="border:none;padding:4px 0"><span>面积（㎡）</span><b id="pdAv" style="font-size:30px">85</b></div><input type="range" id="pdA" min="30" max="300" step="1" value="85"></div>
+          </div>
+        </div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="card b reveal d3"><div class="n">预测单价（万元 / ㎡）</div><div class="bignum" id="pdU" style="font-size:120px"></div></div>
+          <div class="card t reveal d4"><div class="n">预测总价（万元）</div><div class="bignum" id="pdT" style="font-size:90px;color:var(--teal)"></div></div>
+          <p class="reveal d5" style="font-size:22px">原稿设定：西城 · 学区 · 邻近地铁 · 低层 · 85 ㎡两居 → <b>9.29 万/㎡，789.78 万</b>。</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P48；⚠ 用 P44 表中三位小数系数重算为约 9.3 万/㎡，与原稿 9.29 有微小差异，来自系数四舍五入及“是否有客厅”的设定；估价为模型预测，非成交价</div>
+      <script>(function(){const C={i:12.41,d:{'石景山':[0,0],'丰台':[.429,2.948],'朝阳':[2.184,2.78],'东城':[4.467,3.706],'海淀':[4.121,3.876],'西城':[6.177,3.638]},s:-1.8,m:1.257,fl:{'高层':0,'中层':.263,'低层':.343},lv:.27,br:.14,ar:-.003};
+        const st={d:'西城',s:1,m:1,f:'低层',l:1};const mkb=(id,opts,key)=>{const box=$(id);opts.forEach(o=>{const b=document.createElement('button');b.className='tab b';b.textContent=o[0];b.onclick=()=>{st[key]=o[1];box.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));calc();};box.appendChild(b);if(o[1]===st[key])b.classList.add('on');});};
+        mkb('pdD',Object.keys(C.d).map(k=>[k,k]),'d');mkb('pdB',[['学区房',1],['非学区',0]],'s');mkb('pdF',[['低层','低层'],['中层','中层'],['高层','高层']],'f');
+        mkb('pdM',[['邻近地铁',1],['不邻近地铁',0]],'m');mkb('pdL',[['有客厅',1],['无客厅',0]],'l');
+        function calc(){const rr=+$('pdR').value,ar=+$('pdA').value;$('pdRv').textContent=rr;$('pdAv').textContent=ar;const d=C.d[st.d];let e=C.i+d[0]+st.s*(C.s+d[1])+st.m*C.m+C.fl[st.f]+st.l*C.lv+rr*C.br+ar*C.ar;const u=Math.exp(e/10);$('pdU').textContent=u.toFixed(2);$('pdT').textContent=(u*ar).toFixed(0);}
+        $('pdR').oninput=calc;$('pdA').oninput=calc;calc();})();</script>
+    </section>
+
+    <!-- === SLIDE 51 · 结论与建议 === -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="结论和建议">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.4 结论与 2026 回访</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:60px">案例<em>结论</em></h2>
+        <div class="flex gap24 st" style="margin-top:36px">
+          <div class="card o grow" style="min-height:390px"><div class="n">区位因素</div><h3>城区 · 地铁 · 学区</h3><p style="font-size:25px">影响最大；“学区优势”在各城区并不相同。</p></div>
+          <div class="card t grow" style="min-height:390px"><div class="n">内部因素</div><h3>卧室 · 客厅 · 面积 · 楼层</h3><p style="font-size:25px">有影响，但效应小于位置。</p></div>
+          <div class="card b grow" style="min-height:390px"><div class="n">建模建议</div><h3>对数 + 交互</h3><p style="font-size:25px">对数线性可缓解异方差；交互模型带来更好的解读。</p></div>
+        </div>
+        <p class="reveal d5" style="margin-top:34px;font-size:30px">方法论：<b>描述 → 建模 → 换更合适的模型 → 解读 → 预测</b>。</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P49</div>
+    </section>
+
+    <!-- === SLIDE 52 · 未来研究方向 === -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="未来研究方向：还缺什么变量？">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.4 结论与 2026 回访</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:58px">房价的影响因素诸多：<em>加入更多 X</em></h2>
+        <div class="flex gap24 st" style="margin-top:40px">
+          <div class="card b grow"><div class="n">小区位置</div><h3>地处几环？</h3></div>
+          <div class="card t grow"><div class="n">小区环境</div><h3>绿化情况</h3></div>
+          <div class="card o grow"><div class="n">周边配套</div><h3>商圈 · 医院 …</h3></div>
+          <div class="card g grow"><div class="n">城市特有</div><h3>如：海景房</h3></div>
+        </div>
+        <p class="reveal d5" style="margin-top:40px;font-size:30px">遗漏变量会让系数“替别人背锅”——这也是为什么要<b>不断补充业务知识（X）</b>。</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P50；“遗漏变量”说明为课堂补充</div>
+    </section>
+
+    <!-- === SLIDE 53 · 2026 回访：房价 === -->
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="2026 回访：模型是快照，市场与政策在变">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.4 结论与 2026 回访</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:24px;letter-spacing:.14em">2026 FOLLOW-UP</div>
+        <h2 class="reveal d2" style="font-size:58px;margin-top:8px">模型是<em>静态快照</em>，市场在变</h2>
+        <div class="flex gap24 st" style="margin-top:34px">
+          <div class="card b grow"><div class="n">国家统计局 · 2026 年 9 月</div><div class="bignum" style="font-size:96px">−2.5<small>%</small></div><p style="font-size:24px">北京二手住宅销售价格<b>同比</b>（指数 97.5，环比 100.1）；1–9 月平均为上年同期的 93.8%。</p></div>
+          <div class="card o grow"><div class="n">学区溢价在收窄</div><h3 style="font-size:34px">多校划片 + 教师轮岗</h3><p style="font-size:24px">北京“多校划片”被用作准自然实验：政策预期期月均房价降约 1.8%，实施后约 3.3%；顶级名校周边、小户型降幅最大。</p></div>
+        </div>
+        <p class="reveal d5" style="margin-top:26px;font-size:26px"><b>启示</b>：模型系数反映“数据采集时”的关系；<b class="blue">政策与市场变化会改变系数</b>，需要定期重估。</p>
+      </div>
+      <div class="src"><b>参考</b> R3 国家统计局 2026 年 9 月 70 城商品住宅销售价格变动；R2 Applied Economics 2025（多校划片，北京）；⚠ 统计局二手住宅价格为重点+典型调查，与本案例的“挂牌价”口径不同</div>
+    </section>
+
+    <!-- === 章节 Part 4 === -->
+    <section class="slide c chapter" data-sec="4 · 回归五式与机器学习" data-title="Part 4 · 回归五式与机器学习">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 4</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">04</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 4</div>
+        <h2 class="reveal d2">回归五式<em>与机器学习</em></h2>
+        <div class="s reveal d3">Y 的类型不同，模型不同；从“解释”走向“预测”</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>4.1</b>回归五式：Y 的五种类型</div>
+        <div><b>4.2</b>0-1 回归：逻辑函数与拟合</div>
+        <div><b>4.3</b>预测任务：过拟合</div>
+        <div><b>4.4</b>AI 2.0 与 大模型时代的回归</div>
+      </div>
+    </section>
+
+    <!-- === 回归五式（交互）=== -->
+    <section class="slide c" data-sec="4 · 回归五式与机器学习" data-title="回归五式：线性 · 0-1 · 定序 · 计数 · 生存（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.1 回归五式：Y 的五种类型</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:52px">回归<em>五式</em>：看 Y 是什么类型</h2></div>
+        <div class="flex gap16 reveal d2" id="r5T" style="margin-top:20px"></div>
+        <div class="flex gap24 reveal d3" style="margin-top:22px"><div class="card b" style="width:420px;min-height:530px"><div class="n" id="r5N"></div><h3 id="r5H" style="font-size:42px"></h3><p id="r5P" style="font-size:25px;margin-top:12px"></p><div class="chips" id="r5M" style="margin-top:20px"></div></div>
+          <div class="flex gap16 grow" id="r5C"></div></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P51–P57（五类 Y 及其例子）；对应的常用模型名称为课堂补充</div>
+      <script>(function(){const D=[['① 线性回归','Y 是连续数值','取值连续，如金额、时长、数量级大的计数。','线性回归 OLS',[['个人收入','assets/p53_3.jpg','教育程度 / 性别 / 年龄'],['个人发帖量','assets/p53_1.jpg','好友发帖数 / 粉丝数 / 转发数'],['汽车保养花费','assets/p53_2.jpg','品牌 / 价格 / 车型']]],['② 0-1 回归','Y 是“是 / 否”','二分类结果：发生与否。','逻辑回归 Logistic',[['是否流失','assets/p54_1.jpg','当月花费 / 好友个数 / 满意度'],['是否延误','assets/p54_2.jpg','天气状况 / 机型 / 目的地'],['是否被 ST','assets/p54_3.png','资产规模 / 周转率 / 收益率']]],['③ 定序回归','Y 是有序等级','类别有高低次序，但间距不等。','有序 Logit / Probit',[['顾客满意度','assets/p55_1.jpg','品牌 / 功能 / 价格'],['幸福感','assets/p55_2.jpg','收入 / 孩子个数 / 工作性质'],['英语程度','assets/p55_3.jpg','受教育程度 / 年龄 / 性别']]],['④ 计数回归','Y 是次数（0,1,2,…）','非负整数、离散。','泊松 / 负二项回归',[['购买次数','assets/p56_1.png','品牌 / 价格 / 收入'],['子女数目','assets/p56_2.png','收入 / 父母是否独生 / 初育年龄'],['微博数目','assets/p56_3.png','好友发帖数 / 粉丝数 / 在线时长']]],['⑤ 生存回归','Y 是“到事件发生的时间”','关注多久发生，且有“尚未发生”的删失数据。','Cox 比例风险 / 生存模型',[['寿命','assets/p57_1.jpg','是否患病 / 每周运动 / 政府补贴'],['客户生命周期','assets/p57_2.jpg','工资 / 平均消费 / 消费频数'],['上市距融资时间','assets/p57_3.png','融资轮数 / 金额 / 财务指标']]]];
+        TABS('r5T',D.map(d=>[d[0],()=>{$('r5N').textContent='Y 的类型';$('r5H').textContent=d[1];$('r5P').textContent=d[2];$('r5M').innerHTML='<span class="chip">'+d[3]+'</span>';$('r5C').innerHTML=d[4].map(e=>'<div class="card g grow" style="padding:18px"><figure class="contain" style="height:240px"><img src="'+e[1]+'" style="border:none"></figure><h3 style="font-size:32px;margin-top:10px">Y：'+e[0]+'</h3><p style="font-size:22px;margin-top:6px"><b>X：</b>'+e[2]+'</p></div>').join('');}]),0);})();</script>
+    </section>
+
+    <!-- === 0-1 回归：逻辑函数（交互）=== -->
+    <section class="slide c" data-sec="4 · 回归五式与机器学习" data-title="0-1 回归：用 S 曲线预测概率，梯度下降逐步拟合（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.2 0-1 回归：逻辑函数与拟合</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:1040px">
+          <div class="flex between center"><h2 class="reveal d1" style="font-size:46px">P(流失) = 1 / (1 + e<sup>−(β₀+β₁X)</sup>)</h2></div>
+          <svg id="lgcS" viewBox="0 0 1040 520" style="width:1040px;height:520px;background:#fff;border:1px solid var(--rule);margin-top:14px"></svg>
+          <div class="flex gap16 center reveal d3" style="margin-top:14px"><button class="tab b" id="lgcG">▶ 梯度下降拟合</button><button class="tab" id="lgcR">复位</button><span class="mono muted" style="font-size:20px" id="lgcI"></span></div>
+        </div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="reveal d3"><div class="kv" style="border:none;padding:4px 0"><span>β₀</span><b id="lb0">0</b></div><input type="range" id="lgc0" min="-8" max="8" step="0.1" value="0"></div>
+          <div class="reveal d3"><div class="kv" style="border:none;padding:4px 0"><span>β₁（在线时长）</span><b id="lb1">0</b></div><input type="range" id="lgc1" min="-3" max="3" step="0.05" value="0"></div>
+          <div class="card b reveal d4"><div class="kv" style="border:none;padding:4px 0"><span>对数损失</span><b id="lgcL">—</b></div><div class="kv" style="padding:4px 0"><span>0.5 阈值准确率</span><b id="lgcA">—</b></div></div>
+          <p class="reveal d5" style="font-size:22px"><span style="color:#b4402d">●</span> 红：已流失（1）　<span style="color:#1f7a72">●</span> 青：留存（0）<br>输出是<b>概率</b>，取阈值后才是“分类”。</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P54、P58（逻辑回归：0-1 回归 / 分类）；模拟数据；梯度下降为教学演示（L6 将系统讲解）</div>
+      <script>(function(){const r=rng(9),P=[];for(let i=0;i<70;i++){const x=r()*10,p=1/(1+Math.exp(-(3.2-0.7*x)));P.push([x,r()<p?1:0]);}
+        const svg=$('lgcS'),X=v=>70+v*92,Y=v=>470-v*430;let b0=0,b1=0,tm=null;const s=z=>1/(1+Math.exp(-z));
+        function draw(){svg.innerHTML='';mk('line',{x1:60,y1:470,x2:1010,y2:470,stroke:'#1d2433','stroke-width':2},svg);mk('line',{x1:60,y1:470,x2:60,y2:30,stroke:'#1d2433','stroke-width':2},svg);
+          [0,0.5,1].forEach(v=>{const t=mk('text',{x:50,y:Y(v)+6,'text-anchor':'end','font-size':20,fill:'#8a90a0','font-family':'IBM Plex Mono'},svg);t.textContent=v;});
+          mk('line',{x1:60,y1:Y(.5),x2:1010,y2:Y(.5),stroke:'#cfcac0','stroke-dasharray':'6 6'},svg);
+          P.forEach(p=>mk('circle',{cx:X(p[0])+0,cy:Y(p[1])+(p[1]?-6:6),r:8,fill:p[1]?'#b4402d':'#1f7a72','fill-opacity':.7},svg));
+          let d='';for(let i=0;i<=100;i++){const x=i/10;d+=(i?'L':'M')+X(x)+' '+Y(s(b0+b1*x));}mk('path',{d:d,fill:'none',stroke:'#24509e','stroke-width':6},svg);
+          let L=0,ok=0;P.forEach(p=>{const q=Math.min(1-1e-9,Math.max(1e-9,s(b0+b1*p[0])));L-=p[1]*Math.log(q)+(1-p[1])*Math.log(1-q);if((q>.5?1:0)===p[1])ok++;});
+          $('lgcL').textContent=(L/P.length).toFixed(3);$('lgcA').textContent=(ok/P.length*100).toFixed(0)+'%';$('lb0').textContent=b0.toFixed(2);$('lb1').textContent=b1.toFixed(2);$('lgc0').value=b0;$('lgc1').value=b1;}
+        $('lgc0').oninput=e=>{b0=+e.target.value;draw();};$('lgc1').oninput=e=>{b1=+e.target.value;draw();};
+        $('lgcG').onclick=()=>{if(tm){clearInterval(tm);tm=null;$('lgcG').textContent='▶ 梯度下降拟合';return;}$('lgcG').textContent='⏸ 暂停';let it=0;tm=setInterval(()=>{let g0=0,g1=0;P.forEach(p=>{const e=s(b0+b1*p[0])-p[1];g0+=e;g1+=e*p[0];});b0-=0.25*g0/P.length;b1-=0.25*g1/P.length;it++;$('lgcI').textContent='迭代 '+it;draw();if(it>=400){clearInterval(tm);tm=null;$('lgcG').textContent='▶ 梯度下降拟合';}},30);};
+        $('lgcR').onclick=()=>{clearInterval(tm);tm=null;$('lgcG').textContent='▶ 梯度下降拟合';b0=0;b1=0;$('lgcI').textContent='';draw();};draw();})();</script>
+    </section>
+
+    <!-- === 过拟合（交互）=== -->
+    <section class="slide c" data-sec="4 · 回归五式与机器学习" data-title="从解释到预测：模型越复杂越好吗？过拟合演示（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.3 预测任务：过拟合</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div style="width:1040px">
+          <h2 class="reveal d1" style="font-size:50px">多项式阶数↑，<em>训练误差</em>↓，测试误差？</h2>
+          <svg id="ofS" viewBox="0 0 1040 540" style="width:1040px;height:540px;background:#fff;border:1px solid var(--rule);margin-top:14px"></svg>
+          <div class="flex gap24 center reveal d3" style="margin-top:14px"><span class="mono muted" style="font-size:22px">阶数 d</span><input type="range" id="ofR" min="1" max="10" step="1" value="1" style="width:560px"><span class="mono blue" id="ofV" style="font-size:30px"></span><button class="tab" id="ofN">换一批数据</button></div>
+        </div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="card b reveal d3"><div class="kv" style="border:none"><span>训练误差（MSE）</span><b id="ofT">—</b></div><div class="kv"><span>测试误差（MSE）</span><b id="ofE" class="neg">—</b></div></div>
+          <div class="card g reveal d4" id="ofC" style="min-height:210px"><h3 id="ofH" style="font-size:36px"></h3><p id="ofP" style="font-size:24px;margin-top:8px"></p></div>
+          <p class="reveal d5" style="font-size:22px">● 青：训练点（12 个）　○ 灰：测试点<br>赭线：真实规律</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P58（预测任务 vs 解释性任务）；模拟数据，真实函数 sin(πx)，噪声 σ=0.3；训练 12 点，测试 80 点</div>
+      <script>(function(){let seed=4;const svg=$('ofS');function solve(A,b){const n=b.length;for(let i=0;i<n;i++){let m=i;for(let r=i+1;r<n;r++)if(Math.abs(A[r][i])>Math.abs(A[m][i]))m=r;[A[i],A[m]]=[A[m],A[i]];[b[i],b[m]]=[b[m],b[i]];for(let r=i+1;r<n;r++){const f=A[r][i]/A[i][i];for(let c=i;c<n;c++)A[r][c]-=f*A[i][c];b[r]-=f*b[i];}}const x=Array(n).fill(0);for(let i=n-1;i>=0;i--){let s=b[i];for(let c=i+1;c<n;c++)s-=A[i][c]*x[c];x[i]=s/A[i][i];}return x;}
+        function fit(P,d){const A=[],b=[];for(let i=0;i<=d;i++){A.push([]);let sb=0;for(let j=0;j<=d;j++){let s=0;P.forEach(p=>s+=Math.pow(p[0],i+j));A[i].push(s+(i===j?1e-8:0));}P.forEach(p=>sb+=p[1]*Math.pow(p[0],i));b.push(sb);}return solve(A,b);}
+        const ev=(w,x)=>w.reduce((s,c,i)=>s+c*Math.pow(x,i),0);
+        function run(){const r=rng(seed),n=randn(r),f=x=>Math.sin(Math.PI*x),tr=[],te=[];for(let i=0;i<12;i++){const x=-1+2*(i+0.5)/12+(r()-.5)*0.08;tr.push([x,f(x)+n()*0.3]);}for(let i=0;i<80;i++){const x=-1+2*r();te.push([x,f(x)+n()*0.3]);}
+          const d=+$('ofR').value,w=fit(tr,d),X=v=>60+(v+1)*480,Y=v=>270-v*150;svg.innerHTML='';mk('line',{x1:60,y1:Y(0),x2:1020,y2:Y(0),stroke:'#cfcac0','stroke-width':2},svg);
+          let p0='';for(let i=0;i<=100;i++){const x=-1+i*0.02;p0+=(i?'L':'M')+X(x)+' '+Y(f(x));}mk('path',{d:p0,fill:'none',stroke:'#c27a1a','stroke-width':4,'stroke-dasharray':'8 6'},svg);
+          te.forEach(p=>mk('circle',{cx:X(p[0]),cy:Math.max(10,Math.min(530,Y(p[1]))),r:5,fill:'none',stroke:'#8a90a0','stroke-width':1.5},svg));
+          let p1='';for(let i=0;i<=200;i++){const x=-1+i*0.01,y=Math.max(-3.2,Math.min(3.2,ev(w,x)));p1+=(i?'L':'M')+X(x)+' '+Y(y);}mk('path',{d:p1,fill:'none',stroke:'#24509e','stroke-width':6},svg);
+          tr.forEach(p=>mk('circle',{cx:X(p[0]),cy:Y(p[1]),r:9,fill:'#1f7a72',stroke:'#fff','stroke-width':2},svg));
+          const m=(P)=>P.reduce((s,p)=>s+(p[1]-ev(w,p[0]))**2,0)/P.length,a=m(tr),b=m(te);$('ofV').textContent=d;$('ofT').textContent=a.toFixed(3);$('ofE').textContent=b>50?'>50':b.toFixed(3);
+          $('ofH').textContent=d<=2?'欠拟合':(d<=5?'恰到好处':'过拟合');$('ofP').textContent=d<=2?'模型太简单，抓不住 sin 形的规律：训练、测试误差都高。':(d<=5?'训练与测试误差都较低，且接近。':'曲线在训练点之间剧烈摆动：训练误差很小，测试误差反而变大。');}
+        $('ofR').oninput=run;$('ofN').onclick=()=>{seed+=5;run();};run();})();</script>
+    </section>
+
+    <!-- === AI 2.0 机器学习 === -->
+    <section class="slide c" data-sec="4 · 回归五式与机器学习" data-title="AI 2.0 机器学习：从回归到学习算法">
+      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.4 AI 2.0 与大模型时代的回归</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:24px;letter-spacing:.14em">AI 2.0 · MACHINE LEARNING</div>
+        <h2 class="reveal d2" style="font-size:56px;margin-top:8px">回归，是<em>机器学习</em>的第一站</h2>
+        <div class="reveal d3" style="margin-top:20px">
+          <svg viewBox="-4 0 1736 440" style="width:1728px;height:438px">
+            <g font-family="Noto Sans SC">
+              <rect x="0" y="100" width="300" height="240" fill="#fff" stroke="#cfcac0" stroke-width="2"/><image href="assets/p58_3.png" x="60" y="110" width="180" height="176"/><text x="150" y="324" text-anchor="middle" font-size="24" fill="#1d2433" font-weight="700">数据</text>
+              <path d="M300 220 H400" stroke="#24509e" stroke-width="5"/><path d="M400 220 l-18 -12 v24z" fill="#24509e" transform="translate(18 0)"/>
+              <rect x="420" y="100" width="380" height="240" fill="#fff" stroke="#24509e" stroke-width="3"/><text x="610" y="160" text-anchor="middle" font-size="30" font-weight="700" fill="#1d2433">特征提取</text><text x="610" y="198" text-anchor="middle" font-size="19" font-family="IBM Plex Mono" fill="#8a90a0">Feature Extraction</text><text x="610" y="245" text-anchor="middle" font-size="24" fill="#4a5263">基于业务知识构建 X</text><text x="610" y="285" text-anchor="middle" font-size="24" fill="#4a5263">核心价值表现 Y</text>
+              <path d="M800 220 H900" stroke="#24509e" stroke-width="5"/><path d="M900 220 l-18 -12 v24z" fill="#24509e" transform="translate(18 0)"/>
+              <rect x="920" y="100" width="380" height="240" fill="#24509e"/><text x="1110" y="160" text-anchor="middle" font-size="30" font-weight="700" fill="#fff">学习算法</text><text x="1110" y="198" text-anchor="middle" font-size="19" font-family="IBM Plex Mono" fill="#cfd8ee">Learning algorithm</text><text x="1110" y="245" text-anchor="middle" font-size="24" fill="#fff">逻辑回归 · 分类决策树</text><text x="1110" y="285" text-anchor="middle" font-size="24" fill="#fff">朴素贝叶斯 · …</text>
+              <path d="M1300 160 L1410 110" stroke="#24509e" stroke-width="4"/><path d="M1300 280 L1410 330" stroke="#24509e" stroke-width="4"/>
+              <rect x="1420" y="40" width="308" height="130" fill="#fff" stroke="#1f7a72" stroke-width="3"/><text x="1574" y="96" text-anchor="middle" font-size="30" font-weight="700" fill="#1f7a72">预测任务</text><text x="1574" y="136" text-anchor="middle" font-size="22" fill="#4a5263">新样本的 Y 是多少？</text>
+              <rect x="1420" y="270" width="308" height="130" fill="#fff" stroke="#c27a1a" stroke-width="3"/><text x="1574" y="326" text-anchor="middle" font-size="30" font-weight="700" fill="#c27a1a">解释性任务</text><text x="1574" y="366" text-anchor="middle" font-size="22" fill="#4a5263">哪些 X 起作用？</text>
+            </g>
+          </svg>
+        </div>
+        <p class="reveal d5" style="margin-top:10px;font-size:28px">回归：<b>解释</b>为主；机器学习：更强调<b class="teal">对新数据的预测</b>。下一讲：<b>AI 2.0 机器学习</b>（以垃圾邮件分类为例）。</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P58（流程与三种算法：逻辑回归、分类决策树、朴素贝叶斯）；垃圾邮件案例见 Lecture 3 / 5</div>
+    </section>
+
+    <!-- === 大模型时代的回归 === -->
+    <section class="slide c" data-sec="4 · 回归五式与机器学习" data-title="2026 视角：大模型时代，回归还有用吗？">
+      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.4 AI 2.0 与大模型时代的回归</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:24px;letter-spacing:.14em">AI 2.0 → 4.0</div>
+        <h2 class="reveal d2" style="font-size:58px;margin-top:8px">回归<em>没有过时</em>，它被“吸收”了</h2>
+        <div class="flex gap24 st" style="margin-top:34px">
+          <div class="card b grow" style="min-height:430px"><div class="n">研究证据</div><h3 style="font-size:34px">Transformer 能“上下文学会”线性回归</h3><p style="font-size:24px;margin-top:10px">Garg 等（NeurIPS 2022）：给出若干 (x, y) 示例，训练好的 Transformer 在上下文中预测新 y，误差与最小二乘相当。</p></div>
+          <div class="card t grow" style="min-height:430px"><div class="n">管理者视角</div><h3 style="font-size:34px">代码交给 AI，判断留给人</h3><p style="font-size:24px;margin-top:10px">AI 助手可以写出回归代码、画诊断图；但<b>定义 Y、选择 X、识别混杂、解读系数</b>仍是业务判断。</p><p class="ochre" style="font-size:20px;margin-top:10px">⚠ 课堂判断，非引用结论</p></div>
+          <div class="card o grow" style="min-height:430px"><div class="n">仍然常用</div><h3 style="font-size:34px">可解释、可审计</h3><p style="font-size:24px;margin-top:10px">信贷、保险、定价、政策评估等场景，常要求“每个因素值多少”：线性 / 广义线性模型仍是基线。</p><p class="ochre" style="font-size:20px;margin-top:10px">⚠ 行业实践概述，课堂补充</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R4 Garg, Tsipras, Liang, Valiant. What Can Transformers Learn In-Context? NeurIPS 2022（arXiv:2208.01066）；管理者视角两项为课堂补充 ⚠</div>
+    </section>
+
+    <!-- === 总结 === -->
+    <section class="slide c" data-sec="总结" data-title="本讲总结与下一讲">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 4</b> · 总结</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:62px">一页带走：<em>回归分析</em></h2>
+        <div class="flex gap16 st" style="margin-top:34px">
+          <div class="card b grow"><div class="n">01</div><h3 style="font-size:34px">Y ~ X</h3><p style="font-size:23px">Y 是价值；X 是业务知识。先定义，再建模。</p></div>
+          <div class="card t grow"><div class="n">02</div><h3 style="font-size:34px">最小二乘</h3><p style="font-size:23px">让平方误差之和最小；读 估计值、SE、t、P。</p></div>
+          <div class="card o grow"><div class="n">03</div><h3 style="font-size:34px">房价案例</h3><p style="font-size:23px">线性 → 对数 → 交互；每步都有“为什么”。</p></div>
+          <div class="card g grow"><div class="n">04</div><h3 style="font-size:34px">回归五式</h3><p style="font-size:23px">看 Y 的类型；预测要防过拟合。</p></div>
+        </div>
+        <div class="card g reveal d5" style="margin-top:30px;padding:22px 30px"><p style="font-size:26px"><b>三个提醒</b>：相关 ≠ 因果；显著 ≠ 重要；模型是某个时点的快照。<span class="blue" style="margin-left:24px"><b>下一讲 →</b> AI 2.0 机器学习</span></p></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P17、P49、P51–P58；本讲 R1–R5</div>
+    </section>
+
+    <!-- === 参考文献 === -->
+    <section class="slide c" data-sec="附录" data-title="参考文献">
+      <div class="toprule"></div><div class="tag"><b>附录</b> · 参考文献</div><div class="pg"></div>
+      <div class="body"><h2 class="reveal d1" style="font-size:52px;margin-bottom:18px">参考文献 <em>R1–R5</em></h2>
+        <div style="columns:1;font:400 20px/1.55 var(--f-mono);color:var(--ink-2)">
+          <p style="font:inherit;margin:0 0 14px"><b>R1</b> NobelPrize.org：The Prize in Economic Sciences 2021 新闻稿（Card, Angrist, Imbens）— nobelprize.org/prizes/economic-sciences/2021/press-release/</p>
+          <p style="font:inherit;margin:0 0 14px"><b>R2</b> Leveling the playing field: the effects of multi-school zoning policies on housing prices. Applied Economics, 58(5), 2025 — doi.org/10.1080/00036846.2025.2461327</p>
+          <p style="font:inherit;margin:0 0 14px"><b>R3</b> 国家统计局：2026 年 9 月份 70 个大中城市商品住宅销售价格变动情况，2026-10-19 — stats.gov.cn/sj/zxfb/202610/t20261019_1965609.html</p>
+          <p style="font:inherit;margin:0 0 14px"><b>R4</b> Garg, Tsipras, Liang, Valiant. What Can Transformers Learn In-Context? A Case Study of Simple Function Classes. NeurIPS 2022 — arxiv.org/abs/2208.01066</p>
+          <p style="font:inherit;margin:0 0 14px"><b>R5</b> Wasserstein &amp; Lazar. The ASA’s Statement on p-Values: Context, Process, and Purpose. The American Statistician 70(2), 2016</p>
+          <p style="font:inherit;margin:0 0 14px"><b>P</b> 原 PPT：Materials/Lecture_4_Reg.pptx（图片、系数表、案例数据均来自原稿；图见各页来源）</p>
+          <p style="font:inherit;margin:0;color:var(--ochre)">⚠ 所有 “教学模拟” 页（混杂、最小二乘、噪声、异方差、广告、逻辑回归、过拟合）的数据均为虚构，仅用于演示概念。</p>
+        </div></div>
+    </section>
+
+  </div>
+</div>
+
+<!-- 底部控制条（舞台之外） -->
+<div class="deck-controls">
+  <button id="bPrev" title="上一页 ←">◀</button>
+  <button id="bOutline" title="目录 O">OUTLINE</button>
+  <span id="counter"></span>
+  <button id="bNext" title="下一页 →">▶</button>
+</div>
+
+<!-- 目录浮层：由各页 data-title / data-sec 自动生成 -->
+<div id="outline"><div class="close">ESC ✕</div></div>
+
+<!-- 侧边导航栏 -->
+<div id="sbTab" title="导航栏 S">导航</div>
+<aside id="sidebar"><div class="sbh"><b>Lecture 4 · AI 2.0 <span>回归分析</span></b><button id="sbClose">关闭 ✕</button></div><div class="sbl" id="sbList"></div></aside>
+
+<script>
+/* === 舞台缩放：整体等比缩放到窗口，保持 16:9 === */
+const stage = document.getElementById('stage');
+function fit() {
+  const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+  stage.style.transform = `translate(${(innerWidth - 1920 * s) / 2}px, ${(innerHeight - 1080 * s) / 2}px) scale(${s})`;
+}
+addEventListener('resize', fit); fit();
+
+/* === 翻页状态 === */
+const slides = [...document.querySelectorAll('.slide')];
+const counter = document.getElementById('counter');
+let cur = 0;
+slides.forEach((s, k) => { const p = s.querySelector('.pg'); if (p) p.textContent = `${String(k + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`; });
+function show(i) {
+  cur = Math.max(0, Math.min(slides.length - 1, i));
+  slides.forEach((s, k) => { s.classList.toggle('active', k === cur); s.classList.toggle('visible', k === cur); });
+  counter.textContent = `${cur + 1} / ${slides.length}`;
+  history.replaceState(null, '', '#' + (cur + 1));
+  document.querySelectorAll('#outline a').forEach((a, k) => a.classList.toggle('cur', +a.dataset.i === cur));
+  if (window.syncSidebar) syncSidebar();
+}
+
+/* === 目录（Outline）=== */
+const ol = document.getElementById('outline');
+(function buildOutline() {
+  const secs = []; let last = null;
+  slides.forEach((s, k) => {
+    const sec = s.dataset.sec; if (!sec) return;
+    if (!last || last.name !== sec) { last = { name: sec, items: [] }; secs.push(last); }
+    last.items.push({ i: k, t: s.dataset.title || '' });
+  });
+  let h = '<h1>Lecture 4 · AI 2.0 <span>回归分析</span></h1>';
+  secs.forEach(sc => {
+    h += `<div class="sec"><h4>${sc.name}</h4><div class="items">` +
+      sc.items.map(it => `<a data-i="${it.i}"><i>${String(it.i + 1).padStart(2, '0')}</i><span>${it.t}</span></a>`).join('') + '</div></div>';
+  });
+  ol.insertAdjacentHTML('beforeend', h);
+  ol.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { show(+a.dataset.i); toggleOutline(false); }));
+})();
+function toggleOutline(f) { ol.classList.toggle('open', f === undefined ? !ol.classList.contains('open') : f); }
+document.getElementById('bOutline').onclick = () => toggleOutline();
+document.getElementById('bPrev').onclick = () => show(cur - 1);
+document.getElementById('bNext').onclick = () => show(cur + 1);
+ol.querySelector('.close').onclick = () => toggleOutline(false);
+
+/* === 侧边导航栏：折叠分组，当前页高亮，可跳到任意页 === */
+const sb = document.getElementById('sidebar'), sbList = document.getElementById('sbList');
+(function buildSidebar() {
+  const secs = []; let last = null;
+  slides.forEach((s, k) => {
+    const sec = s.dataset.sec; if (!sec) return;
+    if (!last || last.name !== sec) { last = { name: sec, items: [] }; secs.push(last); }
+    last.items.push({ i: k, t: s.dataset.title || '' });
+  });
+  sbList.innerHTML = secs.map(sc => `<div class="sbs"><div class="sbt">${sc.name}<em>${sc.items.length}</em></div><div class="sbi">` +
+    sc.items.map(it => `<a data-i="${it.i}"><i>${String(it.i + 1).padStart(2, '0')}</i><span>${it.t}</span></a>`).join('') + '</div></div>').join('');
+  sbList.querySelectorAll('.sbt').forEach(t => t.addEventListener('click', () => t.parentNode.classList.toggle('open')));
+  sbList.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { show(+a.dataset.i); a.blur(); }));
+})();
+window.syncSidebar = function () {
+  sbList.querySelectorAll('a').forEach(a => a.classList.toggle('cur', +a.dataset.i === cur));
+  const c = sbList.querySelector('a.cur'); if (!c) return;
+  const g = c.closest('.sbs');
+  if (!g.classList.contains('open')) { sbList.querySelectorAll('.sbs.open').forEach(x => x.classList.remove('open')); g.classList.add('open'); }
+  if (sb.classList.contains('open')) c.scrollIntoView({ block: 'nearest' });
+};
+function toggleSidebar(f) { sb.classList.toggle('open', f === undefined ? !sb.classList.contains('open') : f); if (sb.classList.contains('open')) syncSidebar(); }
+document.getElementById('sbTab').onclick = () => toggleSidebar();
+document.getElementById('sbClose').onclick = () => toggleSidebar(false);
+document.addEventListener('mousedown', e => { if (sb.classList.contains('open') && !sb.contains(e.target) && e.target.id !== 'sbTab') toggleSidebar(false); });
+
+/* === 键盘 === */
+addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea')) return;
+  if (e.key === 'Escape') { toggleOutline(false); toggleSidebar(false); }
+  if (e.key === 's' || e.key === 'S') toggleSidebar();
+  if (e.key === 'o' || e.key === 'O') toggleOutline();
+  if (ol.classList.contains('open')) return;
+  if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); show(cur + 1); }
+  if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); show(cur - 1); }
+  if (e.key === 'Home') show(0);
+  if (e.key === 'End') show(slides.length - 1);
+});
+requestAnimationFrame(() => requestAnimationFrame(() => show((parseInt(location.hash.slice(1)) || 1) - 1)));
+</script>
+</body>
+</html>

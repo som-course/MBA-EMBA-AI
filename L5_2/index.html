@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 5.2 · 决策树与随机森林</title>
+
+<!-- Fonts: Noto Serif SC (中文标题) / Source Serif 4 (英文衬线) / Noto Sans SC (正文) / IBM Plex Mono (标签) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@600;700;900&family=Source+Serif+4:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+<style>
+/* === THEME ===
+   暖白纸面 + 墨色 + 唯一强调蓝；青、赭仅用于示意图 */
+:root {
+  --paper: #faf8f4;
+  --paper-2: #f2eee6;
+  --ink: #1d2433;
+  --ink-2: #4a5263;
+  --ink-3: #8a90a0;
+  --blue: #24509e;
+  --teal: #1f7a72;
+  --ochre: #c27a1a;
+  --rule: #cfcac0;
+
+  --f-serif-cn: 'Noto Serif SC', 'Source Serif 4', serif;
+  --f-serif-en: 'Source Serif 4', 'Noto Serif SC', serif;
+  --f-sans: 'Noto Sans SC', sans-serif;
+  --f-mono: 'IBM Plex Mono', monospace;
+
+  --stage-bg: #e9e5dc;
+  --slide-bg: var(--paper);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* === VIEWPORT-BASE (固定 1920×1080 舞台) === */
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-viewport { position: fixed; inset: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; background: var(--slide-bg, #fff); }
+.slide { position: absolute; inset: 0; width: 1920px; height: 1080px; overflow: hidden; display: block; visibility: hidden; opacity: 0; pointer-events: none; background: var(--slide-bg, #fff); }
+.slide.active, .slide.visible { visibility: visible; opacity: 1; pointer-events: auto; z-index: 1; }
+img, video, canvas, svg { max-width: 100%; max-height: 100%; }
+.deck-controls { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 1000; }
+@media print {
+  html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+  .deck-viewport { position: static; overflow: visible; background: #fff; }
+  .deck-stage { position: static; width: auto; height: auto; transform: none !important; background: none; }
+  .slide { position: relative; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 1920px; height: 1080px; break-after: page; page-break-after: always; }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+  .deck-controls { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+}
+
+/* === 动效：进入页面时依次浮现 === */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .9s var(--ease), transform .9s var(--ease); }
+.slide.visible .reveal { opacity: 1; transform: none; }
+.d1 { transition-delay: .10s; } .d2 { transition-delay: .25s; } .d3 { transition-delay: .40s; }
+.d4 { transition-delay: .55s; } .d5 { transition-delay: .70s; } .d6 { transition-delay: .85s; }
+
+/* === COVER 封面 === */
+.cover .toprule { position: absolute; left: 96px; right: 96px; top: 56px; height: 3px; background: var(--ink); }
+.cover .kicker {
+  position: absolute; left: 96px; top: 92px;
+  font: 500 22px/1 var(--f-mono); letter-spacing: .16em; color: var(--ink-3); text-transform: uppercase;
+}
+.cover .kicker b { color: var(--blue); font-weight: 500; }
+
+.cover .title { position: absolute; left: 96px; top: 140px; width: 980px; }
+.cover h1 { font: 900 144px/1.08 var(--f-serif-cn); color: var(--ink); letter-spacing: .02em; }
+.cover h1 span { color: var(--blue); display: block; }
+.cover .sub {
+  margin-top: 28px; font: 700 38px/1.5 var(--f-serif-cn); color: var(--ink);
+}
+
+/* 本讲结构 = outline（对应原稿"papers in this talk"） */
+.cover .outline { position: absolute; left: 96px; top: 650px; width: 940px; }
+.cover .outline .hd {
+  font: 500 18px/1 var(--f-mono); letter-spacing: .18em; color: var(--ink-3);
+  padding-bottom: 14px; border-bottom: 1px solid var(--rule); margin-bottom: 4px;
+}
+.cover .outline .row {
+  display: flex; align-items: baseline; gap: 28px; padding: 11px 0;
+  border-bottom: 1px solid var(--paper-2);
+}
+.cover .outline .no { font: 500 20px/1 var(--f-mono); letter-spacing: .12em; color: var(--blue); width: 120px; white-space: nowrap; }
+.cover .outline .en { font: 600 28px/1.2 var(--f-serif-en); color: var(--ink); }
+.cover .outline .cn { font: 400 24px/1.2 var(--f-sans); color: var(--ink-2); margin-left: auto; }
+
+/* 主讲人 + 校徽 */
+.cover .who { position: absolute; left: 96px; bottom: 56px; display: flex; align-items: center; gap: 28px; }
+.cover .who img { width: 124px; height: 124px; }
+.cover .who .name { font: 700 34px/1.2 var(--f-serif-cn); color: var(--ink); }
+.cover .who .org { font: 400 24px/1.55 var(--f-sans); color: var(--ink-2); margin-top: 6px; }
+.cover .who .meta { font: 400 20px/1.6 var(--f-mono); color: var(--ink-3); letter-spacing: .02em; }
+
+/* 右侧示意图：AI 四次浪潮 */
+.cover .fig { position: absolute; left: 1120px; top: 190px; width: 704px; height: 760px; }
+.fig svg { width: 100%; height: 100%; max-width: none; max-height: none; overflow: visible; }
+.fig .curve { stroke-dasharray: 1200; stroke-dashoffset: 1200; transition: stroke-dashoffset 2.2s .5s var(--ease); }
+.slide.visible .fig .curve { stroke-dashoffset: 0; }
+.fig .node { opacity: 0; transform-box: fill-box; transform-origin: center; transform: scale(.2); transition: opacity .6s var(--ease), transform .6s var(--ease); }
+.slide.visible .fig .node { opacity: 1; transform: none; }
+.fig .n1 { transition-delay: .6s; } .fig .n2 { transition-delay: 1.0s; } .fig .n3 { transition-delay: 1.4s; } .fig .n4 { transition-delay: 1.9s; }
+.fig .lab { opacity: 0; transition: opacity .8s ease; }
+.slide.visible .fig .lab { opacity: 1; }
+.fig .l1 { transition-delay: .8s; } .fig .l2 { transition-delay: 1.2s; } .fig .l3 { transition-delay: 1.6s; } .fig .l4 { transition-delay: 2.1s; }
+.fig text { font-family: var(--f-sans); }
+.fig .ver { font-family: var(--f-mono); font-weight: 500; }
+.fig .cap { font-family: var(--f-serif-en); font-style: italic; }
+
+/* === 页码/导航（舞台之外的 UI） === */
+.deck-controls { font: 500 14px var(--f-mono); color: var(--ink-3); letter-spacing: .1em; user-select: none; }
+
+/* =====================================================
+   CONTENT SLIDES（内页通用组件）
+   ===================================================== */
+.c .toprule { position: absolute; left: 96px; right: 96px; top: 56px; height: 3px; background: var(--ink); }
+.c .tag { position: absolute; left: 96px; top: 80px; font: 500 20px/1 var(--f-mono); letter-spacing: .16em; color: var(--ink-3); text-transform: uppercase; }
+.c .tag b { color: var(--blue); font-weight: 500; }
+.c .pg  { position: absolute; right: 96px; top: 80px; font: 500 20px/1 var(--f-mono); letter-spacing: .1em; color: var(--ink-3); }
+.c .body { position: absolute; left: 96px; right: 96px; top: 140px; bottom: 96px; }
+.c .src { position: absolute; left: 96px; right: 96px; bottom: 34px; padding-top: 10px; border-top: 1px solid var(--rule);
+          font: 400 17px/1.45 var(--f-mono); color: var(--ink-3); letter-spacing: .01em; }
+.c .src b { color: var(--ink-2); font-weight: 500; }
+
+.c h2 { font: 900 72px/1.18 var(--f-serif-cn); color: var(--ink); letter-spacing: .01em; }
+.c h2 em { font-style: normal; color: var(--blue); }
+.c h3 { font: 700 36px/1.3 var(--f-serif-cn); color: var(--ink); }
+.c .lede { font: 400 34px/1.65 var(--f-sans); color: var(--ink-2); }
+.c .lede b, .c p b { color: var(--ink); font-weight: 700; }
+.c p { font: 400 30px/1.65 var(--f-sans); color: var(--ink-2); }
+.c .mono { font-family: var(--f-mono); }
+.c .blue { color: var(--blue); } .c .teal { color: var(--teal); } .c .ochre { color: var(--ochre); }
+.c .muted { color: var(--ink-3); }
+.c .en { font-family: var(--f-serif-en); font-style: italic; }
+
+/* 布局 */
+.c .abs { position: absolute; }
+.c .flex { display: flex; } .c .col { display: flex; flex-direction: column; }
+.c .gap16 { gap: 16px; } .c .gap24 { gap: 24px; } .c .gap32 { gap: 32px; } .c .gap48 { gap: 48px; }
+.c .grow { flex: 1; } .c .center { align-items: center; } .c .between { justify-content: space-between; }
+
+/* 图片 */
+.c figure { margin: 0; position: relative; }
+.c figure img { display: block; width: 100%; height: 100%; object-fit: cover; border: 1px solid var(--rule); background: #fff; }
+.c figure.contain img { object-fit: contain; }
+.c figcaption { margin-top: 10px; font: 400 18px/1.4 var(--f-mono); color: var(--ink-3); }
+
+/* 卡片 */
+.c .card { background: #fff; border: 1px solid var(--rule); border-top: 4px solid var(--ink); padding: 28px 30px; }
+.c .card.b { border-top-color: var(--blue); } .c .card.t { border-top-color: var(--teal); } .c .card.o { border-top-color: var(--ochre); } .c .card.g { border-top-color: var(--ink-3); }
+.c .card h3 { font-size: 34px; margin-bottom: 12px; }
+.c .card p { font-size: 27px; line-height: 1.6; }
+.c .card .n { font: 500 20px/1 var(--f-mono); letter-spacing: .14em; color: var(--ink-3); margin-bottom: 14px; }
+
+/* 大数字 */
+.c .stat .v { font: 900 120px/1 var(--f-serif-en); color: var(--blue); letter-spacing: -.02em; }
+.c .stat .v small { font-size: 52px; font-weight: 700; margin-left: 4px; }
+.c .stat .l { font: 400 26px/1.45 var(--f-sans); color: var(--ink-2); margin-top: 10px; }
+
+/* 引用 */
+.c .quote { font: 700 56px/1.4 var(--f-serif-cn); color: var(--ink); }
+.c .quote .en { display: block; margin-top: 22px; font: 400 italic 34px/1.5 var(--f-serif-en); color: var(--ink-2); }
+.c .quote-mark { font: 900 200px/0.6 var(--f-serif-en); color: var(--blue); opacity: .18; }
+
+/* 表格 */
+.c table { border-collapse: collapse; width: 100%; }
+.c th { font: 500 20px/1 var(--f-mono); letter-spacing: .12em; text-align: left; color: var(--ink-3); padding: 0 20px 14px 0; border-bottom: 2px solid var(--ink); text-transform: uppercase; }
+.c td { font: 400 27px/1.5 var(--f-sans); color: var(--ink-2); padding: 18px 20px 18px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.c td:first-child { font-weight: 700; color: var(--ink); white-space: nowrap; }
+
+/* 标签/药丸 */
+.c .pill { display: inline-block; font: 500 20px/1 var(--f-mono); letter-spacing: .08em; padding: 8px 14px; border: 1.5px solid currentColor; border-radius: 99px; }
+.c .pill.fill { color: #fff; background: var(--blue); border-color: var(--blue); }
+
+/* 章节页 */
+.chapter .big { position: absolute; left: 96px; top: 150px; font: 900 420px/1 var(--f-serif-en); color: var(--blue); opacity: .10; letter-spacing: -.04em; }
+.chapter .ttl { position: absolute; left: 96px; top: 420px; }
+.chapter .ttl .k { font: 500 24px/1 var(--f-mono); letter-spacing: .2em; color: var(--blue); margin-bottom: 26px; }
+.chapter .ttl h2 { font-size: 150px; line-height: 1.1; }
+.chapter .ttl .s { margin-top: 28px; font: 400 40px/1.5 var(--f-sans); color: var(--ink-2); }
+.chapter .subs { position: absolute; left: 96px; right: 96px; bottom: 100px; display: flex; gap: 0; border-top: 1px solid var(--rule); }
+.chapter .subs div { flex: 1; padding-top: 20px; font: 400 26px/1.4 var(--f-sans); color: var(--ink-2); }
+.chapter .subs div b { display: block; font: 500 20px/1 var(--f-mono); letter-spacing: .14em; color: var(--blue); margin-bottom: 10px; }
+
+/* 逐项浮现 */
+.st > * { opacity: 0; transform: translateY(22px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
+.slide.visible .st > * { opacity: 1; transform: none; }
+.st > *:nth-child(1) { transition-delay: .15s; } .st > *:nth-child(2) { transition-delay: .3s; } .st > *:nth-child(3) { transition-delay: .45s; }
+.st > *:nth-child(4) { transition-delay: .6s; } .st > *:nth-child(5) { transition-delay: .75s; } .st > *:nth-child(6) { transition-delay: .9s; }
+.st > *:nth-child(7) { transition-delay: 1.05s; } .st > *:nth-child(8) { transition-delay: 1.2s; }
+
+/* 交互控件 */
+.c .tabs { display: flex; gap: 12px; }
+.c .tab { font: 500 22px/1 var(--f-mono); letter-spacing: .06em; padding: 16px 24px; border: 1.5px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; transition: all .2s; }
+.c .tab:hover { background: var(--paper-2); }
+.c .tab.on { background: var(--ink); color: #fff; }
+.c .tab.b.on { background: var(--blue); border-color: var(--blue); }
+.c .hint { font: 400 20px/1 var(--f-mono); color: var(--ink-3); letter-spacing: .06em; }
+
+/* outline 浮层 */
+#outline { position: fixed; inset: 0; z-index: 2000; background: rgba(250,248,244,.97); display: none; overflow: auto; padding: 5vh 6vw; font-family: var(--f-sans); color: var(--ink); }
+#outline.open { display: block; }
+#outline h1 { font: 900 clamp(28px,3.4vw,52px)/1.2 var(--f-serif-cn); margin-bottom: 3vh; }
+#outline h1 span { color: var(--blue); }
+#outline .sec { margin-bottom: 3vh; }
+#outline .sec h4 { font: 500 clamp(12px,1vw,16px)/1 var(--f-mono); letter-spacing: .16em; color: var(--blue); border-bottom: 1px solid var(--rule); padding-bottom: 1vh; margin-bottom: 1.4vh; }
+#outline .items { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(220px,22vw,360px), 1fr)); gap: .6vh 2vw; }
+#outline a { display: flex; gap: 12px; padding: .8vh 0; color: var(--ink); text-decoration: none; font-size: clamp(14px,1.2vw,20px); line-height: 1.4; cursor: pointer; border-bottom: 1px dotted var(--rule); }
+#outline a i { font: normal 500 clamp(11px,.9vw,14px)/1.8 var(--f-mono); color: var(--ink-3); min-width: 2.2em; }
+#outline a:hover { color: var(--blue); }
+#outline a.cur { color: var(--blue); font-weight: 700; }
+#outline .close { position: fixed; right: 3vw; top: 3vh; font: 500 14px var(--f-mono); letter-spacing: .1em; color: var(--ink-3); cursor: pointer; }
+.deck-controls { display: flex; gap: 22px; align-items: center; background: rgba(250,248,244,.85); padding: 6px 16px; border-radius: 99px; }
+.deck-controls button { all: unset; cursor: pointer; color: var(--ink-2); font: 500 14px var(--f-mono); letter-spacing: .1em; }
+.deck-controls button:hover { color: var(--blue); }
+
+/* 侧边导航栏 */
+#sbTab { position: fixed; left: 0; top: 50%; transform: translateY(-50%); z-index: 1500; width: 26px; height: 96px; background: rgba(250,248,244,.9); border: 1px solid var(--rule); border-left: none; border-radius: 0 8px 8px 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font: 500 13px var(--f-mono); color: var(--ink-3); writing-mode: vertical-rl; letter-spacing: .2em; transition: opacity .25s, color .2s; opacity: .55; }
+#sbTab:hover { opacity: 1; color: var(--blue); }
+#sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 340px; z-index: 1800; background: rgba(250,248,244,.98); border-right: 1px solid var(--rule); box-shadow: 6px 0 24px rgba(29,36,51,.08); transform: translateX(-102%); transition: transform .3s cubic-bezier(.16,1,.3,1); display: flex; flex-direction: column; font-family: var(--f-sans); color: var(--ink); }
+#sidebar.open { transform: none; }
+#sidebar .sbh { padding: 18px 20px 12px; border-bottom: 1px solid var(--rule); display: flex; align-items: center; justify-content: space-between; }
+#sidebar .sbh b { font: 900 17px var(--f-serif-cn); } #sidebar .sbh b span { color: var(--blue); }
+#sidebar .sbh button { all: unset; cursor: pointer; font: 500 12px var(--f-mono); color: var(--ink-3); letter-spacing: .1em; }
+#sidebar .sbh button:hover { color: var(--blue); }
+#sidebar .sbl { overflow-y: auto; flex: 1; padding: 6px 0 24px; }
+#sidebar .sbs > .sbt { display: flex; align-items: center; gap: 8px; padding: 11px 20px; cursor: pointer; font: 500 12px var(--f-mono); letter-spacing: .1em; color: var(--blue); border-top: 1px solid var(--rule); user-select: none; }
+#sidebar .sbs:first-child > .sbt { border-top: none; }
+#sidebar .sbt:before { content: '▸'; font-size: 11px; transition: transform .2s; }
+#sidebar .sbs.open > .sbt:before { transform: rotate(90deg); }
+#sidebar .sbt em { margin-left: auto; font-style: normal; color: var(--ink-3); }
+#sidebar .sbi { display: none; }
+#sidebar .sbs.open .sbi { display: block; }
+#sidebar .sbi a { display: flex; gap: 10px; padding: 7px 20px 7px 34px; font-size: 14px; line-height: 1.4; color: var(--ink-2); cursor: pointer; text-decoration: none; border-left: 3px solid transparent; }
+#sidebar .sbi a i { font: normal 500 11px/1.9 var(--f-mono); color: var(--ink-3); min-width: 1.9em; }
+#sidebar .sbi a:hover { background: #f0ece3; color: var(--ink); }
+#sidebar .sbi a.cur { color: var(--blue); font-weight: 700; border-left-color: var(--blue); background: #eef2fa; }
+@media print { #sbTab, #sidebar { display: none !important; } }
+
+/* === L2 扩展组件 === */
+.c .chip { display: inline-block; font: 500 24px/1 var(--f-sans); padding: 14px 20px; background: #fff; border: 1px solid var(--rule); border-left: 4px solid var(--blue); color: var(--ink); }
+.c .chips { display: flex; flex-wrap: wrap; gap: 14px; }
+.c .tl { position: relative; display: flex; gap: 0; border-top: 3px solid var(--ink); }
+.c .tl button { all: unset; cursor: pointer; flex: 1; padding: 22px 6px 0; text-align: left; position: relative; font: 500 24px/1.2 var(--f-mono); color: var(--ink-3); transition: color .2s; }
+.c .tl button:before { content: ''; position: absolute; left: 0; top: -12px; width: 20px; height: 20px; border-radius: 50%; background: var(--paper); border: 3px solid var(--ink-3); transition: all .2s; }
+.c .tl button small { display: block; margin-top: 8px; font: 400 19px/1.35 var(--f-sans); color: var(--ink-3); padding-right: 10px; }
+.c .tl button:hover { color: var(--blue); }
+.c .tl button.on { color: var(--blue); }
+.c .tl button.on:before { background: var(--blue); border-color: var(--blue); transform: scale(1.3); }
+.c .tl button.on small { color: var(--ink); font-weight: 700; }
+.c .bignum { font: 900 150px/1 var(--f-serif-en); color: var(--blue); letter-spacing: -.03em; }
+.c .bignum small { font-size: 58px; margin-left: 6px; }
+.c .arrow { font: 500 56px/1 var(--f-mono); color: var(--ink-3); align-self: center; }
+.c input[type=range] { width: 100%; accent-color: var(--blue); height: 6px; }
+.c .kv { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--rule); font: 400 26px/1.3 var(--f-sans); color: var(--ink-2); }
+.c .kv b { font: 700 40px/1 var(--f-serif-en); color: var(--ink); }
+.c .kv b.pos { color: var(--teal); } .c .kv b.neg { color: #b4402d; }
+.c figure.crop img { object-fit: cover; }
+.c .bar { height: 26px; background: var(--paper-2); position: relative; }
+.c .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--blue); transition: width .3s; }
+
+/* === L5.2 扩展组件 === */
+.c .sl { display: flex; align-items: center; gap: 18px; font: 500 22px/1 var(--f-mono); color: var(--ink-2); }
+.c .sl input[type=range] { flex: 1; }
+.c .sl b { color: var(--blue); min-width: 70px; text-align: right; }
+.c .panel { background: #fff; border: 1px solid var(--rule); padding: 22px 26px; }
+.c .math { font: 600 40px/1.5 var(--f-serif-en); color: var(--ink); }
+.c .math i { font-style: italic; }
+.c .math sub, .c .math sup { font-size: .6em; }
+.c .tbl { border-collapse: collapse; font: 400 26px/1 var(--f-sans); }
+.c .tbl th, .c .tbl td { padding: 12px 22px; border: 1px solid var(--rule); font: 400 26px/1.1 var(--f-sans); color: var(--ink); text-align: center; background: #fff; letter-spacing: 0; text-transform: none; }
+.c .tbl th { font: 500 20px/1 var(--f-mono); color: var(--ink-3); background: var(--paper-2); }
+.c .tbl tr.sel td { background: #eef2fa; }
+.c .tbl td.y { color: var(--teal); font-weight: 700; } .c .tbl td.n { color: #b4402d; font-weight: 700; }
+.c svg text { font-family: var(--f-sans); }
+.c .btn { font: 500 22px/1 var(--f-mono); padding: 14px 22px; border: 1.5px solid var(--blue); color: var(--blue); background: #fff; cursor: pointer; letter-spacing: .05em; }
+.c .btn:hover { background: var(--blue); color: #fff; }
+.c .acc { font: 700 44px/1 var(--f-serif-en); color: var(--ink); }
+.c .acc small { font: 500 20px/1 var(--f-mono); color: var(--ink-3); display: block; margin-bottom: 8px; letter-spacing: .1em; }
+</style>
+</head>
+<body>
+
+<div class="deck-viewport">
+  <div class="deck-stage" id="stage">
+<script>window.SPAM={"all":[0.0,0.0,0.0,0.0,0.0,0.0,0.69,0.0,1.21,1.16,0.99,0.65,0.0,0.77,0.0,0.0,0.0,0.0,1.12,0.0,0.99,0.35,0.24,0.0,0.0,0.0,0.0,0.0,0.0,0.6,0.0,0.0,1.1,0.0,0.0,1.06,0.0,0.55,0.0,0.0,0.33,0.32,0.0,0.56,0.0,0.0,0.0,0.0,0.72,0.37,2.56,0.0,2.27,0.0,0.29,0.35,0.0,0.55,1.47,0.58,0.86,3.22,0.52,0.0,0.0,0.0,0.0,0.36,0.0,0.47,0.0,0.0,0.41,0.0,0.48,0.0,0.0,0.0,0.0,0.29,0.0,0.19,0.0,0.0,0.0,0.0,0.0,0.18,0.24,0.13,1.14,0.51,0.0,0.0,0.55,0.12,0.15,0.0,0.0,0.0,0.0,0.58,0.0,0.88,0.0,0.0,0.19,0.41,0.0,0.0,0.0,1.19,0.0,0.0,0.26,0.67,1.83,0.0,0.71,0.42,0.0,0.0,0.0,0.0,1.77,0.0,0.26,0.09,0.47,0.0,0.0,0.0,0.0,0.0,0.21,0.0,0.29,0.0,0.0,0.0,0.0,0.87,0.0,0.31,0.0,0.0,0.76,0.0,0.0,0.0,0.0,0.0,0.36,0.0,0.0,0.73,0.5,0.41,0.97,0.15,0.0,0.59,0.0,0.0,0.0,1.11,0.19,0.0,1.26,0.71,0.71,0.91,0.4,0.69,1.2,0.0,0.0,0.0,0.0,0.0,0.84,0.0,1.01,0.43,0.0,0.32,0.22,0.0,0.0,0.2,0.0,0.0,0.0,0.0,0.69,0.49,0.44,1.96,0.4,0.71,0.0,0.0,0.52,0.0,1.29,0.6,0.0,0.0,0.0,0.0,0.0,0.94,0.0,0.0,0.0,0.0,1.29,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.04,0.0,0.1,0.0,0.56,0.0,0.0,0.39,0.03,0.43,0.0,0.1,0.0,0.0,0.0,0.62,0.44,0.82,0.0,0.2,0.0,1.07,0.0,0.0,0.0,1.61,0.0,0.0,0.99,0.78,0.0,0.0,1.28,0.78,0.24,0.51,0.0,0.0,0.53,0.29,0.0,0.56,0.0,0.0,0.0,1.31,0.57,0.0,0.08,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.31,0.0,0.0,0.1,0.0,0.27,0.0,0.36,0.0,0.72,0.19,0.0,0.97,0.46,0.0,0.0,0.0,0.17,0.1,0.55,0.0,0.0,0.0,0.23,0.0,0.0,0.0,1.85,0.59,0.68,1.63,0.0,0.0,0.0,0.0,0.0,0.3,0.0,0.0,1.15,0.0,0.0,0.0,0.0,0.42,0.71,0.0,0.0,0.0,0.0,0.0,0.29,0.0,0.71,0.76,0.0,0.0,0.29,0.34,0.0,0.5,1.33,0.0,1.58,0.0,0.0,0.37,0.46,0.0,0.0,0.0,0.58,0.0,0.0,0.0,0.0,0.22,0.0,0.87,0.0,0.0,0.0,0.64,0.26,0.0,0.72,0.0,0.0,0.55,0.1,0.0,0.0,0.83,1.06,1.0,0.0,0.0,0.14,0.82,0.0,0.0,0.65,0.46,0.69,0.0,0.0,0.53,0.0,0.0,0.15,0.12,0.0,0.0,0.0,0.0,0.54,0.0,0.41,0.0,0.0,0.0,0.36,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.66,0.48,0.0,0.0,0.0,0.59,0.0,0.0,0.23,0.0,0.0,0.44,0.0,0.0,0.0,0.38,1.24,0.09,0.74,1.0,0.29,0.4,0.0,0.0,0.0,0.0,0.71,1.19,0.0,0.0,0.82,0.22,0.0,1.09,0.0,0.0,0.77,0.0,0.4,0.0,0.0,1.13,0.0,0.0,0.0,0.0,0.24,0.48,0.0,0.32,0.0,0.0,0.0,1.12,0.0,0.0,0.51,0.0,0.0,0.0,0.0,0.0,0.27,0.29,0.59,1.06,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.77,0.21,0.0,0.0,0.0,0.0,0.99,1.35,0.0,0.0,0.0,0.67,0.0,0.98,0.0,0.0,0.0,0.0,1.58,0.0,0.0,0.74,4.54,0.48,0.44,0.25,0.0,0.0,0.0,0.12,0.0,0.26,0.0,0.0,0.0,0.47,0.0,0.0,0.28,0.0,0.16,0.0,0.0,0.0,0.89,1.81,0.0,0.28,0.0,0.0,0.0,1.31,0.26,0.2,0.0,0.0,0.55,0.0,0.24,0.94,0.0,0.35,0.0,0.21,0.0,0.0,0.0,0.32,0.0,0.0,0.0,0.18,0.0,0.0,0.15,0.55,0.0,0.0,0.39,0.0,0.0,0.0,0.0,1.13,0.81,1.31,0.0,0.33,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.71,0.78,0.0,1.9,0.0,0.0,0.51,0.0,0.0,0.0,2.17,0.58,0.0,0.0,0.0,0.53,0.6,0.0,0.31,0.46,0.0,0.16,0.0,3.57,0.0,0.0,0.0,0.0,0.64,0.73,1.31,0.12,0.48,0.3,0.0,0.0,0.0,0.0,0.0,0.0,0.67,0.14,0.0,0.0,0.64,0.0,0.29,0.0,0.0,0.0,0.55,0.76,0.0,0.77,3.57,0.0,0.29,1.62,0.64,0.0,1.21,0.73,0.9,0.0,0.0,0.0,0.0,0.0,0.57,0.29,0.0,0.11,0.75,0.0,0.94,0.0,1.47,0.0,0.55,0.0,0.05,0.46,0.0,0.34,0.0,0.87,0.0,0.0,1.14,0.0,0.34,0.64,0.0,0.55,1.13,0.29,1.11,1.17,0.59,0.0,0.52,0.17,0.0,0.0,0.0,0.0,0.0,0.0,0.34,0.0,0.34,0.0,0.0,0.0,0.07,0.0,0.5,0.2,0.0,0.67,0.0,1.51,0.33,0.0,0.0,0.0,0.0,0.13,0.0,0.0,0.0,0.8,0.0,0.0,0.0,0.0,0.78,0.48,0.0,0.0,0.0,0.0,1.96,0.51,0.59,1.69,0.0,0.66,0.0,0.36,0.68,0.0,0.0,0.1,0.0,0.0,0.0,0.0,2.27,0.12,0.0,0.32,0.0,0.0,0.0,0.41,0.0,0.08,0.0,0.0,0.4,0.0,0.0,0.0,0.62,0.0,0.77,0.0,0.25,0.63,1.1,0.86,0.54,0.0,0.0,0.0,0.0,1.68,0.0,0.64,0.0,0.0,0.32,0.64,0.0,0.23,1.01,0.0,2.35,0.0,0.29,1.58,0.0,0.0,0.0,1.22,0.13,0.0,1.26,0.8,0.07,0.0,0.29,0.64,0.0,0.0,0.0,0.0,0.0,0.0],"remove":[0.0,0.26,0.0,0.0,0.0,0.0,0.17,0.0,0.43,0.0,0.99,0.0,0.0,0.38,3.27,0.0,0.0,0.0,1.12,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.17,0.0,0.73,0.0,0.0,0.0,1.56,0.55,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.06,0.0,0.0,0.0,0.0,0.29,0.35,0.0,0.0,0.98,0.58,0.0,0.0,0.0,0.0,0.0,0.76,0.0,0.09,2.3,0.05,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.19,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.06,0.0,0.0,0.0,0.17,0.0,0.0,0.18,0.0,0.3,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.47,0.0,0.0,0.0,0.0,0.0,0.95,0.0,1.04,0.0,0.06,0.13,0.61,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.23,0.0,0.0,0.6,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.26,0.0,0.0,0.0,0.0,0.0,0.25,0.0,0.0,0.0,0.0,0.0,0.09,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.03,0.0,0.0,1.11,0.0,0.0,0.0,0.35,0.4,0.0,0.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.14,0.0,0.5,0.86,0.0,0.0,0.0,0.0,0.0,0.0,2.46,0.0,0.0,0.0,0.69,0.49,0.0,0.0,0.8,0.17,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.88,1.04,0.0,0.94,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.13,0.0,0.0,0.0,0.15,0.0,0.04,0.0,0.0,0.19,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.44,0.41,0.0,0.0,0.0,0.53,0.0,0.0,0.0,1.61,0.0,0.0,0.19,0.0,0.0,0.37,0.0,0.0,0.0,0.51,0.0,0.0,0.0,0.29,0.0,0.0,0.0,0.0,1.65,0.0,0.09,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.96,0.27,0.0,0.0,0.0,0.0,0.0,0.67,0.0,0.05,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.39,0.0,0.0,0.0,0.0,0.68,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.97,0.8,0.0,0.0,0.0,0.0,0.0,0.21,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.19,0.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.58,0.0,0.0,0.37,0.3,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.11,0.13,0.0,0.0,0.0,0.0,0.02,0.1,0.0,0.0,0.27,1.06,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.65,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,2.94,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.6,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.09,0.0,1.0,0.0,0.0,0.0,0.0,0.81,0.0,0.0,0.0,0.0,0.0,0.07,0.0,0.0,0.0,0.0,0.0,0.38,0.0,0.0,0.0,0.45,0.56,0.0,0.0,0.0,0.0,0.24,0.48,0.0,0.32,1.02,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.06,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.58,0.0,0.0,0.0,0.49,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.48,0.0,1.01,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.94,0.0,0.0,0.56,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.55,2.0,0.0,0.94,0.0,0.0,0.0,0.0,1.16,0.0,0.59,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.15,0.0,0.0,0.0,0.0,0.0,0.0,0.65,0.0,0.0,1.63,0.0,0.0,0.33,0.0,0.87,0.0,0.0,0.0,0.0,0.0,0.0,0.17,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.29,0.0,0.0,0.0,0.0,0.0,0.0,0.26,0.6,0.0,0.0,0.05,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.73,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.67,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.45,0.0,0.25,0.0,0.38,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.29,4.0,0.0,0.5,0.0,0.0,0.0,0.0,0.0,0.55,0.0,0.0,0.05,0.0,0.34,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.97,0.0,0.0,0.0,0.72,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.33,0.96,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.42,0.16,0.86,0.0,0.0,1.63,0.0,0.0,0.0,0.0,1.36,0.0,0.0,0.0,0.0,0.0,0.0,0.16,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.32,0.0,0.0,0.0,0.1,0.0,0.08,0.0,0.0,0.0,0.0,2.29,0.0,0.62,0.0,0.0,0.0,0.25,0.63,0.73,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.08,0.0,0.0,0.0,0.5,0.0,0.0,0.0,0.05,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.51,0.0,0.64,0.0,0.0,0.0,0.0,0.0,0.0],"free":[0.0,0.26,1.06,0.0,0.0,0.0,0.17,0.0,0.78,0.0,0.49,0.0,0.0,0.0,1.63,0.0,0.0,0.0,0.56,0.0,0.24,0.59,0.24,0.0,0.0,0.0,0.0,0.0,0.0,0.3,0.0,0.0,0.09,0.0,0.0,0.0,1.56,0.55,0.0,0.0,0.11,0.16,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.15,0.0,0.0,1.13,0.0,0.87,0.7,7.35,0.15,0.49,0.0,0.86,0.0,0.32,0.0,0.0,0.0,0.0,0.26,0.76,0.26,0.0,0.0,0.0,2.56,0.0,0.0,0.0,0.0,0.0,0.0,0.47,0.0,0.0,0.0,0.0,1.03,0.0,0.0,0.03,0.13,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,2.43,0.9,0.0,0.58,0.0,0.0,0.36,0.0,0.0,0.0,0.0,0.0,0.0,0.71,0.0,0.0,0.4,0.0,0.2,0.0,0.0,0.0,0.0,0.0,4.0,0.0,0.0,0.0,0.0,0.0,0.11,0.0,0.0,0.0,0.0,0.0,0.1,0.0,0.0,0.0,0.0,0.0,0.26,0.14,0.0,0.23,0.0,0.0,0.25,0.0,0.0,2.46,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.41,0.0,0.07,0.0,0.0,2.06,0.0,0.0,2.22,0.0,0.0,0.0,0.35,0.1,0.0,0.4,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.14,0.0,0.1,0.0,0.0,0.32,0.0,0.0,0.0,0.2,2.46,0.0,2.94,0.0,0.0,0.49,0.0,1.96,0.8,0.17,0.23,0.0,0.0,0.0,2.59,0.6,1.61,0.29,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.81,0.0,0.0,0.0,0.0,1.13,0.0,0.0,0.0,0.0,0.0,0.72,0.0,0.0,0.0,0.13,1.13,0.0,0.1,0.0,0.0,0.0,0.0,0.0,2.47,0.0,0.0,0.0,0.62,0.0,0.0,0.0,1.61,0.0,1.66,0.0,0.78,0.0,0.0,1.28,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.74,0.0,0.0,0.0,0.82,0.0,0.19,0.31,0.0,0.0,0.0,0.0,0.0,0.0,1.03,0.0,0.0,0.0,0.0,0.0,0.0,1.35,0.0,0.36,0.72,2.91,0.76,0.0,0.0,0.21,0.0,0.0,0.21,0.08,0.02,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.63,0.0,0.0,0.0,0.0,0.0,0.0,0.97,0.8,1.54,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.9,0.0,0.0,0.06,0.0,0.0,0.0,0.14,0.23,0.0,0.0,0.0,0.0,1.58,0.0,0.0,0.74,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.23,0.03,0.0,0.0,0.67,0.0,0.0,0.05,0.26,0.0,0.0,0.0,0.0,0.87,0.91,0.0,0.0,0.83,1.06,0.5,0.0,0.0,0.14,0.0,0.0,0.0,0.65,0.0,1.38,0.0,0.0,0.0,0.0,0.0,0.05,0.0,0.0,0.0,0.0,0.0,0.09,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.58,0.0,0.0,0.0,0.29,0.0,0.0,0.0,0.38,1.24,0.0,0.49,0.0,0.29,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.11,0.0,0.0,0.0,0.0,0.77,0.0,0.0,0.0,1.81,3.97,0.0,0.0,0.0,0.0,1.68,0.48,0.0,0.32,0.0,0.0,0.0,0.56,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.19,0.0,0.0,0.0,0.0,0.0,0.49,0.0,0.0,4.59,0.0,0.0,0.0,0.32,0.0,0.0,0.0,0.0,0.0,3.38,0.0,0.49,0.0,0.48,0.29,1.26,0.89,0.0,0.0,0.0,0.0,0.13,0.62,0.0,0.0,0.0,0.0,0.0,1.41,0.0,0.16,0.0,0.0,0.0,1.34,0.36,0.0,0.0,0.0,0.0,0.0,0.0,0.8,0.09,0.45,1.23,0.55,0.5,0.14,0.0,0.0,0.0,0.0,0.0,0.58,0.0,0.0,0.16,0.0,0.0,0.0,0.0,0.0,0.0,1.11,1.11,0.0,0.0,0.0,0.0,0.0,0.0,0.87,0.37,0.81,0.0,0.0,0.33,0.0,2.63,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.57,0.0,0.0,0.0,2.94,0.0,0.0,1.16,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.25,0.0,0.08,0.0,0.0,0.0,0.0,0.0,0.0,0.64,0.73,0.0,0.0,0.48,0.25,0.0,0.0,0.0,0.0,0.0,0.0,0.67,0.0,1.75,0.0,0.0,0.0,0.0,0.0,0.68,0.0,0.0,0.25,0.0,0.0,0.0,0.0,0.13,0.81,1.29,0.0,0.0,0.0,0.45,0.0,0.0,0.0,0.0,0.0,0.0,0.87,0.0,0.0,0.0,0.0,0.94,3.03,0.0,0.0,0.55,0.0,0.0,0.1,0.0,0.68,0.0,0.0,0.0,0.0,0.66,0.0,1.72,0.0,0.0,0.0,0.37,0.0,1.11,3.51,0.0,0.82,0.0,0.0,0.1,0.97,0.0,0.0,0.0,0.0,0.34,1.19,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.96,0.0,0.66,0.0,0.5,0.0,0.0,0.0,0.0,4.0,0.0,0.0,0.86,0.0,0.0,0.54,0.0,0.0,0.0,0.0,1.82,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.06,0.0,0.32,0.0,0.0,0.0,0.0,0.27,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.62,0.0,0.0,0.39,0.5,1.26,0.09,0.86,0.0,0.0,0.0,0.0,0.0,0.42,0.0,0.0,1.43,0.0,0.48,0.64,0.27,0.13,0.1,0.0,0.0,0.0,0.76,0.0,0.0,0.0,0.0,0.61,0.13,0.0,0.0,0.0,0.0,2.07,0.14,0.64,0.0,0.0,0.0,0.0,0.0,0.0],"your":[0.0,0.52,0.0,0.0,0.0,0.0,0.51,3.17,1.13,0.0,0.99,0.65,0.0,0.71,1.63,0.0,0.0,0.0,1.68,0.0,0.49,1.66,0.73,0.0,0.0,0.0,0.33,0.0,1.75,1.2,0.7,0.0,0.64,0.0,1.0,2.12,1.56,1.67,0.0,0.0,0.9,1.47,6.66,0.56,0.62,0.0,0.0,0.0,0.36,1.41,0.0,0.0,0.0,0.0,2.9,2.47,1.47,1.75,1.3,1.74,0.86,0.0,1.32,0.0,0.0,0.0,0.0,1.27,2.3,1.47,0.0,0.0,1.66,0.96,0.0,0.95,0.0,0.0,0.0,1.75,1.42,0.58,0.0,0.0,0.0,1.03,0.0,1.09,0.2,1.86,1.27,0.0,0.0,0.0,0.92,0.96,0.3,0.0,1.21,2.72,0.0,1.5,0.0,2.2,0.73,0.6,0.06,1.25,0.0,0.0,2.85,2.63,2.09,0.0,0.94,0.0,1.22,0.0,1.06,0.14,0.0,0.0,0.0,0.0,1.18,0.91,0.0,0.0,1.29,0.0,0.0,1.21,0.0,0.0,0.0,0.0,0.04,0.0,0.0,0.0,0.26,0.43,0.0,1.32,1.26,0.0,0.42,0.33,0.0,2.46,1.33,1.06,1.56,0.0,0.0,0.0,2.75,2.48,0.97,1.3,0.0,1.08,1.03,0.0,0.0,3.33,0.38,0.0,3.79,0.17,2.03,0.0,2.22,0.0,4.81,1.21,4.16,0.0,0.0,0.0,0.84,1.28,0.7,4.76,0.0,1.14,0.67,0.32,0.0,2.48,0.0,0.0,0.0,0.0,2.08,0.99,0.0,0.0,1.61,0.71,1.91,0.0,0.52,0.0,1.29,1.21,0.8,0.59,0.0,1.04,0.22,0.94,0.0,0.0,1.16,1.61,5.19,0.0,0.0,0.0,0.0,2.5,0.0,0.0,0.0,0.0,1.57,0.0,1.32,1.17,0.0,1.18,0.05,2.35,0.0,0.0,0.0,0.0,0.0,0.62,3.09,2.06,0.0,0.2,0.0,1.16,0.48,0.34,0.0,0.0,0.0,1.66,0.39,2.34,0.7,3.38,1.28,0.78,0.72,1.03,0.0,2.27,0.0,1.45,1.49,0.94,0.33,0.0,0.82,5.26,1.43,0.62,0.0,0.0,1.36,0.0,0.0,0.0,0.0,0.0,5.26,0.0,0.0,0.2,2.88,2.44,5.47,0.36,0.72,0.0,1.14,0.67,0.97,1.5,0.0,1.25,1.08,0.6,0.04,0.0,0.0,0.0,0.0,0.7,1.98,0.0,0.0,0.0,1.18,0.68,3.27,0.0,0.0,0.58,0.69,0.92,0.3,1.94,1.6,2.31,0.98,0.0,0.0,0.0,0.64,1.42,0.0,0.0,0.0,0.0,0.0,1.02,0.0,0.51,1.52,0.0,0.32,0.88,1.34,0.0,3.03,0.66,1.0,1.58,0.0,0.0,0.37,2.0,0.0,0.0,0.0,0.0,0.0,0.0,0.36,3.7,0.56,0.0,0.0,2.02,0.81,0.0,2.05,1.44,1.28,0.18,0.0,0.0,1.59,1.72,0.87,0.0,1.11,1.06,1.5,0.0,0.0,0.0,0.0,0.0,0.82,0.0,0.0,1.38,2.76,0.0,2.65,0.0,0.46,0.33,0.63,0.0,0.87,0.0,0.0,0.09,0.0,0.0,4.41,0.0,0.0,0.45,1.78,0.0,1.19,0.0,1.21,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.99,0.95,0.0,0.69,2.12,0.0,2.35,0.0,0.0,0.0,1.26,1.86,0.67,1.23,4.0,1.02,0.0,0.0,0.0,0.81,0.0,2.87,1.19,0.0,0.0,1.87,0.73,0.69,1.09,0.91,0.0,1.15,0.0,1.22,0.0,1.36,0.56,3.27,1.09,0.76,2.54,1.68,2.41,0.0,3.24,0.51,0.49,2.83,1.12,0.0,0.0,1.02,0.0,0.0,0.0,0.0,0.0,1.1,0.88,2.97,0.0,0.0,0.0,1.39,0.55,0.0,0.0,0.0,1.15,0.21,0.0,0.0,0.0,0.0,0.99,0.0,0.0,1.14,2.91,1.35,0.0,1.3,0.0,0.0,0.0,0.0,0.0,0.0,1.33,1.23,0.0,2.43,2.35,1.26,1.78,0.0,0.0,3.01,0.0,0.13,0.0,0.0,0.0,0.47,0.0,2.32,1.12,1.01,1.76,0.0,0.0,0.0,4.48,2.53,0.0,0.86,0.0,0.0,0.0,4.6,0.0,0.15,1.35,2.46,1.67,1.5,0.64,0.94,0.0,1.07,1.56,0.43,2.92,1.33,0.0,1.47,0.0,2.81,0.0,0.56,0.0,0.0,0.0,0.97,2.03,1.06,0.0,0.0,0.85,0.65,0.87,0.37,0.0,0.0,0.0,3.3,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,4.12,2.36,0.0,0.0,0.0,0.0,0.77,0.0,1.16,0.0,6.52,0.0,0.0,0.0,1.75,0.8,1.21,1.81,0.31,1.46,0.0,0.16,0.0,0.0,0.0,0.0,0.65,0.0,0.0,0.0,5.26,0.24,1.45,0.65,0.0,0.0,0.81,0.0,0.84,0.0,2.18,0.0,1.75,0.64,3.54,1.73,2.64,0.0,0.0,0.45,0.0,0.42,3.57,0.7,0.0,0.4,0.17,0.81,2.58,1.2,0.6,0.73,4.97,3.79,0.0,6.66,0.0,0.0,1.44,2.9,0.0,0.0,1.51,0.0,0.0,3.03,0.36,0.0,1.66,0.0,0.16,1.48,2.75,0.34,0.0,0.0,0.0,0.0,1.42,1.36,2.06,0.38,0.0,0.92,4.54,0.22,1.67,1.17,1.19,0.82,2.64,0.0,0.0,0.97,0.0,0.0,0.0,0.0,1.03,0.0,1.03,0.0,0.0,0.3,0.23,0.63,0.0,0.0,7.4,3.87,1.92,3.03,0.33,0.0,0.5,0.0,2.94,0.27,0.0,0.0,0.42,0.47,1.73,0.0,0.0,2.18,0.0,2.41,0.0,2.38,1.36,0.0,0.0,0.0,1.08,0.0,0.0,1.48,2.0,1.35,0.0,0.0,2.04,0.2,0.0,0.0,0.0,1.31,0.0,0.18,0.54,3.24,0.0,0.0,0.0,0.0,0.83,3.17,0.0,0.0,2.04,0.0,2.29,2.06,2.51,0.0,0.0,2.78,1.01,0.0,0.64,1.73,0.0,0.0,0.0,1.69,0.0,1.68,0.0,0.32,1.43,0.0,0.73,0.0,0.0,0.65,0.7,0.0,1.17,0.0,1.3,0.0,0.0,4.28,0.0,0.0,0.73,0.0,5.06,0.0,0.0,1.03,1.64,2.56,0.0,0.0,0.0,0.0,0.0,1.38],"excl":[0.0,0.37,0.0,8.33,0.0,0.0,0.32,0.3,0.27,0.0,1.12,0.0,0.0,0.24,0.54,0.0,0.0,0.0,1.08,0.17,0.0,0.15,0.04,0.0,0.0,0.0,0.0,0.0,0.0,0.19,0.09,0.0,0.43,0.0,0.0,0.0,0.0,1.21,0.0,0.25,0.05,0.0,0.0,0.39,0.33,0.0,0.15,0.0,0.0,0.34,1.54,0.0,0.0,0.0,0.14,0.06,1.27,0.15,0.18,0.0,0.93,0.0,0.64,0.0,0.0,0.27,0.0,0.34,0.52,0.33,0.25,0.0,0.28,0.49,0.0,0.0,0.0,0.0,0.0,0.4,0.0,0.0,0.0,0.09,0.0,0.18,0.0,0.01,0.03,0.0,0.37,0.0,0.0,0.0,0.43,0.69,0.0,0.06,0.0,0.17,0.0,0.13,0.11,0.44,0.37,0.0,0.0,0.0,0.13,0.0,0.15,0.4,0.62,0.0,1.06,0.02,1.23,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.17,0.16,0.0,0.0,0.29,0.0,0.0,0.1,0.0,0.71,0.0,0.0,0.0,0.0,0.0,0.0,0.81,0.0,0.0,0.36,0.0,0.0,0.43,0.0,0.18,0.23,0.11,0.03,0.34,0.0,1.8,6.39,0.41,0.97,0.0,0.08,0.0,5.83,0.0,0.0,0.0,0.14,0.0,0.0,1.9,0.06,0.93,0.0,0.13,0.0,0.0,0.0,0.68,0.08,0.0,0.0,0.58,0.2,0.49,0.92,0.0,0.62,0.06,0.05,0.0,1.0,1.91,0.0,0.0,0.0,0.7,0.84,0.0,0.0,0.55,0.17,0.37,0.0,0.0,0.0,1.1,0.08,0.0,0.0,0.0,0.26,0.0,0.16,0.0,0.0,0.49,0.53,0.0,0.0,0.24,0.0,0.0,0.0,0.0,0.0,0.42,0.0,0.25,0.0,0.41,0.0,0.0,0.15,0.0,0.71,0.0,0.0,0.0,0.0,0.0,0.0,0.3,0.53,0.0,0.11,0.0,0.21,0.07,0.0,0.0,0.8,0.0,0.65,0.17,0.79,0.03,0.0,0.72,0.13,0.33,0.18,0.0,0.0,0.0,0.0,0.0,0.24,0.0,0.0,1.36,0.0,0.09,0.0,0.0,0.0,0.0,0.0,0.92,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.62,0.33,0.0,0.0,0.2,0.49,0.26,0.0,0.0,0.32,0.15,0.0,0.06,0.05,0.0,0.0,0.0,1.53,0.0,0.0,0.7,0.0,0.0,0.69,0.11,1.09,0.76,0.0,0.0,0.11,0.0,0.52,0.0,0.83,0.27,0.26,0.0,0.0,0.0,0.0,0.03,0.06,0.0,0.0,0.0,0.0,0.0,0.15,0.0,0.28,0.41,0.0,0.18,0.2,0.34,0.0,0.09,0.35,0.0,0.37,0.0,0.34,0.24,0.18,0.0,0.21,0.03,0.0,0.0,0.06,0.0,0.23,0.03,0.11,0.0,0.0,0.0,0.26,0.49,0.02,0.2,0.15,0.0,0.0,0.54,0.35,0.0,0.0,0.64,1.21,0.89,0.0,0.0,0.0,0.12,0.04,0.0,0.23,0.47,2.38,0.2,0.0,0.09,0.04,0.07,0.0,0.04,0.0,0.87,0.0,0.0,0.03,7.33,0.0,0.43,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.23,0.12,0.0,0.0,0.0,0.02,5.78,0.0,0.09,0.0,0.0,1.0,0.0,0.0,0.39,0.43,0.32,0.56,0.15,0.28,0.76,0.02,0.96,0.0,0.0,0.0,0.0,0.29,0.0,0.0,0.12,0.04,0.19,0.06,0.0,1.41,0.51,0.0,0.84,0.0,0.64,0.77,0.26,0.0,0.0,0.0,0.68,0.49,0.0,0.0,0.07,0.0,0.0,0.61,0.0,2.27,0.08,0.0,0.0,0.0,0.07,0.0,0.14,0.39,0.1,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.44,0.07,0.56,0.0,2.64,0.83,0.85,0.8,0.0,1.94,0.0,2.41,0.0,0.48,0.0,0.0,0.65,0.19,0.0,0.87,0.23,0.15,0.0,0.49,1.0,0.19,1.13,0.0,0.09,0.02,1.16,0.0,0.1,0.0,0.0,0.22,0.0,0.0,0.15,0.0,0.0,0.0,0.0,0.19,0.0,1.2,0.0,0.31,0.0,0.0,0.0,0.82,0.47,0.02,0.14,0.0,1.21,0.45,0.01,1.25,0.0,0.0,0.75,0.12,0.09,0.0,0.05,0.0,0.0,0.0,0.5,0.1,0.23,0.1,0.86,0.75,0.0,0.0,0.0,0.0,0.0,1.46,0.34,0.44,1.21,0.14,0.0,0.0,0.0,0.8,0.0,0.0,0.27,0.0,0.03,0.37,1.16,0.68,0.0,1.01,0.0,0.81,0.26,0.0,0.04,0.0,0.0,0.28,0.0,0.0,0.0,0.0,0.62,0.31,0.0,0.33,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.66,0.88,0.0,0.0,0.04,0.02,0.0,0.0,0.41,0.0,0.14,0.65,0.16,0.0,0.24,0.0,1.18,0.77,0.11,0.0,0.0,0.06,0.0,0.49,0.61,0.25,0.74,0.0,0.0,0.12,0.46,0.0,0.0,0.0,1.63,0.0,0.0,0.0,0.0,0.0,0.16,0.14,0.0,0.0,0.43,0.0,3.57,0.0,0.0,0.0,1.19,0.0,0.0,0.35,0.53,0.22,0.0,0.06,0.0,0.0,0.59,0.0,0.0,0.02,0.16,0.46,1.25,0.0,0.09,0.86,0.1,0.0,0.1,0.0,0.04,0.0,0.0,0.0,0.0,0.13,0.72,0.4,0.0,0.0,0.0,0.04,0.0,0.0,0.02,0.0,0.0,1.15,0.82,2.25,0.12,0.0,0.0,0.0,0.0,0.51,0.0,2.6,0.19,0.3,0.46,0.0,0.0,0.0,0.09,0.08,0.0,0.4,0.37,0.0,0.0,0.06,5.85,0.0,0.0,0.08,0.0,0.19,0.0,0.0,0.0,0.0,0.21,0.0,0.0,0.0,0.3,0.0,0.0,0.0,0.0,0.0,0.0,0.02,0.03,0.1,0.0,0.0,0.3,0.0,0.0,0.0,0.46,0.0,0.1,0.64,0.08,0.4,0.43,1.76,0.0,0.0,5.0,0.55,1.53,0.67,0.0,0.0,0.13,0.0,0.39,0.66,0.0,0.05,0.49,0.0,0.0,0.0,0.1,0.0,0.0,0.0,0.0,0.52,0.03,0.0,0.0,0.88,0.0,0.07,0.08,0.55,0.25,0.0,1.12,0.0,0.0,0.45],"dollar":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.6,0.24,0.0,0.24,0.0,0.0,0.08,0.18,0.0,0.0,0.0,0.33,0.0,0.0,0.23,0.04,0.0,0.0,0.0,0.0,0.0,0.0,0.14,0.06,0.0,0.14,0.0,0.0,0.0,0.18,0.34,0.0,0.0,0.0,0.29,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.42,0.0,0.0,0.0,0.0,0.0,0.0,0.25,0.13,0.67,0.27,0.15,0.0,0.17,0.0,0.0,0.0,0.0,0.52,0.0,0.79,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.22,0.0,1.12,0.3,0.0,0.0,0.18,0.0,0.17,0.01,0.0,0.06,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.17,0.0,0.19,0.34,0.37,0.06,0.13,0.06,0.0,0.0,0.0,0.0,0.4,0.06,0.0,0.15,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.08,0.0,0.0,0.1,0.11,0.0,0.0,0.3,0.0,0.0,0.06,0.0,0.0,0.0,0.0,0.0,0.04,0.0,0.0,0.52,0.0,0.0,0.12,0.0,0.0,0.47,0.0,0.0,0.09,0.0,0.0,0.0,1.0,0.15,0.0,0.0,0.0,1.31,0.0,0.0,0.0,0.14,0.0,0.0,0.47,0.17,0.38,0.0,0.07,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.16,0.0,0.0,0.03,0.0,0.0,0.36,0.11,0.0,0.09,0.0,0.0,0.12,0.2,0.0,0.0,0.21,0.03,0.2,0.0,0.04,0.0,0.0,0.0,0.0,0.05,0.0,0.0,0.02,1.3,0.0,0.16,0.0,0.0,0.21,0.0,0.0,0.0,0.0,0.0,0.0,0.9,0.0,0.0,0.05,0.0,0.16,0.0,0.0,0.0,0.01,0.06,0.0,0.06,0.0,0.0,0.0,0.05,0.0,0.13,0.0,0.0,0.0,0.18,0.0,0.0,0.0,0.0,0.0,0.0,0.55,0.34,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.09,0.0,0.11,0.0,0.0,0.0,0.21,0.12,0.0,0.01,0.0,0.0,0.0,0.0,0.0,0.0,0.05,0.21,0.0,0.0,0.03,0.0,0.14,0.0,0.12,0.0,0.0,0.0,0.0,0.0,0.63,0.0,0.2,0.05,0.04,0.0,0.0,0.0,0.0,0.0,0.0,0.21,0.0,0.0,0.0,0.76,0.24,0.25,0.0,0.0,0.0,0.09,0.29,0.09,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.27,0.0,0.0,0.0,0.0,0.0,0.0,0.15,0.0,0.18,0.41,0.0,0.06,0.13,1.28,0.0,0.18,0.12,0.27,0.0,0.0,0.0,0.06,0.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.02,0.0,0.0,0.0,0.0,0.0,0.34,0.02,0.0,0.03,0.0,0.0,0.14,0.16,0.0,0.0,0.0,0.26,0.0,0.0,0.0,0.02,0.0,0.0,0.0,0.0,0.0,0.0,0.12,0.0,0.47,0.0,0.0,0.01,0.05,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.14,0.0,0.0,0.0,0.0,0.0,0.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.06,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.21,0.0,0.0,0.0,0.23,0.11,0.05,0.0,0.14,0.0,0.0,0.0,0.0,0.12,0.0,0.0,0.0,0.0,0.0,0.07,0.0,0.11,0.13,0.0,0.0,0.0,0.0,0.26,0.0,0.16,0.0,0.0,0.0,0.0,0.0,0.83,0.24,0.0,0.17,1.21,0.03,0.0,0.0,0.0,0.0,0.0,0.03,0.0,0.0,0.0,0.0,0.0,0.05,0.42,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.19,0.0,0.28,0.05,0.68,0.0,0.08,0.11,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.38,0.0,0.0,0.0,0.0,0.0,0.24,0.21,0.0,0.48,0.0,0.0,0.02,0.0,0.07,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.06,0.0,0.0,0.0,0.0,0.47,0.0,0.0,0.0,0.0,0.0,0.07,0.0,0.0,0.0,0.0,0.34,0.98,0.04,0.22,0.0,0.0,0.19,0.0,0.09,0.0,0.1,0.29,0.0,0.0,0.0,0.0,0.0,0.0,0.71,0.3,0.0,0.0,0.0,0.0,0.12,0.0,0.72,0.0,0.0,0.0,0.0,0.16,0.0,0.16,0.0,0.0,0.0,0.0,0.0,0.0,0.06,0.34,0.18,0.06,0.0,0.0,0.17,0.34,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.04,0.1,0.0,0.0,0.76,0.0,0.03,0.0,0.0,0.0,0.0,0.0,0.18,0.0,0.11,0.2,0.03,0.18,0.06,0.0,0.0,0.0,0.0,0.0,0.0,0.1,0.0,0.0,0.0,0.11,0.0,0.27,0.0,0.0,0.13,0.0,0.12,0.61,0.07,0.0,0.0,0.0,0.0,0.37,0.0,0.0,0.0,0.24,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.08,0.43,0.0,0.0,0.0,0.0,0.0,0.34,0.0,0.02,0.79,0.0,0.06,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.2,0.02,0.09,0.13,0.0,0.0,0.47,0.02,0.04,0.17,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.14,0.0,0.04,0.02,0.0,0.0,0.17,0.0,0.06,0.0,1.24,0.54,0.0,0.09,0.0,0.0,0.0,0.0,0.0,0.0,0.17,0.0,0.0,0.0,0.17,0.0,0.76,0.0,0.0,0.0,0.0,0.0,0.0,1.31,0.0,0.0,0.1,0.0,0.0,0.0,0.0,0.0,0.03,0.43,0.0,0.0,0.0,0.0,0.02,0.08,0.16,0.0,0.0,0.0,0.06,0.05,0.01,0.0,0.0,0.15,0.0,0.0,0.0,0.27,0.0,0.0,0.26,0.04,0.0,0.13,0.48,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.1,0.0,0.0,0.06,0.16,0.0,0.0,0.0,0.26,0.0,0.0,0.0,0.0,0.1,0.07,0.0,0.0,0.0,0.03,0.0,0.05,0.37,0.0,0.0,0.0,0.0,0.0,0.0],"hp":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.54,0.0,0.0,0.0,0.19,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.15,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.32,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.62,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.29,0.0,0.0,0.0,0.0,0.0,0.33,0.0,0.0,0.0,0.17,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.6,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.96,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.26,0.0,0.0,0.6,0.0,0.0,0.0,0.0,0.67,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.08,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.34,0.0,0.0,0.0,0.0,0.59,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.48,0.0,0.0,0.0,0.0,0.0,0.0,8.33,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.16,0.08,0.0,0.0,0.0,0.0,4.54,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.39,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,4.44,0.0,0.0,0.0,0.0,0.0,0.0,0.9,0.0,1.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.58,0.0,0.0,0.0,0.0,0.11,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.24,0.0,0.0,0.0,0.0,0.0,1.07,0.0,0.0,0.0,0.0,0.08,0.0,0.0,0.0,0.67,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,3.7,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.3,0.19,0.0,0.29,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.19,0.0,0.0,0.0,0.05,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.69,0.0,0.0,0.0,0.0,0.0,0.74,0.0,0.0,2.04,0.0,0.0,0.0,0.0,0.0,0.0,0.67,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.33,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.5,0.0,4.16,0.0,0.0,0.0,0.0,0.0,0.0,1.36,0.0,0.0,0.0,0.0,0.03,0.0,0.0,0.0,0.0,0.04,0.0,0.0,0.0,0.0,0.0,0.0,1.33,0.0,0.0,0.0,0.0,0.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.31,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.74,0.0,1.28,0.0,0.0,0.0,0.0,0.63,0.0,0.0,0.0,0.0,0.0,0.0,2.1,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.15,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.02,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.89,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.74,0.89,0.0,0.0,0.0,0.0,0.25,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.86,3.84,0.0,0.0,0.0,0.0,0.68,0.0,0.0,0.0,0.0,0.63,0.0,0.06,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.39,0.0,1.57,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.37,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.13,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.78,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.64,0.0,2.73,0.0,0.0,0.54,0.23,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.42,0.0,0.0,0.13,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"caps":[1.33,13.82,2.62,2.0,1.53,1.08,6.36,3.33,6.39,1.21,5.23,1.41,1.0,1.73,14.82,1.6,1.86,1.36,4.97,1.67,5.55,3.62,2.35,4.12,2.0,3.09,2.7,1.41,1.12,1.93,3.56,1.25,8.45,3.33,1.67,13.33,11.71,4.76,1.66,1.28,2.94,2.26,1.3,3.54,4.25,3.85,1.93,2.48,1.54,8.02,2.78,2.67,8.76,1.38,4.89,2.3,6.05,3.63,2.92,1.67,2.41,1.08,3.7,1.9,1.59,11.04,1.14,5.63,11.31,6.07,1.1,1.96,2.02,2.18,1.35,1.08,1.0,3.53,2.39,4.29,7.18,1021.5,1.7,1.82,1.33,2.77,1.67,1.74,2.81,1.51,2.88,1.56,2.0,1.25,1.28,1.33,1.7,1.79,1.0,6.27,2.65,4.22,2.96,2.41,4.0,3.27,2.12,9.44,1.23,4.27,1.4,5.68,3.9,4.09,4.62,1.73,4.16,2.0,1.0,2.35,1.64,2.61,1.11,1.74,2.33,1.08,1.64,2.19,3.44,1.68,2.0,3.22,1.35,7.82,2.41,1.0,2.65,2.17,1.0,2.5,2.15,2.17,2.0,6.19,4.35,2.36,7.5,1.74,1.67,2.69,2.13,2.94,7.27,4.23,2.62,1.13,3.42,32.14,2.19,1.11,1.55,6.05,10.69,4.38,1.17,2.7,3.94,1.45,1.76,1.97,3.18,1.5,2.7,1.77,4.0,4.54,2.9,2.67,1.0,3.32,5.42,2.35,8.55,3.89,3.86,1.25,3.13,2.26,3.02,7.84,1.28,6.72,1.28,1.52,8.78,7.21,1.95,1.65,6.65,7.53,2.28,1.75,1.82,1.0,3.57,3.28,2.4,2.47,1.63,1.43,4.22,2.57,1.46,9.31,2.12,4.5,4.82,1.68,1.92,1.5,1.28,1.42,3.92,2.29,1.16,1.0,2.57,1.0,3.53,1.64,1.5,1.36,2.59,4.32,3.33,2.54,1.38,3.0,2.42,1.67,2.79,6.4,1.26,1.19,1.45,6.82,2.53,1.7,6.53,2.47,2.25,8.0,4.96,2.63,1.56,2.12,3.07,1.56,1.74,1.77,2.8,1.05,2.65,5.14,1.97,2.62,3.63,3.5,15.5,4.5,2.4,2.09,2.44,2.0,1.23,1.0,1.97,1.8,2.84,2.66,4.82,2.92,2.0,2.79,1.18,44.72,2.31,2.85,4.0,1.52,4.05,1.87,1.71,6.9,3.3,2.45,2.01,1.84,2.63,3.6,2.0,5.5,3.1,1.49,1.9,1.55,2.0,1.73,3.0,3.49,2.0,1.8,1.0,1.53,2.74,4.33,2.16,3.05,3.12,5.67,3.13,4.31,1.5,3.58,13.02,15.33,1.0,1.62,4.21,1.43,2.15,2.71,3.85,9.82,2.44,1.57,10.59,2.96,7.2,4.53,3.42,2.31,10.37,3.54,1.65,1.55,2.17,9.74,1.0,1.26,2.59,2.51,1.0,1.61,1.79,4.18,1.76,2.93,1.34,3.27,1.33,2.2,6.03,12.45,1.96,1.6,1.29,1.25,5.11,6.92,1.47,1.75,2.51,5.56,2.0,2.14,1.0,2.23,1.27,2.37,1.68,2.5,2.5,3.31,1.95,3.73,5.04,1.84,2.0,2.13,1.66,1.0,5.11,1.0,2.6,1.43,1.67,1.52,92.33,1.31,1.54,1.26,2.39,1.23,1.43,2.35,4.03,2.88,1.8,2.05,1.56,1.76,6.14,1.57,1.78,2.12,3.72,2.13,251.0,2.43,4.5,1.0,6.6,1.0,1.88,3.96,3.7,3.85,1.69,2.59,2.54,2.47,1.67,2.33,5.5,4.79,2.08,3.9,2.72,1.41,1.0,3.43,2.03,3.1,2.56,2.01,4.05,3.69,1.8,4.19,1.57,3.61,11.69,2.12,1.97,1.44,1.78,4.33,5.13,1.28,1.49,7.03,4.63,10.53,2.36,2.68,1.75,1.89,1.79,2.45,2.5,7.53,1.86,6.69,2.26,3.43,4.91,1.06,1.8,1.21,1.66,1.14,1.0,5.0,14.62,6.82,3.27,1.86,3.17,5.13,3.22,2.53,1.03,8.46,1.09,3.38,1.0,4.27,2.31,1.0,1.67,3.95,1.78,2.2,2.04,2.59,1.0,5.43,6.6,8.97,1.83,2.17,1.26,1.71,2.33,2.74,1.35,1.0,1.67,1.48,4.7,8.73,9.25,1.84,1.8,3.33,2.33,2.69,1.97,18.4,3.9,1.15,2.04,1.71,1.72,3.17,2.09,2.23,5.81,1.3,4.76,4.68,2.11,5.92,1.36,1.79,5.55,1.09,1.83,2.53,2.89,2.26,2.25,1.12,1.55,1.49,4.91,1.36,5.42,3.4,1.68,1.14,1.8,3.92,1.77,2.97,2.97,1.79,15.92,2.13,1.0,2.19,1.78,18.45,2.5,1.0,1.5,1.5,2.59,2.0,5.16,2.56,8.16,295.0,4.05,4.86,3.3,1.67,1.56,1.25,1.33,1.93,3.39,2.21,1.83,2.78,6.17,1.33,3.18,5.89,2.31,2.82,1.19,1.25,2.71,3.57,3.86,3.54,10.07,2.08,4.5,3.24,2.28,1.98,2.5,4.33,1.96,1.8,1.37,5.88,6.5,2.25,4.38,1.54,3.61,1.0,2.29,1.8,1.1,4.74,1.43,7.56,3.11,1.76,2.17,1.84,2.2,4.04,2.44,1.06,1.97,1.83,64.42,1.2,2.0,1.3,1.0,1.0,1.39,4.89,8.17,2.35,2.38,1.99,1.3,5.15,2.29,1.17,4.59,2.0,2.97,6.05,2.9,2.26,1.0,2.55,2.29,1.0,3.28,4.05,3.34,1.49,1.62,1.39,62.5,3.03,4.17,5.87,1.52,1.77,5.04,2.43,2.32,3.5,1.98,2.91,2.43,3.07,3.72,9.79,2.33,25.81,1.0,1.18,3.01,1.98,8.02,2.8,2.0,4.93,3.02,105.8,5.43,1.8,1.23,1.0,1.0,1.41,1.39,4.15,7.95,1.89,2.75,1.54,3.15,2.59,2.81,5.32,1.1,22.71,1.68,1.89,2.32,3.59,5.96,1.0,14.5,2.03,1.0,1.3,2.73,1.86,1.06,2.78,4.0,3.92,1.89,2.08,5.25,2.83,1.86,1.54,1.55,1.0,1.4,1.92,1.79,4.07,1.5,1.5,11.96,2.0,3.85,1.12,2.52,2.39,4.77,3.5,1.89,2.62,8.45,7.06,1.75,2.0,1.0,1.46,5.5,3.84,2.0,2.05,2.32,3.14,5.59,10.07,2.52,1.69,8.55,1.39,3.0,14.0,1.49,1.48,1.0,2.13,1.71,2.97,2.07,1.54,3.64,6.0,2.39,2.68,3.08,2.33,1.68,6.1,1.3,1.75,1.59,1.45],"y":[0,1,0,0,0,0,1,1,1,0,1,0,0,1,1,0,0,0,1,0,1,1,1,0,0,0,0,0,0,1,1,0,1,0,0,0,1,1,0,0,0,1,0,1,0,1,0,0,1,1,1,1,0,0,1,1,1,1,1,1,1,0,1,0,0,1,0,1,1,1,0,0,0,1,0,0,0,0,1,1,1,1,1,0,0,1,0,1,1,0,1,1,0,0,1,1,0,0,1,1,0,1,1,1,1,0,0,1,0,0,1,1,1,0,1,1,1,0,0,0,0,0,0,0,1,1,0,0,1,0,0,1,0,1,0,0,0,0,0,0,1,0,0,1,0,1,1,0,0,1,1,0,1,0,0,0,1,1,0,0,0,1,1,0,0,1,0,0,1,1,1,0,1,0,1,0,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,1,0,0,1,1,0,0,1,1,0,0,0,0,1,0,0,1,0,1,0,1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,1,0,0,1,0,1,0,0,0,0,0,0,1,1,0,0,0,1,0,0,0,1,0,1,1,1,0,0,1,0,1,1,1,0,0,1,0,1,0,1,1,1,1,1,0,0,0,0,1,0,0,0,1,0,0,0,1,1,0,0,0,1,1,0,0,1,0,0,0,0,0,0,0,1,0,0,1,0,0,0,1,1,1,0,0,0,0,1,0,1,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,1,1,0,1,1,1,0,1,1,1,1,0,0,1,1,0,0,1,0,0,0,0,1,0,0,0,0,0,0,1,1,1,0,0,0,1,1,0,0,1,1,1,0,0,1,0,0,0,1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,1,1,1,1,0,1,1,0,0,0,1,0,0,0,0,0,1,0,1,0,0,1,1,0,1,0,1,1,0,0,0,0,1,1,0,1,1,0,1,1,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,1,0,1,1,1,1,1,1,0,1,1,1,0,1,0,0,0,1,0,1,0,0,0,1,1,1,1,0,0,1,0,1,0,0,0,1,0,1,1,0,0,0,0,0,1,1,0,0,1,0,0,1,1,0,1,0,1,1,0,1,0,0,1,0,1,0,1,1,0,0,0,0,1,0,1,1,1,0,0,0,0,1,1,0,1,0,0,1,0,0,0,0,0,0,1,0,1,1,1,1,0,1,1,1,1,0,0,0,0,0,0,1,1,1,0,1,0,0,0,0,0,0,0,1,1,1,1,0,1,0,1,0,0,0,0,1,1,0,0,0,1,0,0,0,0,1,0,1,1,1,0,0,0,1,1,0,0,0,1,0,0,0,0,0,1,1,1,0,1,0,1,0,0,0,1,0,0,1,1,1,0,0,0,0,1,0,0,0,0,1,1,0,1,1,0,1,1,0,0,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,1,1,1,1,0,0,1,0,1,1,1,1,0,0,0,1,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,1,1,0,0,1,0,1,0,0,1,0,1,0,1,0,0,1,1,1,1,1,0,0,1,0,1,1,0,0,1,0,1,1,0,0,1,0,0,0,1,0,0,0,0,1,0,1,1,1,0,1,1,1,0,0,0,0,0,0]};</script>
+
+    <script>
+/* === 公共库：CART（基尼不纯度）、随机森林、随机数；数据为 UCI Spambase 的 800 封随机抽样（种子 52） === */
+window.CT=(function(){
+  const D=window.SPAM,N=D.y.length,NTR=500;
+  const FN={all:'all',remove:'remove',free:'free',your:'your',excl:'“!”',dollar:'“$”',hp:'hp',caps:'大写连续长度'};
+  const ALL=Object.keys(FN);
+  function rng(s){return function(){s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+  function gauss(r){let u=0,v=0;while(!u)u=r();v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+  function gini(a,n){if(!n)return 0;const p=a/n;return 2*p*(1-p)}
+  function best(idx,feats,minLeaf){
+    const n=idx.length;let tot=0;for(const i of idx)tot+=D.y[i];const base=gini(tot,n);let b=null;
+    for(const f of feats){const v=D[f];const s=idx.slice().sort((a,c)=>v[a]-v[c]);let l1=0;
+      for(let k=0;k<n-1;k++){l1+=D.y[s[k]];if(v[s[k]]===v[s[k+1]])continue;const nl=k+1,nr=n-nl;if(nl<minLeaf||nr<minLeaf)continue;
+        const g=base-(nl/n)*gini(l1,nl)-(nr/n)*gini(tot-l1,nr);if(!b||g>b.g)b={f,t:(v[s[k]]+v[s[k+1]])/2,g};}}
+    return b&&b.g>1e-9?b:null}
+  function build(idx,feats,depth,o,r){
+    let tot=0;for(const i of idx)tot+=D.y[i];const n=idx.length;const node={n,p:tot/n,depth};
+    if(depth>=o.maxDepth||n<2*o.minLeaf||tot===0||tot===n)return node;
+    let fs=feats;if(o.mtry&&o.mtry<feats.length){fs=feats.slice();for(let i=fs.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[fs[i],fs[j]]=[fs[j],fs[i]];}fs=fs.slice(0,o.mtry);}
+    const b=best(idx,fs,o.minLeaf);if(!b)return node;
+    const L=[],R=[];for(const i of idx)(D[b.f][i]<=b.t?L:R).push(i);
+    node.f=b.f;node.t=b.t;node.g=b.g;node.imp=b.g*n;node.l=build(L,feats,depth+1,o,r);node.r=build(R,feats,depth+1,o,r);return node}
+  function pred(nd,i,X){X=X||D;while(nd.f)nd=X[nd.f][i]<=nd.t?nd.l:nd.r;return nd.p}
+  function acc(nd,from,to){let c=0;for(let i=from;i<to;i++)c+=((pred(nd,i)>=.5)?1:0)===D.y[i]?1:0;return c/(to-from)}
+  function leaves(nd,box,out){out=out||[];if(!nd.f){out.push({b:box.slice(),p:nd.p,n:nd.n});return out}
+    const k=nd.f;
+    const a=box.slice(),c=box.slice();
+    if(k===box.fx){a[1]=Math.min(a[1],nd.t);c[0]=Math.max(c[0],nd.t);}
+    else if(k===box.fy){a[3]=Math.min(a[3],nd.t);c[2]=Math.max(c[2],nd.t);}
+    a.fx=c.fx=box.fx;a.fy=c.fy=box.fy;leaves(nd.l,a,out);leaves(nd.r,c,out);return out}
+  function count(nd){return nd.f?count(nd.l)+count(nd.r):1}
+  function forest(B,mtry,seed){const r=rng(seed),T=[];for(let b=0;b<B;b++){const idx=[];for(let i=0;i<NTR;i++)idx.push(Math.floor(r()*NTR));T.push(build(idx,ALL,0,{maxDepth:30,minLeaf:1,mtry},r));}return T}
+  function q(f,p){const a=D[f].slice(0,NTR).sort((x,y)=>x-y);return a[Math.floor(p*(a.length-1))]}
+  return{D,N,NTR,FN,ALL,rng,gauss,build,pred,acc,leaves,count,forest,q,best};
+})();
+</script>
+
+    <!-- === SLIDE 1 · 封面 === -->
+    <section class="slide cover" data-sec="开场" data-title="封面">
+      <div class="toprule"></div>
+      <div class="kicker reveal d1"><b>Lecture 5.2</b> &nbsp;·&nbsp; 人工智能产业实践 &nbsp;·&nbsp; MBA / EMBA</div>
+      <div class="title">
+        <h1 class="reveal d2">决策树与<span>随机森林</span></h1>
+        <p class="sub reveal d3">AI 2.0 机器学习：<br>从一棵可解释的树，到一片稳健的森林</p>
+      </div>
+      <div class="outline reveal d4">
+        <div class="hd">IN THIS LECTURE</div>
+        <div class="row"><span class="no">PART 1</span><span class="en">Classification &amp; Regression Trees</span><span class="cn">分类回归树</span></div>
+        <div class="row"><span class="no">PART 2</span><span class="en">Random Forest</span><span class="cn">随机森林</span></div>
+        <div class="row"><span class="no">PART 3</span><span class="en">From Trees to Practice</span><span class="cn">应用与展望</span></div>
+      </div>
+      <div class="who reveal d5">
+        <img src="assets/logo-xjtu-red.png" alt="西安交通大学校徽">
+        <div>
+          <div class="name">常象宇 <span style="font-family:var(--f-serif-en);font-weight:600;font-size:28px;color:var(--ink-2)">Xiangyu Chang</span></div>
+          <div class="org">西安交通大学 管理学院</div>
+          <div class="meta">xiangyuchang@xjtu.edu.cn</div>
+        </div>
+      </div>
+      <div class="fig reveal d3">
+        <svg viewBox="0 0 704 760" aria-label="一棵树生长为森林">
+          <line x1="20" y1="640" x2="684" y2="640" stroke="#1d2433" stroke-width="3"/>
+          <g class="lab l1" stroke="#1d2433" stroke-width="3" fill="none">
+            <path class="curve" d="M 352 150 L 190 300 M 352 150 L 520 300 M 190 300 L 100 450 M 190 300 L 280 450 M 520 300 L 440 450 M 520 300 L 610 450" stroke="#24509e" stroke-width="4" stroke-linecap="round"/>
+          </g>
+          <g class="node n1"><circle cx="352" cy="150" r="30" fill="#24509e"/></g>
+          <g class="node n2"><circle cx="190" cy="300" r="24" fill="#24509e" fill-opacity=".75"/><circle cx="520" cy="300" r="24" fill="#24509e" fill-opacity=".75"/></g>
+          <g class="node n3"><rect x="74" y="430" width="52" height="40" fill="#1f7a72"/><rect x="254" y="430" width="52" height="40" fill="#c27a1a"/><rect x="414" y="430" width="52" height="40" fill="#c27a1a"/><rect x="584" y="430" width="52" height="40" fill="#1f7a72"/></g>
+          <g class="lab l3"><text class="ver" x="352" y="110" text-anchor="middle" font-size="24" fill="#24509e" font-family="IBM Plex Mono">x₁ ≤ s ?</text>
+            <text x="352" y="560" text-anchor="middle" font-size="26" fill="#4a5263">一棵树：一串“是 / 否”的问题</text></g>
+          <g class="lab l4"><text class="ver" x="352" y="690" text-anchor="middle" font-size="24" fill="#24509e" font-family="IBM Plex Mono">TREE ⇢ FOREST</text><text class="cap" x="352" y="740" text-anchor="middle" font-size="28" fill="#1d2433" font-family="Source Serif 4" font-style="italic">many weak trees ⇢ one strong model</text></g>
+        </svg>
+      </div>
+    </section>
+
+    <!-- === SLIDE 2 · 三个问题 === -->
+    <section class="slide c" data-sec="开场" data-title="本讲要回答三个问题">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 5.2</b> · 开场</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:68px">本讲要回答<em>三个问题</em></h2>
+        <div class="flex gap32 st" style="margin-top:56px">
+          <div class="card b grow" style="min-height:430px"><div class="n">PART 1 · 分类回归树</div><h3 style="font-size:46px;margin-bottom:22px">机器如何<br>“长”出一棵树？</h3><p>每一步问一个最能“分清”结果的问题：熵、信息增益、阈值、剪枝。</p></div>
+          <div class="card t grow" style="min-height:430px"><div class="n">PART 2 · 随机森林</div><h3 style="font-size:46px;margin-bottom:22px">单棵树不稳，<br>怎么办？</h3><p>用均值降低方差：自助抽样 + 随机选特征 + 投票。</p></div>
+          <div class="card o grow" style="min-height:430px"><div class="n">PART 3 · 应用与展望</div><h3 style="font-size:46px;margin-bottom:22px">业务里<br>该选哪一个？</h3><p>可解释、稳定性与精度的取舍；2025–2026 表格数据建模的新进展。</p></div>
+        </div>
+        <div class="flex center gap24 reveal d5" style="margin-top:50px;font:500 30px var(--f-mono);color:var(--ink-2)">
+          <span class="pill">AI 1.0 专家规则</span><span class="muted">→</span><span class="pill fill">AI 2.0 机器学习（本讲）</span><span class="muted">→</span><span class="pill">AI 3.0 深度学习</span>
+          <span style="margin-left:24px;font:400 26px var(--f-sans);color:var(--ink-3)">树：让机器从数据中“学出”规则</span>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P2、P23（AI 2.0 机器学习）</div>
+    </section>
+
+    <!-- === SLIDE 3 · 章节 Part 1 === -->
+    <section class="slide c chapter" data-sec="1 · 分类回归树" data-title="Part 1 · 分类回归树">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 5.2</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">01</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 1</div>
+        <h2 class="reveal d2">分类回归树<em>CART</em></h2>
+        <div class="s reveal d3">把知识写成“是 / 否”问题的树，并让数据自己长出这棵树</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>1.1</b>树是人类的知识表达</div>
+        <div><b>1.2</b>从数据自动长出一棵树</div>
+        <div><b>1.3</b>连续变量与回归树</div>
+        <div><b>1.4</b>几何解释与优缺点</div>
+      </div>
+    </section>
+
+    <!-- === SLIDE 4 · 知识的树结构 === -->
+    <section class="slide c" data-sec="1 · 分类回归树" data-title="知识的树结构表示：篮球比赛">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.1 树是人类的知识表达</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">KNOWLEDGE AS A TREE</div>
+          <h2 class="reveal d2" style="font-size:62px">人类的知识，<br>常常就是一棵<em>树</em></h2>
+          <figure class="contain reveal d3" style="height:430px;width:700px"><img src="assets/p03_1.png"></figure>
+          <p class="reveal d4" style="font-size:26px">根节点问天气；非晴天 → 取消；晴天再问是否周六。<b>每个叶节点就是一条规则。</b></p>
+        </div>
+        <div class="col gap16" style="width:520px;align-items:center;justify-content:center">
+          <figure class="contain reveal d3" style="height:690px;width:440px"><img src="assets/p02_1.png"></figure>
+          <figcaption>“Decision Tree: The Obama–Clinton Divide”（选民分群的决策树，⚠ 出处据原图标题，未逐项核对）</figcaption>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P2、P3</div>
+    </section>
+
+    <!-- === SLIDE 5 · 数据与候选问题（交互）=== -->
+    <section class="slide c" data-sec="1 · 分类回归树" data-title="从数据自动构建树：先问哪个问题？（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 从数据自动长出一棵树</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:62px">反过来：给定数据，<em>先问哪个问题？</em></h2><div class="hint">点击候选问题</div></div>
+        <div class="flex gap48" style="margin-top:34px">
+          <div style="width:720px" class="reveal d2">
+            <div class="tabs" style="margin-bottom:22px"><button class="tab b on" id="q5w">Weather = Sunny ?</button><button class="tab b" id="q5d">Dow = Saturday ?</button></div>
+            <table class="tbl" id="t5"></table>
+            <p style="font-size:24px;margin-top:20px">6 天记录：天气、星期几，以及比赛是否举行（Play）。</p>
+          </div>
+          <div class="col grow gap24 reveal d3">
+            <div class="flex gap24">
+              <div class="card t grow" style="padding:22px 26px"><div class="n" id="g5a">是</div><p id="g5ai" style="font-size:26px"></p><div class="bar" style="margin-top:14px"><i id="g5ab" style="background:var(--teal)"></i></div><div class="hint" style="margin-top:10px" id="g5ac"></div></div>
+              <div class="card o grow" style="padding:22px 26px"><div class="n" id="g5b">否</div><p id="g5bi" style="font-size:26px"></p><div class="bar" style="margin-top:14px"><i id="g5bb" style="background:var(--ochre)"></i></div><div class="hint" style="margin-top:10px" id="g5bc"></div></div>
+            </div>
+            <p style="font-size:28px">好问题 = 把“比赛 / 取消”分得<b>更纯</b>。</p>
+            <p style="font-size:28px;color:var(--ink-3)">“更纯”怎么量化？→ 下一页：<b class="blue">熵</b>。</p>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P4、P6（数据表）</div>
+      <script>(function(){const $=id=>document.getElementById(id);
+        const R=[[1,'Rainy','Saturday',0],[2,'Sunny','Saturday',1],[3,'Windy','Tuesday',0],[4,'Sunny','Saturday',1],[5,'Sunny','Monday',0],[6,'Windy','Saturday',0]];
+        window.BB=R;
+        const Q={w:r=>r[1]==='Sunny',d:r=>r[2]==='Saturday'};let q='w';
+        function draw(){$('t5').innerHTML='<tr><th>ID</th><th>Weather</th><th>Dow</th><th>Play</th></tr>'+R.map(r=>'<tr class="'+(Q[q](r)?'sel':'')+'"><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td class="'+(r[3]?'y':'n')+'">'+(r[3]?'Yes':'No')+'</td></tr>').join('');
+          const A=R.filter(Q[q]),B=R.filter(r=>!Q[q](r));const lab=q==='w'?['Weather = Sunny','Weather ≠ Sunny']:['Dow = Saturday','Dow ≠ Saturday'];
+          [[A,'a',lab[0]],[B,'b',lab[1]]].forEach(([G,k,l])=>{const y=G.filter(r=>r[3]).length;$('g5'+k).textContent=l;$('g5'+k+'i').innerHTML='ID：'+G.map(r=>r[0]).join(', ');$('g5'+k+'b').style.width=(100*y/G.length)+'%';$('g5'+k+'c').textContent='Yes '+y+' / No '+(G.length-y)+'（teal = Yes）';});}
+        $('q5w').onclick=()=>{q='w';$('q5w').classList.add('on');$('q5d').classList.remove('on');draw();};
+        $('q5d').onclick=()=>{q='d';$('q5d').classList.add('on');$('q5w').classList.remove('on');draw();};draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 6 · 熵（交互）=== -->
+    <section class="slide c" data-sec="1 · 分类回归树" data-title="熵：度量一个节点的不纯度（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 从数据自动长出一棵树</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:760px" class="col gap24">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">ENTROPY · IMPURITY</div>
+          <h2 class="reveal d2" style="font-size:62px">熵：节点有多<em>“乱”</em></h2>
+          <div class="math reveal d3" style="font-size:40px"><i>e</i> = − Σ<sub><i>i</i>=1…<i>K</i></sub> <i>P<sub>i</sub></i> log<sub>2</sub> <i>P<sub>i</sub></i></div>
+          <div class="math reveal d3" style="font-size:34px;color:var(--ink-2)">二分类（<i>K</i>=2）：<i>e</i> = −[<i>P</i>log<sub>2</sub><i>P</i> + (1−<i>P</i>)log<sub>2</sub>(1−<i>P</i>)]</div>
+          <div class="flex gap16 st" style="flex-wrap:wrap">
+            <button class="btn" data-p="0.5">P = 1/2 → 1</button><button class="btn" data-p="0.3333">P = 1/3 → 0.92</button><button class="btn" data-p="0">P = 0 → 0（纯）</button>
+          </div>
+          <p class="reveal d5" style="font-size:27px">全是同一类 → 熵为 0；两类各半 → 熵最大。<b>熵越小，节点越“纯”。</b></p>
+        </div>
+        <div class="col grow gap16 reveal d3" style="justify-content:center">
+          <svg id="s6" viewBox="0 0 860 560" style="width:100%;height:560px"></svg>
+          <div class="sl"><span>P(比赛举行)</span><input type="range" id="r6" min="0" max="100" value="33"><b id="v6"></b></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P5、P6；Quinlan (1986) ID3（R9）</div>
+      <script>(function(){const $=id=>document.getElementById(id);const H=p=>(p<=0||p>=1)?0:-(p*Math.log2(p)+(1-p)*Math.log2(1-p));
+        const W=860,Ht=560,X=p=>70+p*740,Y=e=>500-e*420;
+        let pts=[];for(let i=0;i<=100;i++)pts.push(X(i/100)+','+Y(H(i/100)));
+        function up(){const p=+$('r6').value/100,e=H(p);
+          $('s6').innerHTML='<line x1="70" y1="500" x2="810" y2="500" stroke="#1d2433" stroke-width="2"/><line x1="70" y1="500" x2="70" y2="60" stroke="#1d2433" stroke-width="2"/>'+
+          '<polyline points="'+pts.join(' ')+'" fill="none" stroke="#24509e" stroke-width="5"/>'+
+          '<line x1="'+X(p)+'" y1="'+Y(e)+'" x2="'+X(p)+'" y2="500" stroke="#c27a1a" stroke-dasharray="6 6" stroke-width="3"/><line x1="70" y1="'+Y(e)+'" x2="'+X(p)+'" y2="'+Y(e)+'" stroke="#c27a1a" stroke-dasharray="6 6" stroke-width="3"/>'+
+          '<circle cx="'+X(p)+'" cy="'+Y(e)+'" r="13" fill="#c27a1a"/>'+
+          '<text x="440" y="545" text-anchor="middle" font-size="24" fill="#4a5263">P：节点中“举行”的比例</text><text x="56" y="86" text-anchor="end" font-size="22" fill="#8a90a0">1</text><text x="56" y="505" text-anchor="end" font-size="22" fill="#8a90a0">0</text>'+
+          '<text x="810" y="60" text-anchor="end" font-size="40" font-weight="700" fill="#c27a1a">e = '+e.toFixed(2)+'</text>';
+          $('v6').textContent=p.toFixed(2);}
+        $('r6').oninput=up;document.querySelectorAll('#s6').forEach(()=>{});
+        document.querySelectorAll('.btn[data-p]').forEach(b=>b.onclick=()=>{$('r6').value=Math.round(+b.dataset.p*100);up();});up();})();</script>
+    </section>
+
+    <!-- === SLIDE 7 · 信息增益（交互）=== -->
+    <section class="slide c" data-sec="1 · 分类回归树" data-title="信息增益：选择最好的分裂（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 从数据自动长出一棵树</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:62px">信息增益：分裂<em>前后的熵之差</em></h2><div class="hint">比较两个候选问题</div></div>
+        <div class="math reveal d2" style="font-size:42px;margin-top:20px"><i>IG</i> = <i>e<sub>s</sub></i> − Σ<sub><i>i</i>=1…<i>n</i></sub> <i>w<sub>i</sub></i> · <i>e<sub>i</sub></i></div>
+        <div class="flex gap32" style="margin-top:28px">
+          <div class="card b grow reveal d3" id="ig7w" style="cursor:pointer"><div class="n">候选 A · Weather = Sunny ?</div><div class="math" id="ig7wf" style="font-size:36px;line-height:1.8"></div><div class="acc" style="margin-top:14px"><small>INFORMATION GAIN</small><span id="ig7wv"></span></div></div>
+          <div class="card o grow reveal d4" id="ig7d" style="cursor:pointer"><div class="n">候选 B · Dow = Saturday ?</div><div class="math" id="ig7df" style="font-size:36px;line-height:1.8"></div><div class="acc" style="margin-top:14px"><small>INFORMATION GAIN</small><span id="ig7dv"></span></div></div>
+        </div>
+        <div class="reveal d5" style="margin-top:44px"><div class="bar" style="height:40px"><i id="b7w" style="background:var(--blue);height:20px"></i><i id="b7d" style="background:var(--ochre);top:20px;height:20px"></i></div>
+          <p style="margin-top:28px;font-size:36px" id="v7"></p></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P5–P6（IG = 0.46 vs 0.25，与原稿一致）</div>
+      <script>(function(){const $=id=>document.getElementById(id);const H=(a,n)=>{if(!n)return 0;const p=a/n;return(p<=0||p>=1)?0:-(p*Math.log2(p)+(1-p)*Math.log2(1-p));};
+        const R=window.BB;
+        function calc(f){const A=R.filter(f),B=R.filter(r=>!f(r));const n=R.length,y=R.filter(r=>r[3]).length,e0=H(y,n);
+          const ya=A.filter(r=>r[3]).length,yb=B.filter(r=>r[3]).length,ea=H(ya,A.length),eb=H(yb,B.length);const ig=e0-A.length/n*ea-B.length/n*eb;
+          const t='父节点：<i>e<sub>s</sub></i> = '+e0.toFixed(2)+'（'+y+' 举行 / '+(n-y)+' 取消）<br>是：'+A.length+'/'+n+' × '+ea.toFixed(2)+'　否：'+B.length+'/'+n+' × '+eb.toFixed(2)+'<br><i>IG</i> = '+e0.toFixed(2)+' − '+(A.length/n*ea).toFixed(2)+' − '+(B.length/n*eb).toFixed(2);return[ig,t];}
+        const [a,ta]=calc(r=>r[1]==='Sunny'),[b,tb]=calc(r=>r[2]==='Saturday');
+        $('ig7wf').innerHTML=ta;$('ig7df').innerHTML=tb;$('ig7wv').textContent=a.toFixed(2);$('ig7dv').textContent=b.toFixed(2);
+        $('b7w').style.width=(a*100)+'%';$('b7d').style.width=(b*100)+'%';
+        function sel(w){$('ig7w').style.outline=w?'3px solid var(--blue)':'none';$('ig7d').style.outline=w?'none':'3px solid var(--ochre)';
+          $('v7').innerHTML=w?'<b class="blue">选 Weather</b>：IG '+a.toFixed(2)+' &gt; '+b.toFixed(2)+'，根节点按天气分裂。':'Dow 的增益较小（'+b.toFixed(2)+'）——点击卡片可切换比较。';}
+        $('ig7w').onclick=()=>sel(true);$('ig7d').onclick=()=>sel(false);sel(true);})();</script>
+    </section>
+
+    <!-- === SLIDE 8 · 递归生长（交互）=== -->
+    <section class="slide c" data-sec="1 · 分类回归树" data-title="递归：一步步长成整棵树（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 从数据自动长出一棵树</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:560px" class="col gap24">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">RECURSIVE PARTITIONING</div>
+          <h2 class="reveal d2" style="font-size:60px">递归：<br>对子节点<em>重复同一步</em></h2>
+          <div class="panel reveal d3" id="d8" style="min-height:200px;font-size:27px;line-height:1.6;color:var(--ink-2)"></div>
+          <div class="flex gap16 reveal d4"><button class="btn" id="p8">◀ 上一步</button><button class="btn" id="n8">下一步 ▶</button><span class="hint" style="align-self:center" id="c8"></span></div>
+        </div>
+        <div class="grow reveal d3"><svg id="s8" viewBox="0 0 960 680" style="width:100%;height:700px"></svg></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P7（树的第二步：继续分裂、叶子节点）</div>
+      <script>(function(){const $=id=>document.getElementById(id);let st=0;
+        const E=['<b>起点</b>：根节点包含全部 6 条记录，2 举行 / 4 取消。','<b>第 1 步</b>：IG 最大的问题是 Weather = Sunny ？左侧 {1,3,6} 全部取消 → <b>已纯，成为叶节点</b>。','<b>第 2 步</b>：右侧 {2,4,5} 仍混杂（Yes, Yes, No），对它重复同一流程：在 Dow 上分裂。','<b>完成</b>：每个叶节点都是纯的。4 条路径 = 3 条规则：晴 &amp; 周六 → 举行；晴 &amp; 非周六 → 取消；非晴 → 取消。'];
+        function node(x,y,t,c,leaf,show){const w=leaf?150:170;return '<g style="opacity:'+(show?1:0)+';transition:opacity .6s">'+(leaf?'<rect x="'+(x-w/2)+'" y="'+(y-34)+'" width="'+w+'" height="68" rx="10" fill="'+c+'" fill-opacity=".14" stroke="'+c+'" stroke-width="3"/>':'<ellipse cx="'+x+'" cy="'+y+'" rx="'+w/2+'" ry="40" fill="#fff" stroke="#1d2433" stroke-width="3"/>')+t.map((s,i)=>'<text x="'+x+'" y="'+(y+(t.length>1?-6+i*30:9))+'" text-anchor="middle" font-size="'+(i?22:25)+'" font-weight="'+(i?400:700)+'" fill="#1d2433">'+s+'</text>').join('')+'</g>';}
+        function edge(x1,y1,x2,y2,l,show){return '<g style="opacity:'+(show?1:0)+';transition:opacity .6s"><line x1="'+x1+'" y1="'+(y1+40)+'" x2="'+x2+'" y2="'+(y2-36)+'" stroke="#1d2433" stroke-width="3"/><text x="'+((x1+x2)/2+(x2<x1?-14:14))+'" y="'+((y1+y2)/2+4)+'" text-anchor="'+(x2<x1?'end':'start')+'" font-size="23" fill="#24509e">'+l+'</text></g>';}
+        function draw(){$('s8').innerHTML=
+          edge(480,90,220,300,'Sunny？否',st>=1)+edge(480,90,740,300,'Sunny？是',st>=1)+edge(740,300,600,520,'Sat？是',st>=2)+edge(740,300,880,520,'Sat？否',st>=2)+
+          node(480,90,['Weather = Sunny ?','ID 1–6 · 2Y/4N'],'#1d2433',false,true)+
+          node(220,300,['Play = No','{1,3,6}'],'#b4402d',true,st>=1)+
+          node(740,300,['Dow = Saturday ?','{2,4,5} · 2Y/1N'],'#1d2433',false,st>=1)+
+          node(600,540,['Play = Yes','{2,4}'],'#1f7a72',true,st>=2)+node(880,540,['Play = No','{5}'],'#b4402d',true,st>=2);
+          $('d8').innerHTML=E[st];$('c8').textContent=(st+1)+' / '+E.length;}
+        $('n8').onclick=()=>{st=Math.min(3,st+1);draw();};$('p8').onclick=()=>{st=Math.max(0,st-1);draw();};
+        (function(){const s=$('s8');})();draw();})();</script>
+    </section>
+
+    <!-- === SLIDE 9 · 何时停止（剪枝）=== -->
+    <section class="slide c" data-sec="1 · 分类回归树" data-title="何时停止生长？剪枝">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 从数据自动长出一棵树</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">STOPPING &amp; PRUNING</div>
+        <h2 class="reveal d2" style="font-size:66px;margin-top:10px">树长到什么程度，<em>该停了？</em></h2>
+        <div class="flex gap32 st" style="margin-top:44px">
+          <div class="card b grow"><div class="n">RULE 1</div><h3>树的深度</h3><p>最多问几层问题。层数越多，规则越细、越容易“背答案”。</p></div>
+          <div class="card t grow"><div class="n">RULE 2</div><h3>叶节点样本数</h3><p>每片叶子至少要有多少条记录——样本太少的规则不可信。</p></div>
+          <div class="card o grow"><div class="n">RULE 3</div><h3>不纯度改进</h3><p>再分裂带来的信息增益小于阈值，就不值得再问。</p></div>
+        </div>
+        <div class="flex gap48 reveal d5" style="margin-top:44px;align-items:center">
+          <p style="font-size:30px;flex:1"><b>先长满，再剪回去</b>（后剪枝，如 CART 的代价复杂度剪枝）通常比<b>边长边停</b>更稳。</p>
+          <p style="font-size:30px;flex:1">这些“旋钮”决定偏差与方差的取舍——<b class="blue">拖动旋钮试试 → 第 12 页</b>。</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P7（深度 / 叶节点样本数 / 不纯度）；Breiman et al. (1984)（R1）</div>
+    </section>
+
+    <!-- === SLIDE 10 · 连续变量阈值（交互）=== -->
+    <section class="slide c" data-sec="1 · 分类回归树" data-title="连续变量：阈值 s 怎么选？（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.3 连续变量与回归树</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:640px" class="col gap24">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">CONTINUOUS FEATURE</div>
+          <h2 class="reveal d2" style="font-size:60px">温度是连续的：<br>切在<em>哪个度数</em>？</h2>
+          <p class="reveal d3" style="font-size:27px">候选问题：<b>温度 ≥ s ？</b>　对晴天的 8 次记录，逐个试 s，仍按<b>信息增益最大</b>选择。</p>
+          <div class="panel reveal d4"><div class="kv"><span>左（&lt; s）熵</span><b id="e10l"></b></div><div class="kv"><span>右（≥ s）熵</span><b id="e10r"></b></div><div class="kv"><span>信息增益 IG</span><b class="pos" id="e10g"></b></div></div>
+          <button class="btn reveal d5" id="b10" style="align-self:flex-start">跳到最优 s</button>
+        </div>
+        <div class="grow col gap24 reveal d3" style="justify-content:center">
+          <svg id="s10" viewBox="0 0 960 300" style="width:100%;height:290px"></svg>
+          <svg id="c10" viewBox="0 0 960 300" style="width:100%;height:290px"></svg>
+          <div class="sl"><span>阈值 s（℃）</span><input type="range" id="r10" min="12" max="35" step="0.5" value="22"><b id="v10"></b></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P8（连续变量与阈值 s）；示意数据为课堂构造（非真实观测）</div>
+      <script>(function(){const $=id=>document.getElementById(id);
+        const T=[14,17,21,23,26,28,30,33],Y=[1,1,1,0,1,0,0,0];
+        const H=(a,n)=>{if(!n)return 0;const p=a/n;return(p<=0||p>=1)?0:-(p*Math.log2(p)+(1-p)*Math.log2(1-p));};
+        const ig=s=>{const l=[],r=[];T.forEach((t,i)=>(t<s?l:r).push(Y[i]));const sm=a=>a.reduce((x,y)=>x+y,0);const e0=H(sm(Y),8);return[H(sm(l),l.length),H(sm(r),r.length),e0-l.length/8*H(sm(l),l.length)-r.length/8*H(sm(r),r.length)];};
+        let bs=12,bg=-1;for(let s=12;s<=35;s+=.5){const g=ig(s)[2];if(g>bg+1e-9){bg=g;bs=s;}}
+        const X=t=>60+(t-12)/23*840;
+        function up(){const s=+$('r10').value,[el,er,g]=ig(s);$('e10l').textContent=el.toFixed(2);$('e10r').textContent=er.toFixed(2);$('e10g').textContent=g.toFixed(2);$('v10').textContent=s.toFixed(1);
+          let h='<rect x="60" y="30" width="'+(X(s)-60)+'" height="200" fill="#1f7a72" fill-opacity=".07"/><rect x="'+X(s)+'" y="30" width="'+(900-X(s))+'" height="200" fill="#c27a1a" fill-opacity=".07"/><line x1="60" y1="230" x2="900" y2="230" stroke="#1d2433" stroke-width="2"/>';
+          T.forEach((t,i)=>{h+='<circle cx="'+X(t)+'" cy="150" r="22" fill="'+(Y[i]?'#1f7a72':'#b4402d')+'"/><text x="'+X(t)+'" y="157" text-anchor="middle" font-size="19" fill="#fff" font-weight="700">'+(Y[i]?'Y':'N')+'</text><text x="'+X(t)+'" y="262" text-anchor="middle" font-size="20" fill="#4a5263">'+t+'</text>';});
+          h+='<line x1="'+X(s)+'" y1="20" x2="'+X(s)+'" y2="236" stroke="#24509e" stroke-width="4"/><text x="'+X(s)+'" y="16" text-anchor="middle" font-size="22" fill="#24509e" font-weight="700">s = '+s+'</text>';
+          $('s10').innerHTML=h;
+          let p=[];for(let t=12;t<=35;t+=.5)p.push(X(t)+','+(260-ig(t)[2]*230));
+          $('c10').innerHTML='<line x1="60" y1="260" x2="900" y2="260" stroke="#1d2433" stroke-width="2"/><polyline points="'+p.join(' ')+'" fill="none" stroke="#24509e" stroke-width="4"/><circle cx="'+X(s)+'" cy="'+(260-g*230)+'" r="11" fill="#c27a1a"/><circle cx="'+X(bs)+'" cy="'+(260-bg*230)+'" r="9" fill="none" stroke="#1f7a72" stroke-width="3"/><text x="60" y="30" font-size="22" fill="#8a90a0">IG(s)</text><text x="'+(X(bs)+16)+'" y="'+(260-bg*230-4)+'" font-size="22" fill="#1f7a72">最优 s≈'+bs+'</text>';}
+        $('r10').oninput=up;$('b10').onclick=()=>{$('r10').value=bs;up();};up();})();</script>
+    </section>
+
+    <!-- === SLIDE 11 · 回归树（交互）=== -->
+    <section class="slide c" data-sec="1 · 分类回归树" data-title="回归问题：按拟合效果选 s（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.3 连续变量与回归树</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:640px" class="col gap24">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">REGRESSION TREE</div>
+          <h2 class="reveal d2" style="font-size:58px">预测冰淇淋收入：<br>用<em>两个均值</em>分段</h2>
+          <div class="math reveal d3" style="font-size:30px;line-height:1.6"><i>R</i><sub>1</sub>(<i>j,s</i>) = {<i>X</i>|<i>X<sub>j</sub></i> &lt; <i>s</i>}，<i>R</i><sub>2</sub>(<i>j,s</i>) = {<i>X</i>|<i>X<sub>j</sub></i> ≥ <i>s</i>}<br>min<sub><i>s</i></sub> Σ<sub><i>R</i>₁</sub>(<i>y<sub>i</sub></i> − <i>ŷ</i><sub><i>R</i>₁</sub>)² + Σ<sub><i>R</i>₂</sub>(<i>y<sub>i</sub></i> − <i>ŷ</i><sub><i>R</i>₂</sub>)²</div>
+          <div class="panel reveal d4"><div class="kv"><span>左侧预测值 ŷ<sub>1</sub></span><b id="m11l"></b></div><div class="kv"><span>右侧预测值 ŷ<sub>2</sub></span><b id="m11r"></b></div><div class="kv"><span>残差平方和 RSS</span><b class="neg" id="m11s"></b></div></div>
+          <button class="btn reveal d5" id="b11" style="align-self:flex-start">跳到 RSS 最小的 s</button>
+        </div>
+        <div class="grow col gap16 reveal d3" style="justify-content:center">
+          <svg id="s11" viewBox="0 0 960 400" style="width:100%;height:400px"></svg>
+          <svg id="c11" viewBox="0 0 960 220" style="width:100%;height:220px"></svg>
+          <div class="sl"><span>阈值 s（℃）</span><input type="range" id="r11" min="11" max="37" step="0.5" value="20"><b id="v11"></b></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P9（回归树的分裂准则）；数据为按 S 形关系模拟的示意数据（种子固定）</div>
+      <script>(function(){const $=id=>document.getElementById(id);const r=CT.rng(7);
+        const P=[];for(let i=0;i<40;i++){const t=10+i*28/39+(r()-.5)*.6;P.push([t,10+28/(1+Math.exp(-(t-24)/3))+CT.gauss(r)*2.2]);}
+        const X=t=>60+(t-10)/28*860,Y=v=>370-(v-8)*9;
+        const rss=s=>{const L=P.filter(p=>p[0]<s),R=P.filter(p=>p[0]>=s);const m=a=>a.length?a.reduce((x,p)=>x+p[1],0)/a.length:0;const ml=m(L),mr=m(R);return[ml,mr,L.reduce((x,p)=>x+(p[1]-ml)**2,0)+R.reduce((x,p)=>x+(p[1]-mr)**2,0)];};
+        let bs=0,bv=1e9;for(let s=11;s<=37;s+=.5){const v=rss(s)[2];if(v<bv){bv=v;bs=s;}}
+        const mx=Math.max(...[...Array(53)].map((_,k)=>rss(11+k*.5)[2]));
+        function up(){const s=+$('r11').value,[ml,mr,v]=rss(s);$('m11l').textContent=ml.toFixed(1);$('m11r').textContent=mr.toFixed(1);$('m11s').textContent=v.toFixed(0);$('v11').textContent=s.toFixed(1);
+          let h='<line x1="60" y1="380" x2="920" y2="380" stroke="#1d2433" stroke-width="2"/>';
+          P.forEach(p=>h+='<circle cx="'+X(p[0])+'" cy="'+Y(p[1])+'" r="6" fill="#24509e" fill-opacity=".7"/>');
+          h+='<line x1="'+X(s)+'" y1="20" x2="'+X(s)+'" y2="380" stroke="#c27a1a" stroke-width="3" stroke-dasharray="8 6"/><line x1="60" y1="'+Y(ml)+'" x2="'+X(s)+'" y2="'+Y(ml)+'" stroke="#1f7a72" stroke-width="6"/><line x1="'+X(s)+'" y1="'+Y(mr)+'" x2="920" y2="'+Y(mr)+'" stroke="#1f7a72" stroke-width="6"/><text x="60" y="22" font-size="21" fill="#8a90a0">收入（千元）</text><text x="920" y="402" text-anchor="end" font-size="21" fill="#8a90a0">温度 X (℃)</text>';
+          $('s11').innerHTML=h;
+          let q=[];for(let t=11;t<=37;t+=.5)q.push(X(t)+','+(200-rss(t)[2]/mx*170));
+          $('c11').innerHTML='<line x1="60" y1="200" x2="920" y2="200" stroke="#1d2433" stroke-width="2"/><polyline points="'+q.join(' ')+'" fill="none" stroke="#24509e" stroke-width="4"/><circle cx="'+X(s)+'" cy="'+(200-v/mx*170)+'" r="10" fill="#c27a1a"/><circle cx="'+X(bs)+'" cy="'+(200-bv/mx*170)+'" r="9" fill="none" stroke="#1f7a72" stroke-width="3"/><text x="60" y="24" font-size="21" fill="#8a90a0">RSS(s)　绿圈 = 最小值（s≈'+bs+'）</text>';}
+        $('r11').oninput=up;$('b11').onclick=()=>{$('r11').value=bs;up();};up();})();</script>
+    </section>
+
+    <!-- === SLIDE 12 · 几何解释：垃圾邮件（交互）=== -->
+    <section class="slide c" data-sec="1 · 分类回归树" data-title="几何解释：树把空间切成矩形（垃圾邮件，交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 几何解释与优缺点</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div class="col" style="width:930px">
+          <div class="flex between center"><h2 class="reveal d1" style="font-size:54px">树 = 把特征空间<em>切成矩形</em></h2><div class="hint">真实邮件 · 500 封训练</div></div>
+          <svg id="s12" viewBox="0 0 900 690" style="width:900px;height:690px;margin-top:10px" class="reveal d2"></svg>
+        </div>
+        <div class="col grow gap16" style="justify-content:center">
+          <div class="reveal d2"><div class="hint" style="margin-bottom:10px">纵轴特征（横轴固定为 your）</div><div class="tabs" id="t12" style="flex-wrap:wrap"></div></div>
+          <div class="sl reveal d3"><span>最大深度</span><input type="range" id="d12" min="0" max="12" value="2"><b id="dv12"></b></div>
+          <div class="sl reveal d3"><span>叶最少样本</span><input type="range" id="m12" min="1" max="40" value="1"><b id="mv12"></b></div>
+          <div class="flex gap24 reveal d4"><div class="acc"><small>叶节点数</small><span id="lv12"></span></div><div class="acc"><small>训练准确率</small><span id="tr12" style="color:var(--teal)"></span></div><div class="acc"><small>测试准确率</small><span id="te12" style="color:var(--blue)"></span></div></div>
+          <svg id="c12" viewBox="0 0 640 270" style="width:100%;height:270px" class="reveal d5"></svg>
+          <p class="reveal d5" style="font-size:24px">深度加大：训练准确率一路升，测试准确率先升后平甚至降 → <b>过拟合</b>。</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P10–P11（your / all 的矩形划分，原图为 10 封样本）；数据：UCI Spambase 随机抽样 800 封（500 训练 / 300 测试），只用 2 个特征建树</div>
+      <script>(function(){const $=id=>document.getElementById(id);const D=CT.D;const NTR=500,NT=300;
+        let fy='free';const FY=['all','remove','free','excl','dollar','hp'];
+        $('t12').innerHTML=FY.map(f=>'<button class="tab b'+(f===fy?' on':'')+'" data-f="'+f+'" style="padding:12px 16px;font-size:20px">'+CT.FN[f]+'</button>').join('');
+        const tr=[...Array(NTR).keys()];
+        function fit(d,m){return CT.build(tr,['your',fy],0,{maxDepth:d,minLeaf:m},null);}
+        function up(){const d=+$('d12').value,m=+$('m12').value;$('dv12').textContent=d;$('mv12').textContent=m;
+          const t=fit(d,m);const xm=Math.max(CT.q('your',.97),.5),ym=Math.max(CT.q(fy,.97),.2);
+          const X=v=>70+Math.min(v,xm)/xm*800,Y=v=>640-Math.min(v,ym)/ym*600;
+          const lv=CT.leaves(t,Object.assign([0,Infinity,0,Infinity],{fx:'your',fy}));
+          let h='';lv.forEach(L=>{const x0=X(Math.max(L.b[0],0)),x1=X(Math.min(L.b[1],xm)),y0=Y(Math.min(L.b[3],ym)),y1=Y(Math.max(L.b[2],0));if(x1-x0<=0||y1-y0<=0)return;
+            const sp=L.p>=.5;h+='<rect x="'+x0+'" y="'+y0+'" width="'+(x1-x0)+'" height="'+(y1-y0)+'" fill="'+(sp?'#c27a1a':'#1f7a72')+'" fill-opacity="'+(.08+.22*Math.abs(L.p-.5)*2)+'" stroke="#1d2433" stroke-opacity=".55" stroke-width="1.5"/>';});
+          h+='<line x1="70" y1="640" x2="870" y2="640" stroke="#1d2433" stroke-width="2"/><line x1="70" y1="40" x2="70" y2="640" stroke="#1d2433" stroke-width="2"/>';
+          for(let i=0;i<NTR;i++){h+='<circle cx="'+(X(D.your[i])+((i*37)%7-3))+'" cy="'+(Y(D[fy][i])+((i*53)%7-3))+'" r="3.6" fill="'+(D.y[i]?'#c27a1a':'#1f7a72')+'" fill-opacity=".75"/>';}
+          h+='<text x="870" y="676" text-anchor="end" font-size="22" fill="#4a5263">your（词频 %）→</text><text x="82" y="34" font-size="22" fill="#4a5263">↑ '+CT.FN[fy]+'　<tspan fill="#c27a1a">● 垃圾</tspan>　<tspan fill="#1f7a72">● 正常</tspan></text>';
+          $('s12').innerHTML=h;
+          $('lv12').textContent=CT.count(t);$('tr12').textContent=(CT.acc(t,0,NTR)*100).toFixed(1)+'%';$('te12').textContent=(CT.acc(t,NTR,NTR+NT)*100).toFixed(1)+'%';
+          let a=[],b=[];for(let k=0;k<=12;k++){const tt=fit(k,m);a.push([k,CT.acc(tt,0,NTR)]);b.push([k,CT.acc(tt,NTR,NTR+NT)]);}
+          const cx=k=>50+k/12*560,cy=v=>240-(v-.5)/.5*200;
+          const pl=(A,c)=>'<polyline points="'+A.map(p=>cx(p[0])+','+cy(p[1])).join(' ')+'" fill="none" stroke="'+c+'" stroke-width="4"/>';
+          $('c12').innerHTML='<line x1="50" y1="240" x2="610" y2="240" stroke="#1d2433" stroke-width="2"/>'+pl(a,'#1f7a72')+pl(b,'#24509e')+'<line x1="'+cx(d)+'" y1="20" x2="'+cx(d)+'" y2="240" stroke="#c27a1a" stroke-dasharray="6 6" stroke-width="3"/><text x="50" y="22" font-size="19" fill="#1f7a72">训练</text><text x="110" y="22" font-size="19" fill="#24509e">测试</text><text x="610" y="262" text-anchor="end" font-size="19" fill="#8a90a0">树的深度 0 → 12（纵轴 50%–100%）</text>';}
+        $('d12').oninput=up;$('m12').oninput=up;
+        document.querySelectorAll('#t12 .tab').forEach(b=>b.onclick=()=>{fy=b.dataset.f;document.querySelectorAll('#t12 .tab').forEach(x=>x.classList.toggle('on',x===b));up();});up();})();</script>
+    </section>
+
+    <!-- === SLIDE 13 · 回归树 vs 线性回归（交互）=== -->
+    <section class="slide c" data-sec="1 · 分类回归树" data-title="分段常数 vs 一条直线（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 几何解释与优缺点</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow">
+          <div class="flex between center"><h2 class="reveal d1" style="font-size:56px">回归树：<em>分段常数</em>的阶梯</h2><div class="hint">模拟数据</div></div>
+          <svg id="s13" viewBox="0 0 1000 620" style="width:100%;height:620px;margin-top:14px" class="reveal d2"></svg>
+        </div>
+        <div class="col gap24" style="width:560px;justify-content:center">
+          <div class="sl reveal d2"><span>树的深度</span><input type="range" id="d13" min="0" max="7" value="2"><b id="dv13"></b></div>
+          <label class="reveal d3" style="font:500 22px var(--f-mono);color:var(--ink-2);cursor:pointer"><input type="checkbox" id="l13" checked style="width:22px;height:22px;vertical-align:-4px;accent-color:var(--blue)"> 同时显示线性回归直线</label>
+          <div class="panel reveal d4"><div class="kv"><span>回归树 · 训练 MSE</span><b id="a13" class="pos"></b></div><div class="kv"><span>回归树 · 测试 MSE</span><b id="b13"></b></div><div class="kv"><span>线性回归 · 测试 MSE</span><b id="c13" style="color:var(--ochre)"></b></div></div>
+          <div class="math reveal d5" style="font-size:30px"><i>f</i>(<i>X</i>) = Σ<sub><i>m</i>=1…<i>M</i></sub> <i>c<sub>m</sub></i> · 1<sub>(<i>X</i>∈<i>R<sub>m</sub></i>)</sub></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P12–P13（原图为矩形划分的二维散点）；此处改为一维数据：y = sin x + 0.3x + 噪声（种子固定；训练 / 测试各 70 点）</div>
+      <script>(function(){const $=id=>document.getElementById(id);const r=CT.rng(13);
+        const mk=()=>{const a=[];for(let i=0;i<70;i++){const x=r()*10;a.push([x,Math.sin(x)+.3*x+CT.gauss(r)*.4]);}return a.sort((p,q)=>p[0]-q[0]);};
+        const TR=mk(),TE=mk();
+        function grow(a,lo,hi,d,mx,out){const n=hi-lo;let m=0;for(let i=lo;i<hi;i++)m+=a[i][1];m/=n;
+          if(d>=mx||n<6){out.push({x0:lo?(a[lo-1][0]+a[lo][0])/2:0,x1:hi<a.length?(a[hi-1][0]+a[hi][0])/2:10,m});return;}
+          let tot=0,tot2=0;for(let i=lo;i<hi;i++){tot+=a[i][1];tot2+=a[i][1]**2;}let best=null,s=0;
+          for(let k=lo;k<hi-3;k++){s+=a[k][1];const nl=k-lo+1;if(nl<3)continue;let sl=s,sr=tot-s;const rss=(tot2-sl*sl/nl-sr*sr/(n-nl));if(!best||rss<best.r)best={k,r:rss};}
+          if(!best){out.push({x0:lo?(a[lo-1][0]+a[lo][0])/2:0,x1:hi<a.length?(a[hi-1][0]+a[hi][0])/2:10,m});return;}
+          grow(a,lo,best.k+1,d+1,mx,out);grow(a,best.k+1,hi,d+1,mx,out);}
+        const ols=a=>{const n=a.length;let sx=0,sy=0,sxy=0,sxx=0;a.forEach(p=>{sx+=p[0];sy+=p[1];sxy+=p[0]*p[1];sxx+=p[0]**2});const b=(n*sxy-sx*sy)/(n*sxx-sx*sx);return[(sy-b*sx)/n,b];};
+        const [b0,b1]=ols(TR);const X=x=>60+x*90,Y=y=>560-(y+1)*125;
+        const tp=(S,x)=>{for(const s of S)if(x<s.x1||s===S[S.length-1])return s.m;};
+        const mse=(S,A,f)=>A.reduce((u,p)=>u+(p[1]-f(S,p[0]))**2,0)/A.length;
+        function up(){const d=+$('d13').value;$('dv13').textContent=d;const S=[];grow(TR,0,TR.length,0,d,S);
+          let h='<line x1="60" y1="590" x2="960" y2="590" stroke="#1d2433" stroke-width="2"/>';
+          TR.forEach(p=>h+='<circle cx="'+X(p[0])+'" cy="'+Y(p[1])+'" r="6" fill="#24509e" fill-opacity=".65"/>');
+          let pts='';S.forEach(s=>pts+=X(s.x0)+','+Y(s.m)+' '+X(s.x1)+','+Y(s.m)+' ');h+='<polyline points="'+pts+'" fill="none" stroke="#1f7a72" stroke-width="6"/>';
+          if($('l13').checked)h+='<line x1="'+X(0)+'" y1="'+Y(b0)+'" x2="'+X(10)+'" y2="'+Y(b0+b1*10)+'" stroke="#c27a1a" stroke-width="5" stroke-dasharray="12 8"/>';
+          h+='<text x="60" y="30" font-size="22" fill="#8a90a0">叶节点 M = '+S.length+'　绿 = 回归树　橙虚线 = 线性回归</text>';
+          $('s13').innerHTML=h;$('a13').textContent=mse(S,TR,tp).toFixed(2);$('b13').textContent=mse(S,TE,tp).toFixed(2);$('c13').textContent=(TE.reduce((u,p)=>u+(p[1]-b0-b1*p[0])**2,0)/TE.length).toFixed(2);}
+        $('d13').oninput=up;$('l13').onchange=up;up();})();</script>
+    </section>
+
+    <!-- === SLIDE 14 · 与线性回归对比（交互）=== -->
+    <section class="slide c" data-sec="1 · 分类回归树" data-title="分类回归树 vs 线性回归：表达、解释、计算（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 几何解释与优缺点</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:60px">两种模型，<em>两种“解释”</em></h2>
+          <div class="tabs reveal d1"><button class="tab b on" id="k14a">线性回归</button><button class="tab b" id="k14b">分类回归树</button></div></div>
+        <div class="flex gap32" style="margin-top:44px">
+          <div class="card b grow reveal d2" style="min-height:430px"><div class="n">表达式</div><div class="math" id="f14" style="font-size:44px;margin-top:30px"></div></div>
+          <div class="card t grow reveal d3" style="min-height:430px"><div class="n">解释性</div><p id="i14" style="margin-top:20px"></p></div>
+          <div class="card o grow reveal d4" style="min-height:430px"><div class="n">计算</div><p id="m14" style="margin-top:20px"></p></div>
+        </div>
+        <p class="reveal d5" style="margin-top:34px;font-size:28px" id="n14"></p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P13–P15</div>
+      <script>(function(){const $=id=>document.getElementById(id);
+        const C={a:['<i>f</i>(<i>X</i>) = <i>β</i><sub>0</sub> + Σ<sub><i>j</i>=1…<i>p</i></sub> <i>X<sub>j</sub></i> <i>β<sub>j</sub></i>','对<b>单个变量</b>给出解释：<i>X<sub>j</sub></i> 每增加 1 个单位，预测变化 <i>β<sub>j</sub></i>（其他变量不变）。','具有<b>解析解</b>（最小二乘 <i>β̂</i> = (X′X)⁻¹X′y），一步求出。','效应“可加、可外推”，但默认不含变量间的交叉。'],
+          b:['<i>f</i>(<i>X</i>) = Σ<sub><i>m</i>=1…<i>M</i></sub> <i>c<sub>m</sub></i> · 1<sub>(<i>X</i>∈<i>R<sub>m</sub></i>)</sub>','对<b>多个变量的交叉项</b>给出解释：“晴天 且 周六”这类<b>组合条件</b>天然出现在路径里。','没有解析解；需要<b>递归算法</b>逐层贪心地构造树结构。','规则可读、可画；但预测是分段常数，难以外推。']};
+        function s(k){$('k14a').classList.toggle('on',k==='a');$('k14b').classList.toggle('on',k==='b');const c=C[k];$('f14').innerHTML=c[0];$('i14').innerHTML=c[1];$('m14').innerHTML=c[2];$('n14').innerHTML=c[3];}
+        $('k14a').onclick=()=>s('a');$('k14b').onclick=()=>s('b');s('a');})();</script>
+    </section>
+
+    <!-- === SLIDE 15 · 优缺点 === -->
+    <section class="slide c" data-sec="1 · 分类回归树" data-title="分类回归树的优点与缺点">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 几何解释与优缺点</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:64px">树：<em>好用</em>，但<em>不稳</em></h2>
+        <div class="flex gap32" style="margin-top:44px">
+          <div class="col grow gap16 st"><div class="mono teal" style="font-size:24px;letter-spacing:.14em">优点</div>
+            <div class="card t"><h3>容易处理缺失值 ⚠</h3><p>典型实现用“代理分裂”等机制；是否原生支持随软件版本而异。</p></div>
+            <div class="card t"><h3>容易处理离散变量 ⚠</h3><p>类别型特征可直接分组分裂；部分 Python 实现需先编码。</p></div>
+            <div class="card t"><h3>规则可读</h3><p>每条根到叶的路径就是一条业务规则，可审计、可沟通。</p></div></div>
+          <div class="col grow gap16 st"><div class="mono ochre" style="font-size:24px;letter-spacing:.14em">缺点</div>
+            <div class="card o"><h3>阈值不稳定</h3><p>训练数据稍有变化，选出的分裂变量与阈值就可能不同。</p></div>
+            <div class="card o"><h3>预测精度不稳定</h3><p>方差大：单棵树对数据的“扰动”极其敏感，容易过拟合。</p></div>
+            <div class="card g"><h3>下一页：亲眼看看“不稳”</h3><p>对同一份数据反复重抽样，树怎么变？</p></div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P16；⚠ 缺失值 / 离散变量的处理依实现与版本而定（R 的 rpart 用代理分裂；scikit-learn 对 NaN 与类别特征的支持随版本变化，以所用版本文档为准）</div>
+    </section>
+
+    <!-- === SLIDE 16 · 不稳定性（交互）=== -->
+    <section class="slide c" data-sec="1 · 分类回归树" data-title="缺点实验：重抽样，树就变了（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 几何解释与优缺点</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:760px" class="col gap24">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">INSTABILITY OF A SINGLE TREE</div>
+          <h2 class="reveal d2" style="font-size:58px">同一批数据，<br>换个样本，<em>树就变</em></h2>
+          <p class="reveal d3" style="font-size:26px">每次从 500 封训练邮件中<b>有放回抽 100 封</b>，长一棵深度 ≤ 3 的树。统计<b>根节点用了哪个特征</b>。</p>
+          <div class="flex gap16 reveal d4"><button class="btn" id="a16">重抽样 ×1</button><button class="btn" id="b16">×20</button><button class="btn" id="c16" style="border-color:var(--ink-3);color:var(--ink-3)">清零</button></div>
+          <svg id="h16" viewBox="0 0 760 400" style="width:760px;height:400px" class="reveal d4"></svg>
+        </div>
+        <div class="grow col gap16 reveal d3" style="justify-content:center">
+          <div class="flex gap24"><div class="acc"><small>已抽样次数</small><span id="n16"></span></div><div class="acc"><small>测试准确率 范围</small><span id="r16" style="color:var(--blue)"></span></div></div>
+          <table class="tbl" id="t16" style="margin-top:16px"></table>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P18（“阈值不稳定、预测精度不稳定”的例子）；数据：Spambase 抽样 800 封，500 训练 / 300 测试</div>
+      <script>(function(){const $=id=>document.getElementById(id);const D=CT.D;const hist={},log=[];let n=0,lo=1,hi=0,seed=100;
+        function once(){const r=CT.rng(seed++);const idx=[];for(let i=0;i<100;i++)idx.push(Math.floor(r()*500));
+          const t=CT.build(idx,CT.ALL,0,{maxDepth:3,minLeaf:3},r);const a=CT.acc(t,500,800);n++;lo=Math.min(lo,a);hi=Math.max(hi,a);
+          if(t.f){hist[t.f]=(hist[t.f]||0)+1;log.unshift([n,CT.FN[t.f]+' ≤ '+t.t.toFixed(2),CT.count(t),a]);}}
+        function draw(){$('n16').textContent=n;$('r16').textContent=n?(lo*100).toFixed(0)+'–'+(hi*100).toFixed(0)+'%':'—';
+          const mx=Math.max(1,...Object.values(hist));let h='';CT.ALL.forEach((f,i)=>{const v=hist[f]||0,w=v/mx*470;h+='<text x="150" y="'+(36+i*46)+'" text-anchor="end" font-size="24" fill="#1d2433">'+CT.FN[f]+'</text><rect x="165" y="'+(14+i*46)+'" width="'+w+'" height="30" fill="#24509e" fill-opacity=".8"/><text x="'+(175+w)+'" y="'+(37+i*46)+'" font-size="22" fill="#4a5263">'+v+'</text>';});
+          $('h16').innerHTML=h+'<text x="165" y="395" font-size="19" fill="#8a90a0">根节点所选特征的次数</text>';
+          $('t16').innerHTML='<tr><th>#</th><th>根节点规则</th><th>叶数</th><th>测试</th></tr>'+log.slice(0,7).map(l=>'<tr><td>'+l[0]+'</td><td style="text-align:left">'+l[1]+'</td><td>'+l[2]+'</td><td>'+(l[3]*100).toFixed(1)+'%</td></tr>').join('');}
+        const run=k=>{for(let i=0;i<k;i++)once();draw();};
+        $('a16').onclick=()=>run(1);$('b16').onclick=()=>run(20);$('c16').onclick=()=>{for(const k in hist)delete hist[k];log.length=0;n=0;lo=1;hi=0;draw();};run(12);})();</script>
+    </section>
+
+    <!-- === SLIDE 17 · 章节 Part 2 === -->
+    <section class="slide c chapter" data-sec="2 · 随机森林" data-title="Part 2 · 随机森林">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 5.2</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">02</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 2</div>
+        <h2 class="reveal d2">随机<em>森林</em></h2>
+        <div class="s reveal d3">用均值降低方差：一片“不太一样”的树，胜过一棵“最好”的树</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>2.1</b>为什么平均能降方差</div>
+        <div><b>2.2</b>随机森林的做法与效果</div>
+        <div><b>2.3</b>变量重要性</div>
+        <div><b>2.4</b>2025–2026：提升法与表格基础模型</div>
+      </div>
+    </section>
+
+    <!-- === SLIDE 18 · 均值降方差（交互）=== -->
+    <section class="slide c" data-sec="2 · 随机森林" data-title="基本思想：用均值降低方差（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.1 为什么平均能降方差</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:700px" class="col gap24">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">AVERAGING REDUCES VARIANCE</div>
+          <h2 class="reveal d2" style="font-size:58px">一个想法：<br>取<em>平均</em></h2>
+          <div class="math reveal d3" style="font-size:36px;line-height:1.7"><i>X</i><sub>1</sub>, …, <i>X<sub>n</sub></i> 独立同分布，方差 <i>σ</i>²<br>var(<i>X̄</i>) = var( (1/<i>n</i>) Σ <i>X<sub>i</sub></i> ) = <i>σ</i>² / <i>n</i></div>
+          <div class="math reveal d4" style="font-size:30px;color:var(--ink-2);border-top:1px solid var(--rule);padding-top:16px">若两两相关系数为 <i>ρ</i>：<br>var(<i>X̄</i>) = <i>ρσ</i>² + (1 − <i>ρ</i>)<i>σ</i>² / <i>n</i></div>
+          <p class="reveal d5" style="font-size:25px">树之间越<b>不相关</b>，平均越有效 —— 这就是“随机”二字的用意。</p>
+        </div>
+        <div class="grow col gap16 reveal d3" style="justify-content:center">
+          <svg id="s18" viewBox="0 0 980 440" style="width:100%;height:440px"></svg>
+          <div class="sl"><span>平均个数 n</span><input type="range" id="n18" min="1" max="50" value="1"><b id="nv18"></b></div>
+          <div class="sl"><span>相关系数 ρ</span><input type="range" id="p18" min="0" max="9" value="0"><b id="pv18"></b></div>
+          <div class="flex gap48"><div class="acc"><small>模拟方差（400 次）</small><span id="e18" style="color:var(--blue)"></span></div><div class="acc"><small>理论方差</small><span id="t18"></span></div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P19（σ²/n）；相关情形的公式见 Hastie, Tibshirani &amp; Friedman《统计学习基础》随机森林一章（R3）；模拟：标准正态，种子固定</div>
+      <script>(function(){const $=id=>document.getElementById(id);const r=CT.rng(18);
+        const Z0=[...Array(400)].map(()=>CT.gauss(r)),Z=[...Array(400)].map(()=>[...Array(50)].map(()=>CT.gauss(r)));
+        function up(){const n=+$('n18').value,rho=+$('p18').value/10;$('nv18').textContent=n;$('pv18').textContent=rho.toFixed(1);
+          const m=Z0.map((z0,k)=>{let s=0;for(let i=0;i<n;i++)s+=Math.sqrt(rho)*z0+Math.sqrt(1-rho)*Z[k][i];return s/n;});
+          const mean=m.reduce((a,b)=>a+b,0)/400,v=m.reduce((a,b)=>a+(b-mean)**2,0)/399;
+          $('e18').textContent=v.toFixed(3);$('t18').textContent=(rho+(1-rho)/n).toFixed(3);
+          const B=40,lo=-3.2,hi=3.2,bin=Array(B).fill(0);m.forEach(x=>{const k=Math.floor((x-lo)/(hi-lo)*B);if(k>=0&&k<B)bin[k]++;});
+          const X=x=>40+(x-lo)/(hi-lo)*900,mx=60;let h='<line x1="40" y1="400" x2="940" y2="400" stroke="#1d2433" stroke-width="2"/>';
+          let g=[];for(let x=lo;x<=hi;x+=.1){g.push(X(x)+','+(400-400*(hi-lo)/B*Math.exp(-x*x/2)/Math.sqrt(2*Math.PI)/400*400*(1)*1));}
+          bin.forEach((c,k)=>{const hh=c/ (400*(hi-lo)/B)*300;h+='<rect x="'+(40+k*900/B+1)+'" y="'+(400-hh)+'" width="'+(900/B-2)+'" height="'+hh+'" fill="#24509e" fill-opacity=".75"/>';});
+          let pts=[];for(let x=lo;x<=hi+1e-9;x+=.1)pts.push(X(x)+','+(400-Math.exp(-x*x/2)/Math.sqrt(2*Math.PI)*300));
+          h+='<polyline points="'+pts.join(' ')+'" fill="none" stroke="#8a90a0" stroke-width="3" stroke-dasharray="8 6"/><text x="940" y="30" text-anchor="end" font-size="22" fill="#8a90a0">灰虚线 = 单个 X 的分布（σ²=1）</text><text x="940" y="60" text-anchor="end" font-size="22" fill="#24509e">蓝柱 = n 个的平均 X̄ 的分布</text>';
+          $('s18').innerHTML=h;}
+        $('n18').oninput=up;$('p18').oninput=up;up();})();</script>
+    </section>
+
+    <!-- === SLIDE 19 · 随机森林配方 === -->
+    <section class="slide c" data-sec="2 · 随机森林" data-title="随机森林：三个动作">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.2 随机森林的做法与效果</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col gap24" style="width:880px;justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">RANDOM FOREST · BREIMAN 2001</div>
+          <h2 class="reveal d2" style="font-size:62px">让每棵树<em>都不一样</em></h2>
+          <figure class="contain reveal d3" style="height:480px"><img src="assets/p20_1.jpg"></figure>
+          <figcaption>随机森林示意：多棵树 → 多数投票 → 最终类别</figcaption>
+        </div>
+        <div class="col grow gap16 st" style="justify-content:center">
+          <div class="card b"><div class="n">STEP 1 · 样本随机</div><h3>自助抽样 Bootstrap</h3><p style="font-size:25px">有放回地抽 n 条样本，每棵树看到的数据不同。</p></div>
+          <div class="card t"><div class="n">STEP 2 · 特征随机</div><h3>每次分裂只考虑 m 个特征</h3><p style="font-size:25px">随机选出 m 个候选，降低树与树之间的相关性 ρ。</p></div>
+          <div class="card o"><div class="n">STEP 3 · 汇总</div><h3>多数投票 / 取平均</h3><p style="font-size:25px">分类：投票；回归：平均。树本身不剪枝，各自长满。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P17、P20；Breiman (2001)（R2）</div>
+    </section>
+
+    <!-- === SLIDE 20 · 森林实验（交互）=== -->
+    <section class="slide c" data-sec="2 · 随机森林" data-title="实验：树越多越准？（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.2 随机森林的做法与效果</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div class="col grow">
+          <div class="flex between center"><h2 class="reveal d1" style="font-size:56px">树越多，<em>测试误差越稳</em></h2><div class="hint" id="w20">计算中…</div></div>
+          <svg id="s20" viewBox="0 0 1000 560" style="width:100%;height:560px;margin-top:14px" class="reveal d2"></svg>
+          <div class="sl reveal d3"><span>树的棵数 B</span><input type="range" id="k20" min="1" max="100" value="1"><b id="kv20"></b></div>
+        </div>
+        <div class="col gap24" style="width:520px;justify-content:center">
+          <div class="reveal d2"><div class="hint" style="margin-bottom:10px">每次分裂的候选特征数 m（共 8 个）</div><div class="tabs" style="flex-wrap:wrap"><button class="tab b" data-m="1" style="white-space:nowrap">m = 1</button><button class="tab b on" data-m="3" style="white-space:nowrap">m = 3</button><button class="tab b" data-m="8" style="white-space:nowrap">m = 8 (Bagging)</button></div></div>
+          <div class="acc reveal d3"><small>随机森林 测试准确率</small><span id="a20" style="color:var(--blue)"></span></div>
+          <div class="acc reveal d4"><small>单棵满生长树 平均测试准确率</small><span id="b20" style="color:var(--ochre)"></span></div>
+          <p class="reveal d5" style="font-size:24px">数据：真实邮件，500 训练 / 300 测试；每棵树不剪枝。多棵树的“平均”带来稳定提升。</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P20；数据：UCI Spambase 抽样 800 封，8 个特征；浏览器内现场训练，结果随抽样而异，不代表全量数据上的绝对精度</div>
+      <script>(function(){const $=id=>document.getElementById(id);let m=3,ready=false;
+        window.RF=window.RF||{};
+        function prep(){if(ready)return;[1,3,8].forEach((mm,i)=>{const T=CT.forest(100,mm,200+mm);const D=CT.D;const votes=Array(300).fill(0),acc=[],ind=[];
+          T.forEach((t,b)=>{let c=0;for(let j=0;j<300;j++){const p=CT.pred(t,500+j)>=.5?1:0;votes[j]+=p;}ind.push(CT.acc(t,500,800));
+            let ok=0;for(let j=0;j<300;j++)ok+=((votes[j]/(b+1))>=.5?1:0)===D.y[500+j]?1:0;acc.push(ok/300);});
+          window.RF[mm]={T,acc,single:ind.reduce((a,b)=>a+b,0)/ind.length};});ready=true;$('w20').textContent='';}
+        function up(){if(!ready)return;const k=+$('k20').value,R=window.RF[m];$('kv20').textContent=k;
+          const X=b=>70+(b-1)/99*880,Y=v=>520-(v-.75)/.25*480;let h='<line x1="70" y1="520" x2="950" y2="520" stroke="#1d2433" stroke-width="2"/><line x1="70" y1="520" x2="70" y2="30" stroke="#1d2433" stroke-width="2"/>';
+          [.8,.85,.9,.95].forEach(v=>h+='<line x1="70" y1="'+Y(v)+'" x2="950" y2="'+Y(v)+'" stroke="#cfcac0" stroke-width="1"/><text x="60" y="'+(Y(v)+7)+'" text-anchor="end" font-size="20" fill="#8a90a0">'+(v*100)+'%</text>');
+          h+='<line x1="70" y1="'+Y(R.single)+'" x2="950" y2="'+Y(R.single)+'" stroke="#c27a1a" stroke-width="3" stroke-dasharray="10 8"/><text x="950" y="'+(Y(R.single)-10)+'" text-anchor="end" font-size="22" fill="#c27a1a">单棵树平均</text>';
+          h+='<polyline points="'+R.acc.slice(0,k).map((v,i)=>X(i+1)+','+Y(v)).join(' ')+'" fill="none" stroke="#24509e" stroke-width="5"/><circle cx="'+X(k)+'" cy="'+Y(R.acc[k-1])+'" r="10" fill="#24509e"/><text x="510" y="552" text-anchor="middle" font-size="22" fill="#4a5263">树的棵数 B（1–100）</text><text x="76" y="24" font-size="21" fill="#8a90a0">测试准确率（75%–100%）</text>';
+          $('s20').innerHTML=h;$('a20').textContent=(R.acc[k-1]*100).toFixed(1)+'%';$('b20').textContent=(R.single*100).toFixed(1)+'%';}
+        $('k20').oninput=up;document.querySelectorAll('.tab[data-m]').forEach(b=>b.onclick=()=>{m=+b.dataset.m;document.querySelectorAll('.tab[data-m]').forEach(x=>x.classList.toggle('on',x===b));up();});
+        setTimeout(()=>{prep();$('k20').value=30;up();},60);window.rfReady=()=>{prep();};})();</script>
+    </section>
+
+    <!-- === SLIDE 21 · 随机森林优缺点 === -->
+    <section class="slide c" data-sec="2 · 随机森林" data-title="随机森林的优点与缺点">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.2 随机森林的做法与效果</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:64px">森林：<em>更稳更准</em>，但<em>看不见树</em>了</h2>
+        <div class="flex gap32" style="margin-top:44px">
+          <div class="col grow gap16 st"><div class="mono teal" style="font-size:24px;letter-spacing:.14em">优点</div>
+            <div class="card t"><h3>继承树的长处</h3><p style="font-size:25px">分类、回归都适用；易处理缺失与因子型数据。</p></div>
+            <div class="card t"><h3>更高阶的交互规则</h3><p style="font-size:25px">多棵树合起来，能表达更复杂的变量交互。</p></div>
+            <div class="card t"><h3>稳定、精度高</h3><p style="font-size:25px">平均降方差：预测更稳，通常显著好于单棵树。</p></div></div>
+          <div class="col grow gap16 st"><div class="mono ochre" style="font-size:24px;letter-spacing:.14em">缺点</div>
+            <div class="card o"><h3>丧失图形化解释</h3><p style="font-size:25px">几百棵树无法逐一阅读，只能借助“变量重要性”等间接解释。</p></div>
+            <div class="card o"><h3>计算更重</h3><p style="font-size:25px">训练与预测时间随树数增长（可并行）。</p></div>
+            <div class="card g"><h3>解释性 ↔ 精度</h3><p style="font-size:25px">单树 → 森林：用一部分可解释性换取稳定性与精度。</p></div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P21</div>
+    </section>
+
+    <!-- === SLIDE 22 · 变量重要性（交互）=== -->
+    <section class="slide c" data-sec="2 · 随机森林" data-title="另一种解释：变量重要性（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 变量重要性</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:700px" class="col gap24">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">VARIABLE IMPORTANCE</div>
+          <h2 class="reveal d2" style="font-size:56px">看不见树，<br>但能看见<em>谁更重要</em></h2>
+          <figure class="contain reveal d3" style="height:300px"><img src="assets/p22_1.png"></figure>
+          <figcaption>原稿示例：交友数据的两种重要性（MeanDecreaseAccuracy / Gini）</figcaption>
+          <p class="reveal d4" style="font-size:24px"><b>Gini</b>：该变量在所有树的分裂中带来的不纯度下降之和。<br><b>置换</b>：打乱该变量后，测试准确率下降多少。</p>
+        </div>
+        <div class="grow col gap16 reveal d3" style="justify-content:center">
+          <div class="flex between center"><div class="tabs"><button class="tab b on" id="g22">Gini 重要性</button><button class="tab b" id="p22">置换重要性（测试集）</button></div><div class="hint">垃圾邮件森林 · m = 3</div></div>
+          <svg id="s22" viewBox="0 0 900 560" style="width:100%;height:560px"></svg>
+          <p style="font-size:23px">⚠ Gini 重要性偏向取值多的连续变量；变量相关时重要性会被分摊，解读需谨慎。</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P22；Strobl et al. (2007) 关于重要性偏差（R4）；数据：Spambase 抽样 800 封，浏览器内现场训练</div>
+      <script>(function(){const $=id=>document.getElementById(id);let mode='g',cache={};
+        function compute(){if(cache.g)return;rfReady();const T=window.RF[3].T,D=CT.D;const g={};CT.ALL.forEach(f=>g[f]=0);
+          const walk=nd=>{if(nd.f){g[nd.f]+=nd.imp;walk(nd.l);walk(nd.r);}};T.forEach(walk);
+          const mx=Math.max(...Object.values(g));cache.g={};CT.ALL.forEach(f=>cache.g[f]=g[f]/mx);
+          const base=window.RF[3].acc[99];const r=CT.rng(22);cache.p={};
+          CT.ALL.forEach(f=>{const X=Object.assign({},D);const col=D[f].slice();const seg=col.slice(500,800);for(let i=seg.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[seg[i],seg[j]]=[seg[j],seg[i]];}
+            for(let i=0;i<300;i++)col[500+i]=seg[i];X[f]=col;let ok=0;
+            for(let j=0;j<300;j++){let v=0;T.forEach(t=>v+=CT.pred(t,500+j,X)>=.5?1:0);ok+=((v/T.length)>=.5?1:0)===D.y[500+j]?1:0;}
+            cache.p[f]=Math.max(0,base-ok/300);});
+          const pm=Math.max(...Object.values(cache.p),1e-9);CT.ALL.forEach(f=>cache.p[f]=cache.p[f]/pm);cache.raw=base;}
+        function up(){compute();const V=cache[mode];const ord=CT.ALL.slice().sort((a,b)=>V[b]-V[a]);let h='';
+          ord.forEach((f,i)=>{const w=V[f]*560;h+='<text x="190" y="'+(48+i*64)+'" text-anchor="end" font-size="28" fill="#1d2433">'+CT.FN[f]+'</text><rect x="205" y="'+(24+i*64)+'" width="'+w+'" height="38" fill="'+(i===0?'#24509e':'#24509e')+'" fill-opacity="'+(i===0?1:.6)+'"/><text x="'+(215+w)+'" y="'+(51+i*64)+'" font-size="23" fill="#4a5263">'+(V[f]*100).toFixed(0)+'%</text>';});
+          $('s22').innerHTML=h+'<text x="205" y="552" font-size="20" fill="#8a90a0">相对重要性（最大者 = 100%）</text>';
+          $('g22').classList.toggle('on',mode==='g');$('p22').classList.toggle('on',mode==='p');}
+        $('g22').onclick=()=>{mode='g';up();};$('p22').onclick=()=>{mode='p';up();};
+        window.imp22=up;setTimeout(()=>{try{up();}catch(e){setTimeout(up,500);}},400);})();</script>
+    </section>
+
+    <!-- === SLIDE 23 · 树 vs 深度学习（2025–2026 更新）=== -->
+    <section class="slide c" data-sec="2 · 随机森林" data-title="2025–2026：表格数据，树模型赢了吗？">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 2025–2026：提升法与表格基础模型</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">UPDATE · TABULAR DATA</div>
+        <h2 class="reveal d2" style="font-size:64px;margin-top:10px">深度学习时代，<em>表格数据</em>仍是树的主场</h2>
+        <div class="flex gap32 st" style="margin-top:40px">
+          <div class="card g grow"><div class="n">2022 · NEURIPS</div><h3>树模型仍优于深度学习</h3><p style="font-size:25px">Grinsztajn 等在多数据集基准上发现：中等规模表格数据中，树类模型（RF、梯度提升）整体仍占优。</p></div>
+          <div class="card b grow"><div class="n">2025 · TABARENA</div><h3>差距在收窄</h3><p style="font-size:25px">“活”基准：梯度提升树仍有很强的性价比；深度模型经<b>充分调参 + 集成</b>后可追平甚至超过；小数据上基础模型最强。</p></div>
+          <div class="card t grow"><div class="n">结论 · 实务</div><h3>不是二选一</h3><p style="font-size:25px">跨模型<b>集成</b>优于任何单一模型族。树模型仍是表格业务的稳妥基线。</p></div>
+        </div>
+        <p class="reveal d5" style="margin-top:34px;font-size:28px">树的启示不过时：<b>先建强基线，再谈复杂模型</b>。</p>
+      </div>
+      <div class="src"><b>参考</b> R5 Grinsztajn et al. (2022)；R6 TabArena (NeurIPS 2025 D&amp;B)；⚠ 基准结论依数据集选择与调参预算而定</div>
+    </section>
+
+    <!-- === SLIDE 24 · 提升法（交互）=== -->
+    <section class="slide c" data-sec="2 · 随机森林" data-title="从森林到梯度提升：逐轮拟合残差（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 2025–2026：提升法与表格基础模型</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow">
+          <div class="flex between center"><h2 class="reveal d1" style="font-size:56px">另一条路：<em>串行</em>地纠错</h2><div class="hint">模拟数据 · 小树逐轮拟合残差</div></div>
+          <svg id="s24" viewBox="0 0 1000 560" style="width:100%;height:560px;margin-top:14px" class="reveal d2"></svg>
+        </div>
+        <div class="col gap24" style="width:560px;justify-content:center">
+          <div class="sl reveal d2"><span>轮数 M</span><input type="range" id="m24" min="0" max="100" value="3"><b id="mv24"></b></div>
+          <div class="sl reveal d2"><span>学习率 η</span><input type="range" id="e24" min="1" max="10" value="5"><b id="ev24"></b></div>
+          <div class="reveal d3"><div class="hint" style="margin-bottom:10px">每棵小树的深度</div><div class="tabs"><button class="tab b on" data-d="1">1（树桩）</button><button class="tab b" data-d="2">2</button><button class="tab b" data-d="3">3</button></div></div>
+          <div class="panel reveal d4"><div class="kv"><span>训练 MSE</span><b id="a24" class="pos"></b></div><div class="kv"><span>测试 MSE</span><b id="b24"></b></div></div>
+          <div class="math reveal d5" style="font-size:30px"><i>F<sub>m</sub></i> = <i>F</i><sub><i>m</i>−1</sub> + <i>η</i> · <i>h<sub>m</sub></i>(残差)</div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> XGBoost / LightGBM / CatBoost 为表格数据的主流实现（见 R6 TabArena）；示意数据：y = sin x + 0.3x + 噪声（种子固定）</div>
+      <script>(function(){const $=id=>document.getElementById(id);const r=CT.rng(24);let dep=1;
+        const mk=()=>{const a=[];for(let i=0;i<60;i++){const x=r()*10;a.push([x,Math.sin(x)+.3*x+CT.gauss(r)*.35]);}return a.sort((p,q)=>p[0]-q[0]);};
+        const TR=mk(),TE=mk();
+        function fit(a,res,lo,hi,d){const n=hi-lo;let m=0;for(let i=lo;i<hi;i++)m+=res[i];m/=n;if(d===0||n<4)return{m};
+          let tot=0;for(let i=lo;i<hi;i++)tot+=res[i];let s=0,best=null;for(let k=lo;k<hi-2;k++){s+=res[k];const nl=k-lo+1;if(nl<2)continue;const sc=s*s/nl+(tot-s)*(tot-s)/(n-nl);if(!best||sc>best.s)best={k,s:sc};}
+          if(!best)return{m};return{t:(a[best.k][0]+a[best.k+1][0])/2,l:fit(a,res,lo,best.k+1,d-1),r:fit(a,res,best.k+1,hi,d-1)};}
+        const ev=(nd,x)=>{while(nd.t!==undefined)nd=x<=nd.t?nd.l:nd.r;return nd.m;};
+        function run(M,eta){const F=TR.map(()=>0),T=[];const f0=TR.reduce((u,p)=>u+p[1],0)/TR.length;F.fill(f0);
+          for(let m=0;m<M;m++){const res=TR.map((p,i)=>p[1]-F[i]);const t=fit(TR,res,0,TR.length,dep);T.push(t);TR.forEach((p,i)=>F[i]+=eta*ev(t,p[0]));}
+          return{f0,T,eta,pred:x=>f0+T.reduce((u,t)=>u+eta*ev(t,x),0)};}
+        const X=x=>60+x*90,Y=y=>520-(y+1)*115;
+        function up(){const M=+$('m24').value,eta=+$('e24').value/10;$('mv24').textContent=M;$('ev24').textContent=eta.toFixed(1);const R=run(M,eta);
+          let h='<line x1="60" y1="560" x2="960" y2="560" stroke="#1d2433" stroke-width="2"/>';
+          TR.forEach(p=>h+='<circle cx="'+X(p[0])+'" cy="'+Y(p[1])+'" r="6" fill="#24509e" fill-opacity=".6"/>');
+          let pts=[];for(let x=0;x<=10;x+=.05)pts.push(X(x)+','+Y(R.pred(x)));
+          h+='<polyline points="'+pts.join(' ')+'" fill="none" stroke="#1f7a72" stroke-width="6"/><text x="60" y="30" font-size="22" fill="#8a90a0">绿线 = 前 '+M+' 棵小树累加的预测</text>';
+          $('s24').innerHTML=h;const ms=A=>A.reduce((u,p)=>u+(p[1]-R.pred(p[0]))**2,0)/A.length;$('a24').textContent=ms(TR).toFixed(3);$('b24').textContent=ms(TE).toFixed(3);}
+        $('m24').oninput=up;$('e24').oninput=up;document.querySelectorAll('.tab[data-d]').forEach(b=>b.onclick=()=>{dep=+b.dataset.d;document.querySelectorAll('.tab[data-d]').forEach(x=>x.classList.toggle('on',x===b));up();});up();})();</script>
+    </section>
+
+    <!-- === SLIDE 25 · 表格基础模型 TabPFN === -->
+    <section class="slide c" data-sec="2 · 随机森林" data-title="2025–2026：表格基础模型 TabPFN">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 2025–2026：提升法与表格基础模型</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">UPDATE · TABULAR FOUNDATION MODEL</div>
+        <h2 class="reveal d2" style="font-size:64px;margin-top:10px">AI 4.0 的思路，<em>进入表格数据</em></h2>
+        <div class="flex gap32 st" style="margin-top:40px">
+          <div class="card b grow"><div class="n">机制</div><h3>预训练一次，上下文里“读表”</h3><p style="font-size:25px">TabPFN：在海量合成数据集上预训练的 Transformer；新任务不再训练，把训练表放进输入，一次前向传播给出预测。</p></div>
+          <div class="card t grow"><div class="n">2025.01 · NATURE</div><h3>小数据上超过调参后的树</h3><p style="font-size:25px">论文报告：≤10,000 样本、≤500 特征的基准上，平均约 2.8 秒的分类预测优于调参 4 小时的强基线集成。</p></div>
+          <div class="card o grow"><div class="n">2025.11 · TABPFN-2.5</div><h3>规模扩大到 5 万 × 2 千</h3><p style="font-size:25px">技术报告称支持至 50,000 样本、2,000 特征，在 TabArena 上优于调参后的 XGBoost / CatBoost。</p></div>
+        </div>
+        <p class="reveal d5" style="margin-top:34px;font-size:27px">⚠ 结果多为作者自报；大样本、高维稀疏、需要可审计规则的场景，<b>树模型仍是首选基线</b>。</p>
+      </div>
+      <div class="src"><b>参考</b> R7 Hollmann et al., Nature 2025；R8 TabPFN-2.5 报告（arXiv:2511.08667，Prior Labs）；R6 TabArena；⚠ 基准为论文自报</div>
+    </section>
+
+    <!-- === SLIDE 26 · 章节 Part 3 === -->
+    <section class="slide c chapter" data-sec="3 · 应用与展望" data-title="Part 3 · 应用与展望">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 5.2</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">03</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 3</div>
+        <h2 class="reveal d2">应用与<em>展望</em></h2>
+        <div class="s reveal d3">树的规则如何落到业务，以及怎么选模型</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>3.1</b>规则型决策：信贷审批</div>
+        <div><b>3.2</b>模型选型指南</div>
+        <div><b>3.3</b>回到 AI 2.0 框架</div>
+        <div><b>3.4</b>总结与练习</div>
+      </div>
+    </section>
+
+    <!-- === SLIDE 27 · 业务规则树（交互）=== -->
+    <section class="slide c" data-sec="3 · 应用与展望" data-title="树 = 可审计的业务规则：信贷审批（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 规则型决策：信贷审批</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div class="col" style="width:640px;justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">TREE AS BUSINESS RULES</div>
+          <h2 class="reveal d2" style="font-size:54px;margin:8px 0 22px">每个决定，<br>都有一条<em>可复述的路径</em></h2>
+          <div class="sl reveal d3"><span>逾期次数</span><input type="range" id="a27" min="0" max="5" value="0"><b id="av27"></b></div>
+          <div class="sl reveal d3" style="margin-top:22px"><span>负债率</span><input type="range" id="b27" min="0" max="100" value="45"><b id="bv27"></b></div>
+          <div class="sl reveal d3" style="margin-top:22px"><span>年收入(万)</span><input type="range" id="c27" min="3" max="60" value="15"><b id="cv27"></b></div>
+          <div class="panel reveal d4" style="margin-top:28px"><div class="hint" style="margin-bottom:8px">决策与理由</div><div id="r27" style="font:700 30px/1.5 var(--f-serif-cn);color:var(--ink)"></div></div>
+          <p class="reveal d5" style="font-size:22px;margin-top:14px">⚠ 阈值为教学示意，非真实风控规则。</p>
+        </div>
+        <div class="grow reveal d3"><svg id="s27" viewBox="0 0 1160 620" style="width:100%;height:700px"></svg></div>
+      </div>
+      <div class="src"><b>参考</b> 课堂构造的示意规则树；R11《个人信息保护法》第二十四条（自动化决策的透明与说明义务，⚠ 条款表述以原文为准）</div>
+      <script>(function(){const $=id=>document.getElementById(id);
+        const N={r:{x:600,y:60,t:'逾期次数 ≥ 2 ?'},a:{x:800,y:220,t:'负债率 > 60% ?'},b:{x:650,y:390,t:'年收入 ≥ 20 万 ?'},c:{x:990,y:390,t:'年收入 ≥ 8 万 ?'},
+          L1:{x:200,y:230,t:'拒绝',k:'R'},L2:{x:560,y:555,t:'人工复核',k:'V'},L3:{x:750,y:555,t:'拒绝',k:'R'},L4:{x:910,y:555,t:'批准',k:'A'},L5:{x:1070,y:555,t:'人工复核',k:'V'}};
+        const E=[['r','L1','是'],['r','a','否'],['a','b','是'],['a','c','否'],['b','L2','是'],['b','L3','否'],['c','L4','是'],['c','L5','否']];
+        const col={R:'#b4402d',V:'#c27a1a',A:'#1f7a72'};
+        function up(){const o=+$('a27').value,d=+$('b27').value,inc=+$('c27').value;$('av27').textContent=o;$('bv27').textContent=d+'%';$('cv27').textContent=inc;
+          let path=['r'],why=[];let leaf;
+          if(o>=2){path.push('L1');leaf='L1';why.push('逾期 '+o+' 次 ≥ 2');}
+          else{why.push('逾期 '+o+' 次 &lt; 2');path.push('a');
+            if(d>60){why.push('负债率 '+d+'% &gt; 60%');path.push('b');if(inc>=20){why.push('年收入 '+inc+' 万 ≥ 20');path.push('L2');leaf='L2';}else{why.push('年收入 '+inc+' 万 &lt; 20');path.push('L3');leaf='L3';}}
+            else{why.push('负债率 '+d+'% ≤ 60%');path.push('c');if(inc>=8){why.push('年收入 '+inc+' 万 ≥ 8');path.push('L4');leaf='L4';}else{why.push('年收入 '+inc+' 万 &lt; 8');path.push('L5');leaf='L5';}}}
+          const onE=(a,b)=>path.includes(a)&&path.includes(b)&&path.indexOf(b)===path.indexOf(a)+1;
+          let h='';E.forEach(e=>{const A=N[e[0]],B=N[e[1]],on=onE(e[0],e[1]);h+='<line x1="'+A.x+'" y1="'+(A.y+36)+'" x2="'+B.x+'" y2="'+(B.y-36)+'" stroke="'+(on?'#24509e':'#cfcac0')+'" stroke-width="'+(on?6:3)+'"/><text x="'+((A.x+B.x)/2+(B.x<A.x?-14:14))+'" y="'+((A.y+B.y)/2+6)+'" text-anchor="'+(B.x<A.x?'end':'start')+'" font-size="22" fill="'+(on?'#24509e':'#8a90a0')+'">'+e[2]+'</text>';});
+          for(const k in N){const n=N[k],on=path.includes(k);if(n.k){h+='<rect x="'+(n.x-70)+'" y="'+(n.y-34)+'" width="140" height="68" rx="10" fill="'+col[n.k]+'" fill-opacity="'+(on?.9:.12)+'" stroke="'+col[n.k]+'" stroke-width="3"/><text x="'+n.x+'" y="'+(n.y+10)+'" text-anchor="middle" font-size="28" font-weight="700" fill="'+(on?'#fff':col[n.k])+'">'+n.t+'</text>';}
+            else h+='<rect x="'+(n.x-120)+'" y="'+(n.y-36)+'" width="240" height="72" rx="36" fill="'+(on?'#eef2fa':'#fff')+'" stroke="'+(on?'#24509e':'#1d2433')+'" stroke-width="'+(on?5:3)+'"/><text x="'+n.x+'" y="'+(n.y+9)+'" text-anchor="middle" font-size="26" font-weight="700" fill="#1d2433">'+n.t+'</text>';}
+          $('s27').innerHTML=h;$('r27').innerHTML='<span style="color:'+col[N[leaf].k]+'">'+N[leaf].t+'</span><br><span style="font:400 24px/1.6 var(--f-sans);color:var(--ink-2)">'+why.join('；')+'</span>';}
+        ['a27','b27','c27'].forEach(i=>$(i).oninput=up);up();})();</script>
+    </section>
+
+    <!-- === SLIDE 28 · 选型指南（交互）=== -->
+    <section class="slide c" data-sec="3 · 应用与展望" data-title="模型选型：先问需求（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.2 模型选型指南</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div style="width:720px" class="col gap16">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">WHICH MODEL?</div>
+          <h2 class="reveal d2" style="font-size:58px">先问<em>需求</em>，再选模型</h2>
+          <div class="col gap16 reveal d3" style="margin-top:14px" id="l28"></div>
+        </div>
+        <div class="grow col" style="justify-content:center"><div class="card b reveal d3" id="d28" style="min-height:560px;padding:44px 48px"></div></div>
+      </div>
+      <div class="src"><b>参考</b> 课堂归纳，综合原 PPT P14–P16、P21 与本讲 2025–2026 更新（R5–R8）；⚠ 经验性建议，须结合数据与业务验证</div>
+      <script>(function(){const $=id=>document.getElementById(id);
+        const D=[['要向客户 / 监管解释每个决定','浅层决策树 · 逻辑回归 · 规则集','<li>树的路径即规则，可审计、可复述</li><li>限制深度与叶样本数，防止过拟合</li><li>代价：精度通常低于集成模型</li>'],
+          ['表格数据，要稳定的高精度','随机森林 · 梯度提升（XGBoost / LightGBM / CatBoost）','<li>先做强基线：RF 几乎不用调参，GBDT 调参后常更强</li><li>用变量重要性做间接解释</li><li>跨模型集成通常再提升一档</li>'],
+          ['样本很少（≲ 万级）','先试表格基础模型（TabPFN 类），并与树基线对比','<li>无需逐数据集训练，一次前向给出预测</li><li>⚠ 结论多为作者自报，需在自己的数据上验证</li><li>仍保留树 / 线性模型作为对照</li>'],
+          ['图像、文本、语音等非结构化数据','深度学习 · 预训练大模型（后续讲）','<li>树对原始像素 / 词序无能为力</li><li>常见做法：大模型提取特征 → 树模型做业务预测</li>']];
+        $('l28').innerHTML=D.map((d,i)=>'<button class="tab'+(i?'':' on')+'" style="text-align:left;font:500 27px/1.4 var(--f-sans);padding:22px 26px;letter-spacing:0" data-i="'+i+'">'+d[0]+'</button>').join('');
+        function s(i){document.querySelectorAll('#l28 .tab').forEach((b,k)=>b.classList.toggle('on',k===i));$('d28').innerHTML='<div class="n">推荐</div><h3 style="font-size:40px;line-height:1.4;color:var(--blue)">'+D[i][1]+'</h3><ul style="margin:30px 0 0 28px;font:400 29px/1.9 var(--f-sans);color:var(--ink-2)">'+D[i][2]+'</ul>';}
+        document.querySelectorAll('#l28 .tab').forEach(b=>b.onclick=()=>s(+b.dataset.i));s(0);})();</script>
+    </section>
+
+    <!-- === SLIDE 29 · 回到 AI 2.0 框架（交互）=== -->
+    <section class="slide c" data-sec="3 · 应用与展望" data-title="回到 AI 2.0 框架：预测任务与解释性任务（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.3 回到 AI 2.0 框架</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:60px">AI 2.0：<em>特征 + 学习算法</em></h2><div class="tabs reveal d1"><button class="tab b on" id="a29">预测任务</button><button class="tab b" id="b29">解释性任务</button></div></div>
+        <svg id="s29" viewBox="-8 0 1744 520" style="width:100%;height:520px;margin-top:24px" class="reveal d2"></svg>
+        <div class="flex gap32 reveal d3" style="margin-top:14px;align-items:center"><figure class="contain" style="height:110px;width:110px"><img src="assets/p23_3.png"></figure><p id="n29" style="font-size:28px;flex:1"></p></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P23；垃圾邮件场景见 L3（AI 1.0 专家规则 vs AI 2.0 学出规则）</div>
+      <script>(function(){const $=id=>document.getElementById(id);let m='p';
+        function box(x,y,w,h,t,s,c,on){return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="'+(on?c+'1f':'#fff')+'" stroke="'+(on?c:'#cfcac0')+'" stroke-width="'+(on?5:3)+'"/><text x="'+(x+w/2)+'" y="'+(y+h/2-(s?4:-10))+'" text-anchor="middle" font-size="32" font-weight="700" fill="#1d2433">'+t+'</text>'+(s?'<text x="'+(x+w/2)+'" y="'+(y+h/2+34)+'" text-anchor="middle" font-size="24" fill="#4a5263">'+s+'</text>':'');}
+        function up(){$('a29').classList.toggle('on',m==='p');$('b29').classList.toggle('on',m==='e');
+          let h=box(0,160,330,180,'业务问题','核心价值：目标 Y','#8a90a0',true)+box(420,160,380,180,'特征提取','基于业务知识构建 X','#24509e',true)+
+            box(890,60,400,380,'','','#1f7a72',true)+'<text x="1090" y="112" text-anchor="middle" font-size="32" font-weight="700" fill="#1d2433">学习算法</text><text x="1090" y="180" text-anchor="middle" font-size="26" fill="#1d2433">逻辑回归</text><text x="1090" y="236" text-anchor="middle" font-size="26" fill="#1d2433">朴素贝叶斯</text><text x="1090" y="292" text-anchor="middle" font-size="28" font-weight="700" fill="'+(m==='e'?'#1f7a72':'#1d2433')+'">分类 / 回归树</text><text x="1090" y="348" text-anchor="middle" font-size="28" font-weight="700" fill="'+(m==='p'?'#1f7a72':'#1d2433')+'">随机森林 · 提升</text>'+
+            '<line x1="330" y1="250" x2="420" y2="250" stroke="#1d2433" stroke-width="3"/><line x1="800" y1="250" x2="890" y2="250" stroke="#1d2433" stroke-width="3"/><line x1="1290" y1="250" x2="1380" y2="250" stroke="#1d2433" stroke-width="3"/>'+
+            box(1380,160,348,180,m==='p'?'预测任务':'解释性任务',m==='p'?'新样本的 Ŷ 要准':'哪些因素、什么规则','#c27a1a',true);
+          $('s29').innerHTML=h;$('n29').innerHTML=m==='p'?'<b>预测</b>：精度与稳定性优先 → <b class="blue">随机森林 / 提升</b>。':'<b>解释</b>：可读、可审计优先 → <b class="blue">单棵浅树 / 逻辑回归</b>（森林用变量重要性间接解释）。';}
+        $('a29').onclick=()=>{m='p';up();};$('b29').onclick=()=>{m='e';up();};up();})();</script>
+    </section>
+
+    <!-- === SLIDE 30 · 总结 === -->
+    <section class="slide c" data-sec="3 · 应用与展望" data-title="本讲小结">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.4 总结与练习</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:66px">本讲<em>小结</em></h2>
+        <div class="flex gap32 st" style="margin-top:44px">
+          <div class="card b grow"><div class="n">树</div><h3>递归地问“最能分清”的问题</h3><p style="font-size:25px">熵 → 信息增益；回归用 RSS；深度与叶样本数控制复杂度。</p></div>
+          <div class="card o grow"><div class="n">不稳</div><h3>单棵树方差大</h3><p style="font-size:25px">阈值与精度对数据扰动敏感，深树易过拟合。</p></div>
+          <div class="card t grow"><div class="n">森林</div><h3>平均降方差</h3><p style="font-size:25px">自助抽样 + 随机特征 + 投票，用部分可解释性换稳定与精度。</p></div>
+          <div class="card g grow"><div class="n">2026</div><h3>树仍是基线</h3><p style="font-size:25px">提升法与表格基础模型在进步；先建强基线，再谈复杂。</p></div>
+        </div>
+        <p class="reveal d5" style="margin-top:40px;font-size:30px">一句话：<b>可解释用树，要稳要准用森林，要最强则集成与对比。</b></p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P2–P23；R5–R8</div>
+    </section>
+
+    <!-- === SLIDE 31 · 课后练习 === -->
+    <section class="slide c" data-sec="3 · 应用与展望" data-title="课后练习">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.4 总结与练习</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:64px">课后<em>练习</em></h2>
+        <div class="col gap16 st" style="margin-top:36px">
+          <div class="card b flex gap32 center" style="padding:22px 30px"><span class="mono blue" style="font-size:30px">01</span><p style="font-size:29px"><b>手算</b>：把篮球数据再加一行（ID 7：Sunny, Tuesday, Yes），重算两个候选分裂的信息增益，根节点会变吗？</p></div>
+          <div class="card t flex gap32 center" style="padding:22px 30px"><span class="mono teal" style="font-size:30px">02</span><p style="font-size:29px"><b>实验</b>：回到第 12 页，调节深度与叶最少样本，找出测试准确率最高的组合，并说明为什么。</p></div>
+          <div class="card o flex gap32 center" style="padding:22px 30px"><span class="mono ochre" style="font-size:30px">03</span><p style="font-size:29px"><b>选型</b>：为“客户流失预警”写一页选型说明：用单树还是森林？解释性要求是什么？</p></div>
+          <div class="card g flex gap32 center" style="padding:22px 30px"><span class="mono muted" style="font-size:30px">04</span><p style="font-size:29px"><b>用 AI 助手</b>：让 AI 写代码训练随机森林并解读变量重要性，检查它是否把“重要”误说成了“因果”。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 课堂练习设计</div>
+    </section>
+
+    <!-- === SLIDE 32 · 谢谢 === -->
+    <section class="slide c" data-sec="3 · 应用与展望" data-title="谢谢">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.4 总结与练习</div><div class="pg"></div>
+      <div class="body flex gap48 center">
+        <div class="col grow gap24">
+          <h2 class="reveal d1" style="font-size:120px">谢谢<em>！</em></h2>
+          <p class="reveal d2" style="font-size:36px">Q &amp; A</p>
+          <p class="reveal d3 mono" style="font-size:26px;color:var(--ink-3)">常象宇 · 西安交通大学 管理学院<br>xiangyuchang@xjtu.edu.cn</p>
+          <p class="reveal d4" style="font-size:27px;margin-top:14px">下一讲：<b>Lecture 6.1 深度学习</b>（AI 3.0）</p>
+        </div>
+        <figure class="contain reveal d3" style="width:640px;height:640px"><img src="assets/p24_1.png"></figure>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P24</div>
+    </section>
+
+    <!-- === 参考文献 === -->
+    <section class="slide c" data-sec="附录" data-title="参考文献">
+      <div class="toprule"></div><div class="tag"><b>附录</b> · 参考文献</div><div class="pg"></div>
+      <div class="body"><h2 class="reveal d1" style="font-size:52px;margin-bottom:18px">参考文献 <em>R1–R11</em></h2>
+        <div style="columns:2;column-gap:56px;font:400 20px/1.5 var(--f-mono);color:var(--ink-2)"><p style="font:inherit;margin:0 0 12px"><b>R1</b> Breiman, Friedman, Olshen &amp; Stone (1984). <i>Classification and Regression Trees</i>. Wadsworth.</p><p style="font:inherit;margin:0 0 12px"><b>R2</b> Breiman, L. (2001). Random Forests. <i>Machine Learning</i> 45(1), 5–32.</p><p style="font:inherit;margin:0 0 12px"><b>R3</b> Hastie, Tibshirani &amp; Friedman (2009). <i>The Elements of Statistical Learning</i>, 2nd ed., Springer（第 9、15 章）。</p><p style="font:inherit;margin:0 0 12px"><b>R4</b> Strobl, Boulesteix, Zeileis &amp; Hothorn (2007). Bias in random forest variable importance measures. <i>BMC Bioinformatics</i> 8:25.</p><p style="font:inherit;margin:0 0 12px"><b>R5</b> Grinsztajn, Oyallon &amp; Varoquaux (2022). Why do tree-based models still outperform deep learning on typical tabular data? NeurIPS 2022 Datasets &amp; Benchmarks.</p><p style="font:inherit;margin:0 0 12px"><b>R6</b> Erickson et al. (2025). TabArena: A Living Benchmark for Machine Learning on Tabular Data. NeurIPS 2025 D&amp;B；arXiv:2506.16791。</p><p style="font:inherit;margin:0 0 12px"><b>R7</b> Hollmann et al. (2025). Accurate predictions on small data with a tabular foundation model. <i>Nature</i>（TabPFN）— nature.com/articles/s41586-024-08328-6</p><p style="font:inherit;margin:0 0 12px"><b>R8</b> Prior Labs (2025). TabPFN-2.5 Model Report. arXiv:2511.08667。</p><p style="font:inherit;margin:0 0 12px"><b>R9</b> Quinlan, J. R. (1986). Induction of decision trees. <i>Machine Learning</i> 1(1), 81–106.</p><p style="font:inherit;margin:0 0 12px"><b>R10</b> Hopkins, Reeber, Forman &amp; Suermondt (1999). Spambase. UCI Machine Learning Repository（本讲交互页所用数据，随机抽样 800 封）。</p><p style="font:inherit;margin:0 0 12px"><b>R11</b> 《中华人民共和国个人信息保护法》第二十四条（自动化决策）。⚠ 引用以法条原文为准。</p><p style="font:inherit;margin:0 0 12px"><b>P</b> 原 PPT：Materials/Lecture_5.2.pptx（P2 选民决策树图、P20 随机森林示意、P22 变量重要性图来自原稿；⚠ 原图出处未逐项核对）</p></div></div>
+    </section>
+
+  </div>
+</div>
+
+<!-- 底部控制条（舞台之外） -->
+<div class="deck-controls">
+  <button id="bPrev" title="上一页 ←">◀</button>
+  <button id="bOutline" title="目录 O">OUTLINE</button>
+  <span id="counter"></span>
+  <button id="bNext" title="下一页 →">▶</button>
+</div>
+
+<!-- 目录浮层：由各页 data-title / data-sec 自动生成 -->
+<div id="outline"><div class="close">ESC ✕</div></div>
+
+<!-- 侧边导航栏 -->
+<div id="sbTab" title="导航栏 S">导航</div>
+<aside id="sidebar"><div class="sbh"><b>Lecture 5.2 · 决策树与<span>随机森林</span></b><button id="sbClose">关闭 ✕</button></div><div class="sbl" id="sbList"></div></aside>
+
+<script>
+/* === 舞台缩放：整体等比缩放到窗口，保持 16:9 === */
+const stage = document.getElementById('stage');
+function fit() {
+  const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+  stage.style.transform = `translate(${(innerWidth - 1920 * s) / 2}px, ${(innerHeight - 1080 * s) / 2}px) scale(${s})`;
+}
+addEventListener('resize', fit); fit();
+
+/* === 翻页状态 === */
+const slides = [...document.querySelectorAll('.slide')];
+const counter = document.getElementById('counter');
+let cur = 0;
+slides.forEach((s, k) => { const p = s.querySelector('.pg'); if (p) p.textContent = `${String(k + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`; });
+function show(i) {
+  cur = Math.max(0, Math.min(slides.length - 1, i));
+  slides.forEach((s, k) => { s.classList.toggle('active', k === cur); s.classList.toggle('visible', k === cur); });
+  counter.textContent = `${cur + 1} / ${slides.length}`;
+  history.replaceState(null, '', '#' + (cur + 1));
+  document.querySelectorAll('#outline a').forEach((a, k) => a.classList.toggle('cur', +a.dataset.i === cur));
+  if (window.syncSidebar) syncSidebar();
+}
+
+/* === 目录（Outline）=== */
+const ol = document.getElementById('outline');
+(function buildOutline() {
+  const secs = []; let last = null;
+  slides.forEach((s, k) => {
+    const sec = s.dataset.sec; if (!sec) return;
+    if (!last || last.name !== sec) { last = { name: sec, items: [] }; secs.push(last); }
+    last.items.push({ i: k, t: s.dataset.title || '' });
+  });
+  let h = '<h1>Lecture 5.2 · 决策树与<span>随机森林</span></h1>';
+  secs.forEach(sc => {
+    h += `<div class="sec"><h4>${sc.name}</h4><div class="items">` +
+      sc.items.map(it => `<a data-i="${it.i}"><i>${String(it.i + 1).padStart(2, '0')}</i><span>${it.t}</span></a>`).join('') + '</div></div>';
+  });
+  ol.insertAdjacentHTML('beforeend', h);
+  ol.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { show(+a.dataset.i); toggleOutline(false); }));
+})();
+function toggleOutline(f) { ol.classList.toggle('open', f === undefined ? !ol.classList.contains('open') : f); }
+document.getElementById('bOutline').onclick = () => toggleOutline();
+document.getElementById('bPrev').onclick = () => show(cur - 1);
+document.getElementById('bNext').onclick = () => show(cur + 1);
+ol.querySelector('.close').onclick = () => toggleOutline(false);
+
+/* === 侧边导航栏：折叠分组，当前页高亮，可跳到任意页 === */
+const sb = document.getElementById('sidebar'), sbList = document.getElementById('sbList');
+(function buildSidebar() {
+  const secs = []; let last = null;
+  slides.forEach((s, k) => {
+    const sec = s.dataset.sec; if (!sec) return;
+    if (!last || last.name !== sec) { last = { name: sec, items: [] }; secs.push(last); }
+    last.items.push({ i: k, t: s.dataset.title || '' });
+  });
+  sbList.innerHTML = secs.map(sc => `<div class="sbs"><div class="sbt">${sc.name}<em>${sc.items.length}</em></div><div class="sbi">` +
+    sc.items.map(it => `<a data-i="${it.i}"><i>${String(it.i + 1).padStart(2, '0')}</i><span>${it.t}</span></a>`).join('') + '</div></div>').join('');
+  sbList.querySelectorAll('.sbt').forEach(t => t.addEventListener('click', () => t.parentNode.classList.toggle('open')));
+  sbList.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { show(+a.dataset.i); a.blur(); }));
+})();
+window.syncSidebar = function () {
+  sbList.querySelectorAll('a').forEach(a => a.classList.toggle('cur', +a.dataset.i === cur));
+  const c = sbList.querySelector('a.cur'); if (!c) return;
+  const g = c.closest('.sbs');
+  if (!g.classList.contains('open')) { sbList.querySelectorAll('.sbs.open').forEach(x => x.classList.remove('open')); g.classList.add('open'); }
+  if (sb.classList.contains('open')) c.scrollIntoView({ block: 'nearest' });
+};
+function toggleSidebar(f) { sb.classList.toggle('open', f === undefined ? !sb.classList.contains('open') : f); if (sb.classList.contains('open')) syncSidebar(); }
+document.getElementById('sbTab').onclick = () => toggleSidebar();
+document.getElementById('sbClose').onclick = () => toggleSidebar(false);
+document.addEventListener('mousedown', e => { if (sb.classList.contains('open') && !sb.contains(e.target) && e.target.id !== 'sbTab') toggleSidebar(false); });
+
+/* === 键盘 === */
+addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea')) return;
+  if (e.key === 'Escape') { toggleOutline(false); toggleSidebar(false); }
+  if (e.key === 's' || e.key === 'S') toggleSidebar();
+  if (e.key === 'o' || e.key === 'O') toggleOutline();
+  if (ol.classList.contains('open')) return;
+  if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); show(cur + 1); }
+  if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); show(cur - 1); }
+  if (e.key === 'Home') show(0);
+  if (e.key === 'End') show(slides.length - 1);
+});
+requestAnimationFrame(() => requestAnimationFrame(() => show((parseInt(location.hash.slice(1)) || 1) - 1)));
+</script>
+</body>
+</html>

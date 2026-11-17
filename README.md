@@ -4,6 +4,8 @@
 
 授课对象：MBA与EMBA学生
 
+**课程主页：<https://som-course.github.io/MBA-EMBA-AI/>**（入口为仓库根目录 `index.html`）
+
 **网页幻灯（GitHub Pages）**
 
 | 讲次 | 打开方式 |

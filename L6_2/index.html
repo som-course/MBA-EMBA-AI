@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 6.2 · 强化学习</title>
+
+<!-- Fonts: Noto Serif SC (中文标题) / Source Serif 4 (英文衬线) / Noto Sans SC (正文) / IBM Plex Mono (标签) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@600;700;900&family=Source+Serif+4:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+<style>
+/* === THEME ===
+   暖白纸面 + 墨色 + 唯一强调蓝；青、赭仅用于示意图 */
+:root {
+  --paper: #faf8f4;
+  --paper-2: #f2eee6;
+  --ink: #1d2433;
+  --ink-2: #4a5263;
+  --ink-3: #8a90a0;
+  --blue: #24509e;
+  --teal: #1f7a72;
+  --ochre: #c27a1a;
+  --rule: #cfcac0;
+
+  --f-serif-cn: 'Noto Serif SC', 'Source Serif 4', serif;
+  --f-serif-en: 'Source Serif 4', 'Noto Serif SC', serif;
+  --f-sans: 'Noto Sans SC', sans-serif;
+  --f-mono: 'IBM Plex Mono', monospace;
+
+  --stage-bg: #e9e5dc;
+  --slide-bg: var(--paper);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* === VIEWPORT-BASE (固定 1920×1080 舞台) === */
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-viewport { position: fixed; inset: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; background: var(--slide-bg, #fff); }
+.slide { position: absolute; inset: 0; width: 1920px; height: 1080px; overflow: hidden; display: block; visibility: hidden; opacity: 0; pointer-events: none; background: var(--slide-bg, #fff); }
+.slide.active, .slide.visible { visibility: visible; opacity: 1; pointer-events: auto; z-index: 1; }
+img, video, canvas, svg { max-width: 100%; max-height: 100%; }
+.deck-controls { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 1000; }
+@media print {
+  html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+  .deck-viewport { position: static; overflow: visible; background: #fff; }
+  .deck-stage { position: static; width: auto; height: auto; transform: none !important; background: none; }
+  .slide { position: relative; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 1920px; height: 1080px; break-after: page; page-break-after: always; }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+  .deck-controls { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+}
+
+/* === 动效：进入页面时依次浮现 === */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .9s var(--ease), transform .9s var(--ease); }
+.slide.visible .reveal { opacity: 1; transform: none; }
+.d1 { transition-delay: .10s; } .d2 { transition-delay: .25s; } .d3 { transition-delay: .40s; }
+.d4 { transition-delay: .55s; } .d5 { transition-delay: .70s; } .d6 { transition-delay: .85s; }
+
+/* === COVER 封面 === */
+.cover .toprule { position: absolute; left: 96px; right: 96px; top: 56px; height: 3px; background: var(--ink); }
+.cover .kicker {
+  position: absolute; left: 96px; top: 92px;
+  font: 500 22px/1 var(--f-mono); letter-spacing: .16em; color: var(--ink-3); text-transform: uppercase;
+}
+.cover .kicker b { color: var(--blue); font-weight: 500; }
+
+.cover .title { position: absolute; left: 96px; top: 140px; width: 980px; }
+.cover h1 { font: 900 144px/1.08 var(--f-serif-cn); color: var(--ink); letter-spacing: .02em; }
+.cover h1 span { color: var(--blue); display: block; }
+.cover .sub {
+  margin-top: 28px; font: 700 38px/1.5 var(--f-serif-cn); color: var(--ink);
+}
+
+/* 本讲结构 = outline（对应原稿"papers in this talk"） */
+.cover .outline { position: absolute; left: 96px; top: 650px; width: 940px; }
+.cover .outline .hd {
+  font: 500 18px/1 var(--f-mono); letter-spacing: .18em; color: var(--ink-3);
+  padding-bottom: 14px; border-bottom: 1px solid var(--rule); margin-bottom: 4px;
+}
+.cover .outline .row {
+  display: flex; align-items: baseline; gap: 28px; padding: 11px 0;
+  border-bottom: 1px solid var(--paper-2);
+}
+.cover .outline .no { font: 500 20px/1 var(--f-mono); letter-spacing: .12em; color: var(--blue); width: 120px; white-space: nowrap; }
+.cover .outline .en { font: 600 28px/1.2 var(--f-serif-en); color: var(--ink); }
+.cover .outline .cn { font: 400 24px/1.2 var(--f-sans); color: var(--ink-2); margin-left: auto; }
+
+/* 主讲人 + 校徽 */
+.cover .who { position: absolute; left: 96px; bottom: 56px; display: flex; align-items: center; gap: 28px; }
+.cover .who img { width: 124px; height: 124px; }
+.cover .who .name { font: 700 34px/1.2 var(--f-serif-cn); color: var(--ink); }
+.cover .who .org { font: 400 24px/1.55 var(--f-sans); color: var(--ink-2); margin-top: 6px; }
+.cover .who .meta { font: 400 20px/1.6 var(--f-mono); color: var(--ink-3); letter-spacing: .02em; }
+
+/* 右侧示意图：AI 四次浪潮 */
+.cover .fig { position: absolute; left: 1120px; top: 190px; width: 704px; height: 760px; }
+.fig svg { width: 100%; height: 100%; max-width: none; max-height: none; overflow: visible; }
+.fig .curve { stroke-dasharray: 1200; stroke-dashoffset: 1200; transition: stroke-dashoffset 2.2s .5s var(--ease); }
+.slide.visible .fig .curve { stroke-dashoffset: 0; }
+.fig .node { opacity: 0; transform-box: fill-box; transform-origin: center; transform: scale(.2); transition: opacity .6s var(--ease), transform .6s var(--ease); }
+.slide.visible .fig .node { opacity: 1; transform: none; }
+.fig .n1 { transition-delay: .6s; } .fig .n2 { transition-delay: 1.0s; } .fig .n3 { transition-delay: 1.4s; } .fig .n4 { transition-delay: 1.9s; }
+.fig .lab { opacity: 0; transition: opacity .8s ease; }
+.slide.visible .fig .lab { opacity: 1; }
+.fig .l1 { transition-delay: .8s; } .fig .l2 { transition-delay: 1.2s; } .fig .l3 { transition-delay: 1.6s; } .fig .l4 { transition-delay: 2.1s; }
+.fig text { font-family: var(--f-sans); }
+.fig .ver { font-family: var(--f-mono); font-weight: 500; }
+.fig .cap { font-family: var(--f-serif-en); font-style: italic; }
+
+/* === 页码/导航（舞台之外的 UI） === */
+.deck-controls { font: 500 14px var(--f-mono); color: var(--ink-3); letter-spacing: .1em; user-select: none; }
+
+/* =====================================================
+   CONTENT SLIDES（内页通用组件）
+   ===================================================== */
+.c .toprule { position: absolute; left: 96px; right: 96px; top: 56px; height: 3px; background: var(--ink); }
+.c .tag { position: absolute; left: 96px; top: 80px; font: 500 20px/1 var(--f-mono); letter-spacing: .16em; color: var(--ink-3); text-transform: uppercase; }
+.c .tag b { color: var(--blue); font-weight: 500; }
+.c .pg  { position: absolute; right: 96px; top: 80px; font: 500 20px/1 var(--f-mono); letter-spacing: .1em; color: var(--ink-3); }
+.c .body { position: absolute; left: 96px; right: 96px; top: 140px; bottom: 96px; }
+.c .src { position: absolute; left: 96px; right: 96px; bottom: 34px; padding-top: 10px; border-top: 1px solid var(--rule);
+          font: 400 17px/1.45 var(--f-mono); color: var(--ink-3); letter-spacing: .01em; }
+.c .src b { color: var(--ink-2); font-weight: 500; }
+
+.c h2 { font: 900 72px/1.18 var(--f-serif-cn); color: var(--ink); letter-spacing: .01em; }
+.c h2 em { font-style: normal; color: var(--blue); }
+.c h3 { font: 700 36px/1.3 var(--f-serif-cn); color: var(--ink); }
+.c .lede { font: 400 34px/1.65 var(--f-sans); color: var(--ink-2); }
+.c .lede b, .c p b { color: var(--ink); font-weight: 700; }
+.c p { font: 400 30px/1.65 var(--f-sans); color: var(--ink-2); }
+.c .mono { font-family: var(--f-mono); }
+.c .blue { color: var(--blue); } .c .teal { color: var(--teal); } .c .ochre { color: var(--ochre); }
+.c .muted { color: var(--ink-3); }
+.c .en { font-family: var(--f-serif-en); font-style: italic; }
+
+/* 布局 */
+.c .abs { position: absolute; }
+.c .flex { display: flex; } .c .col { display: flex; flex-direction: column; }
+.c .gap16 { gap: 16px; } .c .gap24 { gap: 24px; } .c .gap32 { gap: 32px; } .c .gap48 { gap: 48px; }
+.c .grow { flex: 1; } .c .center { align-items: center; } .c .between { justify-content: space-between; }
+
+/* 图片 */
+.c figure { margin: 0; position: relative; }
+.c figure img { display: block; width: 100%; height: 100%; object-fit: cover; border: 1px solid var(--rule); background: #fff; }
+.c figure.contain img { object-fit: contain; }
+.c figcaption { margin-top: 10px; font: 400 18px/1.4 var(--f-mono); color: var(--ink-3); }
+
+/* 卡片 */
+.c .card { background: #fff; border: 1px solid var(--rule); border-top: 4px solid var(--ink); padding: 28px 30px; }
+.c .card.b { border-top-color: var(--blue); } .c .card.t { border-top-color: var(--teal); } .c .card.o { border-top-color: var(--ochre); } .c .card.g { border-top-color: var(--ink-3); }
+.c .card h3 { font-size: 34px; margin-bottom: 12px; }
+.c .card p { font-size: 27px; line-height: 1.6; }
+.c .card .n { font: 500 20px/1 var(--f-mono); letter-spacing: .14em; color: var(--ink-3); margin-bottom: 14px; }
+
+/* 大数字 */
+.c .stat .v { font: 900 120px/1 var(--f-serif-en); color: var(--blue); letter-spacing: -.02em; }
+.c .stat .v small { font-size: 52px; font-weight: 700; margin-left: 4px; }
+.c .stat .l { font: 400 26px/1.45 var(--f-sans); color: var(--ink-2); margin-top: 10px; }
+
+/* 引用 */
+.c .quote { font: 700 56px/1.4 var(--f-serif-cn); color: var(--ink); }
+.c .quote .en { display: block; margin-top: 22px; font: 400 italic 34px/1.5 var(--f-serif-en); color: var(--ink-2); }
+.c .quote-mark { font: 900 200px/0.6 var(--f-serif-en); color: var(--blue); opacity: .18; }
+
+/* 表格 */
+.c table { border-collapse: collapse; width: 100%; }
+.c th { font: 500 20px/1 var(--f-mono); letter-spacing: .12em; text-align: left; color: var(--ink-3); padding: 0 20px 14px 0; border-bottom: 2px solid var(--ink); text-transform: uppercase; }
+.c td { font: 400 27px/1.5 var(--f-sans); color: var(--ink-2); padding: 18px 20px 18px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.c td:first-child { font-weight: 700; color: var(--ink); white-space: nowrap; }
+
+/* 标签/药丸 */
+.c .pill { display: inline-block; font: 500 20px/1 var(--f-mono); letter-spacing: .08em; padding: 8px 14px; border: 1.5px solid currentColor; border-radius: 99px; }
+.c .pill.fill { color: #fff; background: var(--blue); border-color: var(--blue); }
+
+/* 章节页 */
+.chapter .big { position: absolute; left: 96px; top: 150px; font: 900 420px/1 var(--f-serif-en); color: var(--blue); opacity: .10; letter-spacing: -.04em; }
+.chapter .ttl { position: absolute; left: 96px; top: 420px; }
+.chapter .ttl .k { font: 500 24px/1 var(--f-mono); letter-spacing: .2em; color: var(--blue); margin-bottom: 26px; }
+.chapter .ttl h2 { font-size: 150px; line-height: 1.1; }
+.chapter .ttl .s { margin-top: 28px; font: 400 40px/1.5 var(--f-sans); color: var(--ink-2); }
+.chapter .subs { position: absolute; left: 96px; right: 96px; bottom: 100px; display: flex; gap: 0; border-top: 1px solid var(--rule); }
+.chapter .subs div { flex: 1; padding-top: 20px; font: 400 26px/1.4 var(--f-sans); color: var(--ink-2); }
+.chapter .subs div b { display: block; font: 500 20px/1 var(--f-mono); letter-spacing: .14em; color: var(--blue); margin-bottom: 10px; }
+
+/* 逐项浮现 */
+.st > * { opacity: 0; transform: translateY(22px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
+.slide.visible .st > * { opacity: 1; transform: none; }
+.st > *:nth-child(1) { transition-delay: .15s; } .st > *:nth-child(2) { transition-delay: .3s; } .st > *:nth-child(3) { transition-delay: .45s; }
+.st > *:nth-child(4) { transition-delay: .6s; } .st > *:nth-child(5) { transition-delay: .75s; } .st > *:nth-child(6) { transition-delay: .9s; }
+.st > *:nth-child(7) { transition-delay: 1.05s; } .st > *:nth-child(8) { transition-delay: 1.2s; }
+
+/* 交互控件 */
+.c .tabs { display: flex; gap: 12px; }
+.c .tab { font: 500 22px/1 var(--f-mono); letter-spacing: .06em; padding: 16px 24px; border: 1.5px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; transition: all .2s; }
+.c .tab:hover { background: var(--paper-2); }
+.c .tab.on { background: var(--ink); color: #fff; }
+.c .tab.b.on { background: var(--blue); border-color: var(--blue); }
+.c .hint { font: 400 20px/1 var(--f-mono); color: var(--ink-3); letter-spacing: .06em; }
+
+/* outline 浮层 */
+#outline { position: fixed; inset: 0; z-index: 2000; background: rgba(250,248,244,.97); display: none; overflow: auto; padding: 5vh 6vw; font-family: var(--f-sans); color: var(--ink); }
+#outline.open { display: block; }
+#outline h1 { font: 900 clamp(28px,3.4vw,52px)/1.2 var(--f-serif-cn); margin-bottom: 3vh; }
+#outline h1 span { color: var(--blue); }
+#outline .sec { margin-bottom: 3vh; }
+#outline .sec h4 { font: 500 clamp(12px,1vw,16px)/1 var(--f-mono); letter-spacing: .16em; color: var(--blue); border-bottom: 1px solid var(--rule); padding-bottom: 1vh; margin-bottom: 1.4vh; }
+#outline .items { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(220px,22vw,360px), 1fr)); gap: .6vh 2vw; }
+#outline a { display: flex; gap: 12px; padding: .8vh 0; color: var(--ink); text-decoration: none; font-size: clamp(14px,1.2vw,20px); line-height: 1.4; cursor: pointer; border-bottom: 1px dotted var(--rule); }
+#outline a i { font: normal 500 clamp(11px,.9vw,14px)/1.8 var(--f-mono); color: var(--ink-3); min-width: 2.2em; }
+#outline a:hover { color: var(--blue); }
+#outline a.cur { color: var(--blue); font-weight: 700; }
+#outline .close { position: fixed; right: 3vw; top: 3vh; font: 500 14px var(--f-mono); letter-spacing: .1em; color: var(--ink-3); cursor: pointer; }
+.deck-controls { display: flex; gap: 22px; align-items: center; background: rgba(250,248,244,.85); padding: 6px 16px; border-radius: 99px; }
+.deck-controls button { all: unset; cursor: pointer; color: var(--ink-2); font: 500 14px var(--f-mono); letter-spacing: .1em; }
+.deck-controls button:hover { color: var(--blue); }
+
+/* 侧边导航栏 */
+#sbTab { position: fixed; left: 0; top: 50%; transform: translateY(-50%); z-index: 1500; width: 26px; height: 96px; background: rgba(250,248,244,.9); border: 1px solid var(--rule); border-left: none; border-radius: 0 8px 8px 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font: 500 13px var(--f-mono); color: var(--ink-3); writing-mode: vertical-rl; letter-spacing: .2em; transition: opacity .25s, color .2s; opacity: .55; }
+#sbTab:hover { opacity: 1; color: var(--blue); }
+#sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 340px; z-index: 1800; background: rgba(250,248,244,.98); border-right: 1px solid var(--rule); box-shadow: 6px 0 24px rgba(29,36,51,.08); transform: translateX(-102%); transition: transform .3s cubic-bezier(.16,1,.3,1); display: flex; flex-direction: column; font-family: var(--f-sans); color: var(--ink); }
+#sidebar.open { transform: none; }
+#sidebar .sbh { padding: 18px 20px 12px; border-bottom: 1px solid var(--rule); display: flex; align-items: center; justify-content: space-between; }
+#sidebar .sbh b { font: 900 17px var(--f-serif-cn); } #sidebar .sbh b span { color: var(--blue); }
+#sidebar .sbh button { all: unset; cursor: pointer; font: 500 12px var(--f-mono); color: var(--ink-3); letter-spacing: .1em; }
+#sidebar .sbh button:hover { color: var(--blue); }
+#sidebar .sbl { overflow-y: auto; flex: 1; padding: 6px 0 24px; }
+#sidebar .sbs > .sbt { display: flex; align-items: center; gap: 8px; padding: 11px 20px; cursor: pointer; font: 500 12px var(--f-mono); letter-spacing: .1em; color: var(--blue); border-top: 1px solid var(--rule); user-select: none; }
+#sidebar .sbs:first-child > .sbt { border-top: none; }
+#sidebar .sbt:before { content: '▸'; font-size: 11px; transition: transform .2s; }
+#sidebar .sbs.open > .sbt:before { transform: rotate(90deg); }
+#sidebar .sbt em { margin-left: auto; font-style: normal; color: var(--ink-3); }
+#sidebar .sbi { display: none; }
+#sidebar .sbs.open .sbi { display: block; }
+#sidebar .sbi a { display: flex; gap: 10px; padding: 7px 20px 7px 34px; font-size: 14px; line-height: 1.4; color: var(--ink-2); cursor: pointer; text-decoration: none; border-left: 3px solid transparent; }
+#sidebar .sbi a i { font: normal 500 11px/1.9 var(--f-mono); color: var(--ink-3); min-width: 1.9em; }
+#sidebar .sbi a:hover { background: #f0ece3; color: var(--ink); }
+#sidebar .sbi a.cur { color: var(--blue); font-weight: 700; border-left-color: var(--blue); background: #eef2fa; }
+@media print { #sbTab, #sidebar { display: none !important; } }
+
+/* === L2 扩展组件 === */
+.c .chip { display: inline-block; font: 500 24px/1 var(--f-sans); padding: 14px 20px; background: #fff; border: 1px solid var(--rule); border-left: 4px solid var(--blue); color: var(--ink); }
+.c .chips { display: flex; flex-wrap: wrap; gap: 14px; }
+.c .tl { position: relative; display: flex; gap: 0; border-top: 3px solid var(--ink); }
+.c .tl button { all: unset; cursor: pointer; flex: 1; padding: 22px 6px 0; text-align: left; position: relative; font: 500 24px/1.2 var(--f-mono); color: var(--ink-3); transition: color .2s; }
+.c .tl button:before { content: ''; position: absolute; left: 0; top: -12px; width: 20px; height: 20px; border-radius: 50%; background: var(--paper); border: 3px solid var(--ink-3); transition: all .2s; }
+.c .tl button small { display: block; margin-top: 8px; font: 400 19px/1.35 var(--f-sans); color: var(--ink-3); padding-right: 10px; }
+.c .tl button:hover { color: var(--blue); }
+.c .tl button.on { color: var(--blue); }
+.c .tl button.on:before { background: var(--blue); border-color: var(--blue); transform: scale(1.3); }
+.c .tl button.on small { color: var(--ink); font-weight: 700; }
+.c .bignum { font: 900 150px/1 var(--f-serif-en); color: var(--blue); letter-spacing: -.03em; }
+.c .bignum small { font-size: 58px; margin-left: 6px; }
+.c .arrow { font: 500 56px/1 var(--f-mono); color: var(--ink-3); align-self: center; }
+.c input[type=range] { width: 100%; accent-color: var(--blue); height: 6px; }
+.c .kv { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--rule); font: 400 26px/1.3 var(--f-sans); color: var(--ink-2); }
+.c .kv b { font: 700 40px/1 var(--f-serif-en); color: var(--ink); }
+.c .kv b.pos { color: var(--teal); } .c .kv b.neg { color: #b4402d; }
+.c figure.crop img { object-fit: cover; }
+.c .bar { height: 26px; background: var(--paper-2); position: relative; }
+.c .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--blue); transition: width .3s; }
+
+/* === L6.2 扩展组件 === */
+.c .tile { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: 58px; height: 80px; background: #fff; border: 1.5px solid var(--ink-3); border-bottom-width: 5px; border-radius: 7px; font: 700 34px/1 var(--f-serif-cn); color: var(--ink); cursor: default; user-select: none; position: relative; transition: transform .15s, box-shadow .15s; }
+.c .tile small { font: 500 17px/1 var(--f-serif-cn); margin-top: 4px; }
+.c .tile.m { color: #b4402d; } .c .tile.p { color: var(--blue); } .c .tile.s { color: var(--teal); } .c .tile.z { color: var(--ink); } .c .tile.zr { color: #b4402d; } .c .tile.zg { color: var(--teal); }
+.c .tile.pick { cursor: pointer; } .c .tile.pick:hover { transform: translateY(-6px); box-shadow: 0 8px 16px rgba(29,36,51,.15); }
+.c .tile.sel { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(36,80,158,.25); transform: translateY(-10px); }
+.c .tile.sm { width: 44px; height: 60px; font-size: 26px; } .c .tile.sm small { font-size: 13px; }
+.c .tile.xs { width: 34px; height: 46px; font-size: 20px; border-bottom-width: 3px; border-radius: 5px; } .c .tile.xs small { font-size: 10px; margin-top: 2px; }
+.c .tile.back { background: repeating-linear-gradient(45deg, #2f6b64, #2f6b64 6px, #286059 6px, #286059 12px); border-color: #1b4a44; color: transparent; }
+.c .tiles { display: flex; gap: 6px; flex-wrap: wrap; }
+.c .btn { all: unset; cursor: pointer; font: 500 22px/1 var(--f-mono); letter-spacing: .06em; padding: 14px 22px; border: 1.5px solid var(--ink); color: var(--ink); transition: all .2s; }
+.c .btn:hover { background: var(--paper-2); } .c .btn.fill { background: var(--blue); border-color: var(--blue); color: #fff; } .c .btn.fill:hover { background: #1c3f7e; }
+.c .hbar { display: flex; align-items: center; gap: 14px; font: 400 24px/1 var(--f-sans); color: var(--ink-2); margin: 10px 0; }
+.c .hbar .nm { width: 210px; flex: none; } .c .hbar .tr { flex: 1; height: 30px; background: var(--paper-2); position: relative; } .c .hbar .tr i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--blue); transition: width .35s; } .c .hbar .vl { width: 100px; font: 500 24px var(--f-mono); color: var(--ink); text-align: right; }
+.c .math { font: 400 italic 38px/1.5 var(--f-serif-en); color: var(--ink); } .c .math i { font-style: italic; } .c .math .u { font-style: normal; }
+.c svg text { font-family: var(--f-sans); }
+
+.cover .outline .row { padding: 6px 0; }
+</style>
+</head>
+<body>
+
+<div class="deck-viewport">
+  <div class="deck-stage" id="stage">
+<script>
+/* 麻将牌工具：0-8 万，9-17 筒，18-26 索，27-33 东南西北白发中 */
+window.TN=(()=>{const a=[];const cn='一二三四五六七八九';for(let i=0;i<9;i++)a.push({c:cn[i],s:'万',k:'m'});for(let i=0;i<9;i++)a.push({c:i+1+'',s:'筒',k:'p'});for(let i=0;i<9;i++)a.push({c:i+1+'',s:'索',k:'s'});['东','南','西','北'].forEach(x=>a.push({c:x,s:'',k:'z'}));a.push({c:'白',s:'',k:'z'});a.push({c:'发',s:'',k:'zg'});a.push({c:'中',s:'',k:'zr'});return a;})();
+window.tileEl=function(i,cls){const t=TN[i];const d=document.createElement('span');d.className='tile '+t.k+' '+(cls||'');d.innerHTML=t.c+(t.s?'<small>'+t.s+'</small>':'');d.dataset.t=i;return d;};
+window.softmax=function(z,T){const m=Math.max(...z);const e=z.map(v=>Math.exp((v-m)/T));const s=e.reduce((a,b)=>a+b,0);return e.map(v=>v/s);};
+</script>
+
+    <!-- === SLIDE 1 · 封面 === -->
+    <section class="slide cover" data-sec="开场" data-title="封面">
+      <div class="toprule"></div>
+      <div class="kicker reveal d1"><b>Lecture 6.2</b> &nbsp;·&nbsp; 人工智能产业实践 &nbsp;·&nbsp; MBA / EMBA</div>
+      <div class="title">
+        <h1 class="reveal d2" style="font-size:118px">AI 3.0<span>强化学习</span></h1>
+        <p class="sub reveal d3" style="font-size:34px;margin-top:20px">从打麻将的 AI 讲起：<br>让机器在试错中学会决策</p>
+      </div>
+      <div class="outline reveal d4" style="top:575px">
+        <div class="hd">IN THIS LECTURE</div>
+        <div class="row"><span class="no" style="width:110px">PART 1</span><span class="en">Games as a Testbed</span><span class="cn">游戏：AI 的试验场</span></div>
+        <div class="row"><span class="no" style="width:110px">PART 2</span><span class="en">Modeling Mahjong</span><span class="cn">把麻将变成数据问题</span></div>
+        <div class="row"><span class="no" style="width:110px">PART 3</span><span class="en">Reinforcement Learning</span><span class="cn">强化学习：左右互搏</span></div>
+        <div class="row"><span class="no" style="width:110px">PART 4</span><span class="en">Suphx, LuckyJ, AlphaHu</span><span class="cn">麻将 AI 的前沿</span></div>
+        <div class="row"><span class="no" style="width:110px">PART 5</span><span class="en">Beyond Games</span><span class="cn">从大模型到机器人</span></div>
+      </div>
+      <div class="who reveal d5">
+        <img src="assets/logo-xjtu-red.png" alt="西安交通大学校徽">
+        <div>
+          <div class="name">常象宇 <span style="font-family:var(--f-serif-en);font-weight:600;font-size:28px;color:var(--ink-2)">Xiangyu Chang</span></div>
+          <div class="org">西安交通大学 管理学院</div>
+          <div class="meta">xiangyuchang@xjtu.edu.cn</div>
+        </div>
+      </div>
+      <div class="fig reveal d3">
+        <svg viewBox="0 0 704 760" aria-label="智能体与环境的交互循环">
+          <rect x="60" y="80" width="230" height="130" fill="none" stroke="#1d2433" stroke-width="3"/>
+          <text x="175" y="140" text-anchor="middle" font-size="34" font-weight="700" fill="#1d2433">智能体</text>
+          <text x="175" y="180" text-anchor="middle" font-size="22" fill="#8a90a0" font-family="IBM Plex Mono">AGENT</text>
+          <rect x="414" y="80" width="230" height="130" fill="none" stroke="#24509e" stroke-width="3"/>
+          <text x="529" y="140" text-anchor="middle" font-size="34" font-weight="700" fill="#24509e">环境</text>
+          <text x="529" y="180" text-anchor="middle" font-size="22" fill="#8a90a0" font-family="IBM Plex Mono">ENVIRONMENT</text>
+          <path class="curve" d="M 290 110 L 414 110" stroke="#1f7a72" stroke-width="4" fill="none"/>
+          <path class="curve" d="M 414 180 L 290 180" stroke="#c27a1a" stroke-width="4" fill="none"/>
+          <g class="lab l1"><text x="352" y="96" text-anchor="middle" font-size="24" fill="#1f7a72">动作 a</text><text x="352" y="240" text-anchor="middle" font-size="24" fill="#c27a1a">状态 s，奖励 r</text></g>
+          <g class="node n1"><circle cx="175" cy="420" r="26" fill="#8a90a0"/></g>
+          <g class="node n2"><circle cx="352" cy="360" r="34" fill="#1f7a72"/></g>
+          <g class="node n3"><circle cx="529" cy="290" r="44" fill="#24509e"/></g>
+          <path class="curve" d="M 175 420 C 250 420, 280 360, 352 360 S 460 300, 529 290" fill="none" stroke="#24509e" stroke-width="4" stroke-linecap="round"/>
+          <g class="lab l2"><text x="175" y="480" text-anchor="middle" font-size="24" fill="#4a5263">随机</text><text x="352" y="480" text-anchor="middle" font-size="24" fill="#4a5263">更好</text><text x="529" y="480" text-anchor="middle" font-size="24" fill="#4a5263">超人</text></g>
+          <text class="cap" x="352" y="620" text-anchor="middle" font-size="30" fill="#1d2433">trial, error, reward</text>
+          <text x="352" y="670" text-anchor="middle" font-size="24" fill="#8a90a0">在试错中学会决策</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- === SLIDE 2 · 本讲三个问题 === -->
+    <section class="slide c" data-sec="开场" data-title="本讲要回答三个问题">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 6.2</b> · 开场</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:68px">本讲要回答<em>三个问题</em></h2>
+        <div class="flex gap32 st" style="margin-top:56px">
+          <div class="card b grow" style="min-height:430px"><div class="n">PART 1–2</div><h3 style="font-size:46px;margin-bottom:22px">真实决策问题<br>怎么变成数据问题？</h3><p>以麻将为例：状态、动作、输出概率，如何用数字表示。</p></div>
+          <div class="card t grow" style="min-height:430px"><div class="n">PART 3–4</div><h3 style="font-size:46px;margin-bottom:22px">AI 怎样在<br>试错中变强？</h3><p>奖励、策略、探索、自我对弈；Suphx 与 LuckyJ 的实战证据。</p></div>
+          <div class="card o grow" style="min-height:430px"><div class="n">PART 5</div><h3 style="font-size:46px;margin-bottom:22px">同一套方法<br>还能做什么？</h3><p>大模型推理（o1 / R1）、机器人、自动驾驶；以及对管理者意味着什么。</p></div>
+        </div>
+        <div class="flex center gap24 reveal d5" style="margin-top:50px;font:500 30px var(--f-mono);color:var(--ink-2)">
+          <span class="pill">感知：深度学习</span><span class="muted">+</span><span class="pill fill">决策：强化学习</span><span class="muted">=</span><span class="pill">AI 3.0</span>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P1–P3，章节结构为重做</div>
+    </section>
+
+    <!-- === SLIDE 3 · AI 3.0 回顾 === -->
+    <section class="slide c" data-sec="开场" data-title="AI 3.0 = 深度学习 + 强化学习">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 6.2</b> · 开场</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:24px;letter-spacing:.14em">RECAP · 课程位置</div>
+        <h2 class="reveal d2" style="font-size:64px;margin-top:10px">上一讲教会机器<em>“看”</em>，这一讲教会机器<em>“做”</em></h2>
+        <div class="flex gap32 st" style="margin-top:56px">
+          <div class="card g grow"><div class="n">L5 · AI 2.0</div><h3>机器学习</h3><p>从数据中学规律：预测、分类。</p></div>
+          <div class="card b grow"><div class="n">L6.1 · AI 3.0</div><h3>深度学习</h3><p>多层神经网络：自动提取特征，擅长感知（图像、语音、文字）。</p></div>
+          <div class="card t grow" style="border-top-width:8px"><div class="n">L6.2 · AI 3.0 · 本讲</div><h3>强化学习</h3><p>在环境中试错，用奖励学会<b>一连串决策</b>。</p></div>
+          <div class="card g grow"><div class="n">L7 · AI 4.0</div><h3>预训练大模型</h3><p>下一讲：提示词、智能体。（本讲 Part 5 先预告：RL 如何训练大模型推理）</p></div>
+        </div>
+        <p class="reveal d5" style="margin-top:44px;font-size:30px">监督学习：<b>有标准答案</b>（这张图是猫）；强化学习：<b>只有延迟的得分</b>（这局赢了/输了）。</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P2–P3；课程规划见 AGENTS.md（L1 课程路线）</div>
+    </section>
+
+    <!-- === 章节 Part 1 === -->
+    <section class="slide c chapter" data-sec="1 · 游戏：AI 的试验场" data-title="Part 1 · 游戏：AI 的试验场">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 6.2</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">01</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 1</div>
+        <h2 class="reveal d2">游戏：AI 的<em>试验场</em></h2>
+        <div class="s reveal d3">从深蓝到 AlphaGo，再到“最难的”麻将</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>1.1</b>开端：深蓝与 AlphaGo</div>
+        <div><b>1.2</b>为什么是游戏</div>
+        <div><b>1.3</b>从围棋到麻将</div>
+      </div>
+    </section>
+
+    <!-- === 深蓝 === -->
+    <section class="slide c" data-sec="1 · 游戏：AI 的试验场" data-title="开端：1997，深蓝战胜卡斯帕罗夫">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.1 开端</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <figure class="reveal d2" style="width:760px;height:620px;align-self:center"><img src="assets/p02_1.png" alt="Kasparov vs Deep Blue"><figcaption>Garry Kasparov vs. IBM Deep Blue</figcaption></figure>
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">1997</div>
+          <h2 class="reveal d2" style="font-size:80px">IBM <em>深蓝</em><br>击败世界冠军</h2>
+          <p class="reveal d3" style="font-size:34px">国际象棋：<b>穷举搜索 + 人工设计的评估函数</b>。<br>机器的“智能”来自算力与专家规则——属于 <b>AI 1.0</b> 的思路。</p>
+          <div class="card g reveal d4"><p style="font-size:28px">对比：围棋的搜索空间太大，这条路走不通——这正是 2016 年的突破要解决的问题。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P2（备注：1997 年深蓝击败卡斯帕罗夫）。比分 3.5–2.5 为公开史实</div>
+    </section>
+
+    <!-- === DeepMind / AlphaGo === -->
+    <section class="slide c" data-sec="1 · 游戏：AI 的试验场" data-title="2014–2016：DeepMind 与 AlphaGo">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.1 开端</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">2010 → 2014 → 2016</div>
+          <h2 class="reveal d2" style="font-size:72px">强化学习的时代：<br><em>DeepMind</em></h2>
+          <div class="st col gap16" style="margin-top:6px">
+            <div class="kv"><span>2010</span><b style="font-size:30px">DeepMind 成立</b></div>
+            <div class="kv"><span>2014</span><b style="font-size:30px">被 Google 收购（约 5 亿美元 ⚠）</b></div>
+            <div class="kv"><span>2016.03</span><b style="font-size:30px">AlphaGo 4:1 战胜李世石九段</b></div>
+          </div>
+          <p class="reveal d5" style="font-size:26px">⚠ 收购金额为媒体报道口径，原 PPT 亦写作 500M USD。</p>
+        </div>
+        <figure class="reveal d3" style="width:640px;height:640px;align-self:center"><img src="assets/p03_1.jpg" alt="DeepMind Challenge Match"><figcaption>DeepMind Challenge Match, March 2016</figcaption></figure>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P3；DeepMind：10 Years of AlphaGo（R2）</div>
+    </section>
+
+    <!-- === Nature 论文 === -->
+    <section class="slide c" data-sec="1 · 游戏：AI 的试验场" data-title="AlphaGo：深度神经网络 + 树搜索">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.1 开端</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col gap16" style="width:560px">
+          <figure class="reveal d1 contain" style="height:520px"><img src="assets/p04_1.jpg" alt="Nature 2016"></figure>
+          <figcaption>Silver et al., Nature 529, 484–489 (2016)</figcaption>
+        </div>
+        <div class="col grow gap24" style="justify-content:center">
+          <h2 class="reveal d1" style="font-size:60px">Deep Neural Networks<br>with <em>Tree Search</em></h2>
+          <div class="st col gap16">
+            <div class="card b"><div class="n">① 策略网络</div><p>先学人类棋谱（监督学习），再自我对弈（强化学习）：<b>该走哪里？</b></p></div>
+            <div class="card t"><div class="n">② 价值网络</div><p><b>这个局面赢面多大？</b>对应本讲的 P(WIN)。</p></div>
+            <div class="card o"><div class="n">③ 蒙特卡洛树搜索</div><p>用两个网络把搜索只集中在“有希望”的分支上。</p></div>
+          </div>
+        </div>
+        <figure class="reveal d3 contain" style="width:230px;height:560px;align-self:center"><img src="assets/p06_5.png" alt="search tree"><figcaption>搜索树示意</figcaption></figure>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P4；Silver et al. 2016（R1）；DeepMind 10 Years of AlphaGo（R2）</div>
+    </section>
+
+    <!-- === 时间线交互 === -->
+    <section class="slide c" data-sec="1 · 游戏：AI 的试验场" data-title="游戏 AI 时间线（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.1 开端</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:60px">游戏 AI：每一次突破，都是<em>更难的游戏</em></h2>
+        <div class="tl reveal d2" id="gtl" style="margin-top:56px"></div>
+        <div class="card b reveal d3" style="margin-top:44px;min-height:300px"><div class="n" id="gtN"></div><h3 id="gtH" style="font-size:44px"></h3><p id="gtP" style="font-size:30px;margin-top:12px"></p></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P2–P4、P26–P27、P31–P33；R1–R7（见参考文献）。⚠ 各条的时间为首次公开发表/公布年份</div>
+      <script>(function(){const E=[
+        ['1997','深蓝','国际象棋','完美信息 · 二人 · 无随机。穷举搜索 + 人工评估函数（IBM）。'],
+        ['2016','AlphaGo','围棋','完美信息，但搜索空间巨大。深度网络 + 树搜索 + 强化学习（DeepMind）。'],
+        ['2017–18','AlphaGo Zero / AlphaZero','围棋 / 国象 / 将棋','不再使用人类棋谱，只靠自我对弈从零学起。'],
+        ['2019','Pluribus','六人德州扑克','不完全信息 · 多人。Science 2019（Meta 与 CMU）。'],
+        ['2019–20','Suphx','日本麻将','四人 · 随机 · 不完全信息。天凤平台 10 段（微软亚洲研究院）。'],
+        ['2023','LuckyJ','日本麻将','腾讯：天凤稳定段位 10.68，自我对弈 + 遗憾最小化。'],
+        ['2024–25','o1 / DeepSeek-R1','“思考”任务','不是游戏：用可验证的奖励训练大模型推理。']];
+        const box=document.getElementById('gtl');E.forEach((e,i)=>{const b=document.createElement('button');b.innerHTML=e[0]+'<small>'+e[1]+'</small>';b.onclick=()=>{box.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));gtN.textContent=e[2];gtH.textContent=e[1];gtP.textContent=e[3];};box.appendChild(b);if(i===1)b.click();});})();</script>
+    </section>
+
+    <!-- === 为什么是游戏 === -->
+    <section class="slide c" data-sec="1 · 游戏：AI 的试验场" data-title="游戏是人类世界最完美的模拟">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 为什么是游戏</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap24" style="justify-content:center">
+          <h2 class="reveal d1" style="font-size:78px">游戏是人类世界<br>最完美的<em>模拟</em></h2>
+          <div class="st col gap16" style="margin-top:12px">
+            <div class="kv"><span>规则明确</span><b style="font-size:30px">状态与动作可穷尽描述</b></div>
+            <div class="kv"><span>结果可量化</span><b style="font-size:30px">输赢、得分即奖励</b></div>
+            <div class="kv"><span>零成本试错</span><b style="font-size:30px">可自我对弈数百万局</b></div>
+            <div class="kv"><span>难度可递进</span><b style="font-size:30px">从国象到多人不完全信息</b></div>
+          </div>
+        </div>
+        <div class="col gap24" style="width:560px;justify-content:center">
+          <figure class="reveal d2" style="height:300px"><img src="assets/p06_1.png" alt="chess"></figure>
+          <figure class="reveal d3" style="height:300px"><img src="assets/p07_2.png" alt="poker"></figure>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P5–P6</div>
+    </section>
+
+    <!-- === 游戏类型对比（交互） === -->
+    <section class="slide c" data-sec="1 · 游戏：AI 的试验场" data-title="四种游戏，越来越接近现实（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.3 从围棋到麻将</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">越接近现实，越难</h2><div class="tabs reveal d2" id="gmT"><button class="tab b on" data-k="0">国际象棋</button><button class="tab b" data-k="1">围棋</button><button class="tab b" data-k="2">德州扑克</button><button class="tab b" data-k="3">麻将</button></div></div>
+        <div class="flex gap48" style="margin-top:34px">
+          <figure class="contain reveal d2" style="width:520px;height:560px"><img id="gmImg" src="assets/p06_1.png" alt=""></figure>
+          <div class="grow">
+            <table id="gmTab"><tr><th style="width:280px">维度</th><th>取值</th></tr></table>
+            <p id="gmNote" style="margin-top:28px;font-size:29px"></p>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P6–P7（备注：围棋两人、非随机；麻将四人、随机摸牌）；Pluribus（R6）。“多人”指牌桌人数，德州按 Pluribus 的六人场景</div>
+      <script>(function(){const G=[
+        ['assets/p06_1.png',['2 人','完全可见','无（确定性）','胜 / 负'],'深蓝：搜索 + 规则。AI 1.0。'],
+        ['assets/p07_1.png',['2 人','完全可见','无（确定性）','胜 / 负'],'棋盘巨大，靠网络“凭直觉”剪枝，AlphaGo。'],
+        ['assets/p07_2.png',['2–6 人','手牌隐藏','有（发牌）','筹码输赢'],'要猜对手手牌，并考虑“诈唬”。'],
+        ['assets/p06_7.png',['4 人','手牌 + 牌山隐藏','有（摸牌）','名次 + 点数']
+        ,'多人 + 随机 + 隐藏信息 + 长程规划：最贴近真实商业决策。']];
+        const rows=['玩家数','信息','随机性','结局'];const tb=document.getElementById('gmTab');
+        function set(k){document.querySelectorAll('#gmT .tab').forEach(x=>x.classList.toggle('on',x.dataset.k==k));gmImg.src=G[k][0];
+          [...tb.querySelectorAll('tr:not(:first-child)')].forEach(r=>r.remove());
+          rows.forEach((r,i)=>{const tr=document.createElement('tr');tr.innerHTML='<td>'+r+'</td><td>'+G[k][1][i]+'</td>';tb.appendChild(tr);});gmNote.innerHTML='<b>'+G[k][2]+'</b>';}
+        document.querySelectorAll('#gmT .tab').forEach(b=>b.onclick=()=>set(b.dataset.k));set(0);})();</script>
+    </section>
+
+    <!-- === 麻将的挑战（交互） === -->
+    <section class="slide c" data-sec="1 · 游戏：AI 的试验场" data-title="麻将的挑战：看不见的信息（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.3 从围棋到麻将</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">CHALLENGE</div>
+          <h2 class="reveal d2" style="font-size:66px">多人 · 随机 ·<br><em>不完全信息</em></h2>
+          <p class="reveal d3">拖动滑块：随着牌局推进，已打出的牌越来越多。你能看到的仍然只是<b>一小部分</b>。</p>
+          <div class="reveal d4" style="margin-top:12px"><div class="hint">已打出的牌数 k</div><input type="range" id="mjK" min="0" max="60" value="12"></div>
+          <div class="flex gap32 reveal d5" style="margin-top:10px">
+            <div class="stat"><div class="v" id="mjA" style="font-size:96px">13</div><div class="l">自己的手牌（可见）</div></div>
+            <div class="stat"><div class="v" id="mjB" style="font-size:96px;color:var(--teal)">12</div><div class="l">牌河（可见）</div></div>
+            <div class="stat"><div class="v" id="mjC" style="font-size:96px;color:var(--ochre)">111</div><div class="l">对你而言未知</div></div>
+          </div>
+        </div>
+        <div class="card b" style="width:620px;align-self:center"><div class="n">136 张牌 = 34 种 × 4 张</div>
+          <div id="mjGrid" style="display:grid;grid-template-columns:repeat(17,1fr);gap:4px"></div>
+          <p style="font-size:24px;margin-top:20px"><b style="color:var(--blue)">蓝</b> 自己手牌　<b style="color:var(--teal)">青</b> 牌河　<b style="color:var(--ochre)">赭</b> 未知（对手手牌 + 牌山）</p></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P7（备注：麻将四人、随机摸牌）。未计入副露、宝牌指示牌等细节，为教学简化</div>
+      <script>(function(){const g=document.getElementById('mjGrid');const cs=[];for(let i=0;i<136;i++){const d=document.createElement('div');d.style.cssText='height:34px;background:var(--ochre);opacity:.75;transition:background .25s';g.appendChild(d);cs.push(d);}
+        function up(){const k=+mjK.value;mjB.textContent=k;mjC.textContent=136-13-k;cs.forEach((d,i)=>{d.style.background=i<13?'var(--blue)':i<13+k?'var(--teal)':'var(--ochre)';d.style.opacity=i<13+k?1:.75;});}
+        mjK.oninput=up;up();})();</script>
+    </section>
+
+    <!-- === 章节 Part 2 === -->
+    <section class="slide c chapter" data-sec="2 · 把麻将变成数据问题" data-title="Part 2 · 把麻将变成数据问题">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 6.2</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">02</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 2</div>
+        <h2 class="reveal d2">把麻将变成<em>数据问题</em></h2>
+        <div class="s reveal d3">业务目标 → 决策 → 概率输出 → 数字表示 → 神经网络</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>2.1</b>业务问题</div>
+        <div><b>2.2</b>什么叫“打得好”</div>
+        <div><b>2.3</b>建模：输入与输出</div>
+      </div>
+    </section>
+
+    <!-- === 麻将规则 === -->
+    <section class="slide c" data-sec="2 · 把麻将变成数据问题" data-title="打麻将的业务目标：凑成 4×3+2（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.1 业务问题</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:60px">目标：13 张牌 + 摸 1 张，凑成 <em>4×3+2</em></h2><button class="btn fill reveal d2" id="hdBtn">显示分组</button></div>
+        <div class="flex gap48" style="margin-top:36px">
+          <div class="col grow gap24">
+            <div class="card b"><div class="n">34 种牌 × 4 张 = 136 张</div>
+              <div id="pal" class="col gap16"></div>
+            </div>
+            <div class="card t"><div class="n">一副和牌（示例）</div><div class="tiles" id="hand14" style="gap:10px;min-height:92px"></div><p id="hdTxt" style="font-size:26px;margin-top:14px">4 组（顺子 / 刻子）+ 1 对将牌 = 14 张。</p></div>
+          </div>
+          <figure class="reveal d3" style="width:420px;height:560px"><img src="assets/p06_7.png" alt="mahjong" style="object-fit:cover"></figure>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P8（备注：34 种牌 = 3 花色 × 9 + 风 4 + 中发白 3；4 人各 13 张，凑成 4×3+2）</div>
+      <script>(function(){const P=document.getElementById('pal');[[0,9],[9,18],[18,27],[27,34]].forEach(r=>{const d=document.createElement('div');d.className='tiles';for(let i=r[0];i<r[1];i++)d.appendChild(tileEl(i,'sm'));P.appendChild(d);});
+        const H=[[0,1,2],[12,13,14],[24,25,26],[27,27,27],[33,33]],cols=['var(--blue)','var(--teal)','var(--ochre)','#b4402d','var(--ink)'];
+        const hd=document.getElementById('hand14');let on=false;
+        function draw(){hd.innerHTML='';H.forEach((g,gi)=>{const w=document.createElement('div');w.style.cssText='display:flex;gap:4px;padding:6px;border-bottom:5px solid '+(on?cols[gi]:'transparent')+';transition:border-color .3s';g.forEach(i=>w.appendChild(tileEl(i)));hd.appendChild(w);});hdBtn.textContent=on?'隐藏分组':'显示分组';}
+        hdBtn.onclick=()=>{on=!on;draw();};draw();})();</script>
+    </section>
+
+    <!-- === 对局截图 === -->
+    <section class="slide c" data-sec="2 · 把麻将变成数据问题" data-title="一局牌：从起手到结算">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.1 业务问题</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:56px">一局牌 = <em>一连串决策</em>，最后才结算得分</h2>
+        <div class="flex gap32" style="margin-top:34px">
+          <div class="col grow"><figure class="reveal d2" style="height:620px"><img src="assets/p08_2.jpg" alt="对局中" style="object-fit:contain"></figure><figcaption>① 对局中：每一步摸牌、打牌、鸣牌都是决策</figcaption></div>
+          <div class="col grow"><figure class="reveal d3" style="height:620px"><img src="assets/p08_1.jpg" alt="结算" style="object-fit:contain"></figure><figcaption>② 结算：和牌，得失分——<b>延迟到最后才出现的奖励</b></figcaption></div>
+          <div class="col" style="width:380px;justify-content:center"><div class="card o reveal d4"><div class="n">关键特征</div><p>单步决策没有“标准答案”，只有整局的<b>最终结果</b>。这正是强化学习登场的原因。</p></div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P8（天凤对局截图）</div>
+    </section>
+
+    <!-- === 打得好：天凤段位 + 稳定段位计算器 === -->
+    <section class="slide c" data-sec="2 · 把麻将变成数据问题" data-title="什么叫麻将打得好？稳定段位（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.2 什么叫打得好</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap24">
+          <h2 class="reveal d1" style="font-size:58px">不是赢一局，而是<em>长期名次</em>好</h2>
+          <p class="reveal d2" style="font-size:28px">天凤平台“稳定段位” = (5·n<sub>1</sub> + 2·n<sub>2</sub>) / n<sub>4</sub> − 2 （n<sub>k</sub> 为获得第 k 名的对局数）。调节名次分布：</p>
+          <div class="st col gap16" id="srS"></div>
+        </div>
+        <div class="col gap24" style="width:600px;justify-content:center">
+          <div class="card b reveal d3 stat" style="text-align:center"><div class="n">稳定段位（教学计算）</div><div class="v" id="srV" style="font-size:150px">—</div><div class="l" id="srL"></div></div>
+          <div class="flex gap24 center reveal d4"><figure class="contain" style="width:200px;height:120px"><img src="assets/p10_1.png" alt="天凤"></figure><p style="font-size:24px">天凤（Tenhou）：日本在线麻将平台，段位 1–10 段 + 十一段。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P10（备注：“始终和自己段位一样的人在打”）；稳定段位公式见 Suphx 论文附录 C（R3）。稳定段位对局数少时方差很大</div>
+      <script>(function(){const N=['1 位率','2 位率','3 位率','4 位率'],v=[27,26,24,23];const box=document.getElementById('srS');const el=[];
+        N.forEach((n,i)=>{const r=document.createElement('div');r.innerHTML='<div class="flex between" style="font:400 26px var(--f-sans);color:var(--ink-2)"><span>'+n+'</span><b class="mono" style="color:var(--ink)"></b></div><input type="range" min="1" max="60" value="'+v[i]+'">';box.appendChild(r);el.push(r.querySelector('input'));});
+        function up(){const s=el.map(e=>+e.value);const t=s.reduce((a,b)=>a+b,0);const p=s.map(x=>x/t);box.querySelectorAll('b').forEach((b,i)=>b.textContent=(p[i]*100).toFixed(1)+'%');
+          const sr=(5*p[0]+2*p[1])/p[3]-2;srV.textContent=sr.toFixed(2);srL.textContent=sr>=7.4?'≥ 顶级人类（论文：7.46）':sr>=6.5?'接近 NAGA / 爆打（≈6.6）':'普通水平';}
+        el.forEach(e=>e.oninput=up);up();})();</script>
+    </section>
+
+    <!-- === 七类决策（交互） === -->
+    <section class="slide c" data-sec="2 · 把麻将变成数据问题" data-title="麻将的七类决策（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 建模：输入与输出</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">每一步，都由<em>七个决策器</em>之一负责</h2><div class="tabs reveal d2" id="acT"><button class="tab b on" data-k="0">自己摸牌后</button><button class="tab b" data-k="1">别人打牌后</button></div></div>
+        <div class="flex gap24" id="acRow" style="margin-top:44px"></div>
+        <div class="card b reveal d3" style="margin-top:40px"><div class="flex center gap32"><div class="mono blue" style="font-size:24px">AI</div><p style="font-size:30px" id="acTxt"></p></div></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P11–P12（备注：七个要做的决策；是否自摸、加杠、暗杠、立直、打牌；对他人打牌可吃、碰、明杠）。“荣和”等未列入原稿七类，不在此展开</div>
+      <script>(function(){const D=[[['暗杠','Y / N','手里有 4 张相同的牌'],['加杠','Y / N','已碰的牌又摸到第 4 张'],['立直','Y / N','听牌时宣告'],['打牌','34 选 1','<b>打哪张？</b>——最核心、最频繁']],[['吃','Y / N','仅限上家，凑顺子'],['碰','Y / N','凑刻子，任意家'],['明杠','Y / N','别人打出第 4 张']]];
+        const T=['摸到一张牌后，AI 依次判断：是否暗杠 / 加杠 / 立直，最后必须<b>打出一张牌</b>。','别人打出一张牌，AI 可选择：吃 / 碰 / 明杠，或者过。其中“是否吃三条”是原稿中的例子。'];
+        const row=document.getElementById('acRow');function set(k){document.querySelectorAll('#acT .tab').forEach(x=>x.classList.toggle('on',x.dataset.k==k));row.innerHTML='';D[k].forEach((d,i)=>{const c=document.createElement('div');c.className='card '+(d[0]==='打牌'?'b':'g')+' grow';c.style.cssText='min-height:300px;opacity:0;transform:translateY(16px);transition:all .4s '+i*.08+'s';c.innerHTML='<div class="n">'+d[0]+' ACTOR</div><h3 style="font-size:52px">'+d[0]+'</h3><div class="pill'+(d[0]==='打牌'?' fill':'')+'" style="margin:14px 0">'+d[1]+'</div><p style="font-size:26px">'+d[2]+'</p>';row.appendChild(c);requestAnimationFrame(()=>requestAnimationFrame(()=>{c.style.opacity=1;c.style.transform='none';}));});acTxt.innerHTML=T[k];}
+        document.querySelectorAll('#acT .tab').forEach(b=>b.onclick=()=>set(b.dataset.k));set(0);})();</script>
+    </section>
+
+    <!-- === 核心任务：打哪张 → 概率输出 === -->
+    <section class="slide c" data-sec="2 · 把麻将变成数据问题" data-title="核心任务：打哪张？输出每张牌的概率（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 建模：输入与输出</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:58px">希望 AI 输出：每张牌被打出的<em>概率</em></h2>
+        <div class="card b reveal d2" style="margin-top:30px;padding-bottom:20px"><div class="n">当前 13+1 张手牌 · 点击一张牌，把它“压低”（模拟人类否决）</div><div id="smRow" style="display:flex;gap:10px;align-items:flex-end;justify-content:space-between"></div></div>
+        <div class="flex gap48 center reveal d3" style="margin-top:28px">
+          <div style="width:700px"><div class="hint">温度 T：越小越“果断”，越大越“犹豫”</div><input type="range" id="smT" min="20" max="300" value="100"></div>
+          <div class="mono" style="font-size:30px;color:var(--ink-2)">T = <b id="smTv" style="color:var(--ink)">1.0</b> &nbsp; ΣP = <b id="smS" style="color:var(--teal)">1.00</b></div>
+          <div class="math" style="font-size:34px">P<sub>i</sub> = e<sup>z<sub>i</sub>/T</sup> / Σ<sub>j</sub> e<sup>z<sub>j</sub>/T</sup></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P13–P15（备注：“点击率 = 中奖率”）。示例手牌与打分 z<sub>i</sub> 为教学玩具，不是真实模型输出；softmax 为 P1–P3 通用公式</div>
+      <script>(function(){const H=[0,1,2,3,5,7,10,10,13,15,20,21,27,33],z=[.2,-.5,-.5,-.3,.4,.9,-1.2,-1.2,.7,.8,.1,.1,1.8,1.5];const adj=H.map(_=>0);
+        const row=document.getElementById('smRow'),cols=[];
+        H.forEach((t,i)=>{const c=document.createElement('div');c.style.cssText='display:flex;flex-direction:column;align-items:center;gap:8px;width:108px';const bar=document.createElement('div');bar.style.cssText='height:200px;display:flex;align-items:flex-end';const b=document.createElement('div');b.style.cssText='width:56px;background:var(--blue);transition:height .3s;height:4px';bar.appendChild(b);const v=document.createElement('div');v.className='mono';v.style.cssText='font-size:22px;color:var(--ink)';const te=tileEl(t,'pick');te.onclick=()=>{adj[i]=adj[i]?0:-3;te.classList.toggle('sel',!!adj[i]);up();};c.append(v,bar,te);row.appendChild(c);cols.push([b,v]);});
+        function up(){const T=smT.value/100;const p=softmax(z.map((x,i)=>x+adj[i]),T);const m=Math.max(...p);p.forEach((q,i)=>{cols[i][0].style.height=Math.max(4,q/m*200)+'px';cols[i][0].style.background=q===m?'var(--blue)':'#8fa5cf';cols[i][1].textContent=q.toFixed(2);});smTv.textContent=T.toFixed(1);smS.textContent=p.reduce((a,b)=>a+b,0).toFixed(2);}
+        smT.oninput=up;up();})();</script>
+    </section>
+
+    <!-- === 数据化表示（交互） === -->
+    <section class="slide c" data-sec="2 · 把麻将变成数据问题" data-title="麻将的数据化表示：4×9 矩阵（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 建模：输入与输出</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:56px">一手牌 = 一个<em>数字矩阵</em></h2><button class="btn reveal d2" id="bdClr">清空 / 重置</button></div>
+        <div class="flex gap48" style="margin-top:28px">
+          <div class="col gap16" style="width:820px">
+            <div class="hint">点击下方的牌，加入手牌（每种至多 4 张）</div>
+            <div id="bdPal" class="col gap16"></div>
+            <div class="hint" style="margin-top:12px">当前手牌：<b id="bdN">0</b> 张</div>
+            <div class="tiles" id="bdHand" style="min-height:70px"></div>
+          </div>
+          <div class="col grow gap16" style="align-items:center">
+            <div class="mono" style="font-size:22px;color:var(--ink-3)">行：万 / 筒 / 索 / 字　列：1–9</div>
+            <div id="bdM" style="display:grid;grid-template-columns:repeat(9,74px);gap:6px"></div>
+            <p style="font-size:24px;text-align:center">字牌 7 种，对应第 4 行前 7 列。<br>实战中将<b>多个这样的矩阵堆叠</b>（手牌、牌河、副露……）作为输入。</p>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P16–P17（4×9 矩阵与“多层堆叠”输入）；多通道输入细节见 Suphx 论文（R3）</div>
+      <script>(function(){const cnt=Array(34).fill(0),hand=[];const P=document.getElementById('bdPal');
+        [[0,9],[9,18],[18,27],[27,34]].forEach(r=>{const d=document.createElement('div');d.className='tiles';for(let i=r[0];i<r[1];i++){const t=tileEl(i,'pick xs');t.style.cssText='width:44px;height:60px;font-size:26px';t.onclick=()=>{if(cnt[i]<4&&hand.length<14){cnt[i]++;hand.push(i);hand.sort((a,b)=>a-b);draw();}};d.appendChild(t);}P.appendChild(d);});
+        const M=document.getElementById('bdM'),cells=[];for(let i=0;i<36;i++){const c=document.createElement('div');c.style.cssText='height:74px;display:flex;align-items:center;justify-content:center;font:500 36px var(--f-mono);border:1px solid var(--rule);background:#fff;transition:all .25s';M.appendChild(c);cells.push(c);}
+        function draw(){const H=document.getElementById('bdHand');H.innerHTML='';hand.forEach((t,k)=>{const e=tileEl(t,'pick sm');e.onclick=()=>{cnt[t]--;hand.splice(k,1);draw();};H.appendChild(e);});bdN.textContent=hand.length;
+          cells.forEach((c,j)=>{const r=Math.floor(j/9),col=j%9;let v=0,valid=true;if(r<3)v=cnt[r*9+col];else if(col<7)v=cnt[27+col];else valid=false;c.textContent=valid?v:'';c.style.background=!valid?'var(--paper-2)':v?['#fff','#dbe4f5','#a9bde6','#6f8fcf','#24509e'][v]:'#fff';c.style.color=v>=3?'#fff':'var(--ink)';});}
+        const init=[7,8,8,12,13,14,18,19,19,20,22,25,27];function reset(){cnt.fill(0);hand.length=0;init.forEach(t=>{cnt[t]++;hand.push(t);});draw();}
+        bdClr.onclick=()=>{if(hand.length){cnt.fill(0);hand.length=0;draw();}else reset();};reset();})();</script>
+    </section>
+
+    <!-- === CNN（交互） === -->
+    <section class="slide c" data-sec="2 · 把麻将变成数据问题" data-title="我是怎么建模的：CNN 卷积看“搭子”（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 建模：输入与输出</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:54px">输入 → <em>CNN 变换</em> → 概率输出</h2><div class="tabs reveal d2" id="cvT"><button class="tab b on" data-k="0">连续三张</button><button class="tab b" data-k="1">相邻两张</button><button class="tab b" data-k="2">成对 / 刻子</button></div></div>
+        <div class="flex gap32" style="margin-top:30px">
+          <div class="col gap16" style="align-items:center"><div class="mono blue" style="font-size:22px">输入矩阵 (4×9)</div><div id="cvIn" style="display:grid;grid-template-columns:repeat(9,62px);gap:4px"></div>
+            <div class="hint" style="margin-top:8px">滤波器滑动位置</div><input type="range" id="cvP" min="0" max="6" value="0" style="width:420px"></div>
+          <div class="col" style="align-items:center;justify-content:center;width:130px"><div class="arrow">⟶</div><div class="mono muted" style="font-size:20px;text-align:center">卷积<br>滤波器</div><div class="mono blue" id="cvF" style="font-size:30px;margin-top:10px"></div></div>
+          <div class="col gap16" style="align-items:center"><div class="mono teal" style="font-size:22px">特征图（每个位置的匹配强度）</div><div id="cvOut" style="display:grid;grid-template-columns:repeat(7,62px);gap:4px"></div>
+            <p style="font-size:24px;margin-top:10px;max-width:520px;text-align:center">滤波器在每一行滑动，<b>相同权重</b>检测同一种牌型；后接全连接层 + softmax，输出 34 种牌的概率。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P18（输入 → CNN → 概率，立体卷积示意图 p18_3）。示例矩阵取自原 PPT P16；滤波器为教学手写，非训练所得</div>
+      <script>(function(){const X=[[0,0,0,0,0,0,0,1,2],[0,0,0,1,0,1,1,0,0],[0,1,2,1,0,0,1,0,0],[0,3,0,0,0,0,0,0,0]];
+        const F=[[1,1,1],[1,1,0],[2,0,0]];const FN=['[1 1 1]','[1 1]','[≥2]'];let k=0;
+        const I=document.getElementById('cvIn'),O=document.getElementById('cvOut'),ic=[],oc=[];
+        for(let i=0;i<36;i++){const c=document.createElement('div');c.style.cssText='height:62px;display:flex;align-items:center;justify-content:center;font:500 30px var(--f-mono);border:1px solid var(--rule);background:#fff;transition:all .2s';c.textContent=X[Math.floor(i/9)][i%9];I.appendChild(c);ic.push(c);}
+        for(let i=0;i<28;i++){const c=document.createElement('div');c.style.cssText='height:62px;display:flex;align-items:center;justify-content:center;font:500 28px var(--f-mono);border:1px solid var(--rule);background:#fff;transition:all .2s';O.appendChild(c);oc.push(c);}
+        function resp(r,c){if(k===0)return (X[r][c]>0&&X[r][c+1]>0&&X[r][c+2]>0)?3:0;if(k===1)return (c+1<9&&X[r][c]>0&&X[r][c+1]>0)?2:0;return X[r][c]>=2?1:0;}
+        function up(){const p=+cvP.value;ic.forEach((c,i)=>{const r=Math.floor(i/9),col=i%9;const w=k===0?3:k===1?2:1;const inwin=col>=p&&col<p+w;c.style.background=X[r][col]?'#e4ebf8':'#fff';c.style.outline=inwin?'3px solid var(--ochre)':'none';c.style.zIndex=inwin?1:0;});
+          oc.forEach((c,i)=>{const r=Math.floor(i/7),col=i%7;const v=(k===0&&col>6)||(k===0&&col+2>8)?0:resp(r,col);c.textContent=v||'·';c.style.background=v?'rgba(31,122,114,'+(0.2+v*0.25)+')':'#fff';c.style.color=v?'var(--ink)':'var(--ink-3)';c.style.outline=col===p?'3px solid var(--ochre)':'none';});cvF.textContent=FN[k];}
+        document.querySelectorAll('#cvT .tab').forEach(b=>b.onclick=()=>{k=+b.dataset.k;document.querySelectorAll('#cvT .tab').forEach(x=>x.classList.toggle('on',x===b));up();});cvP.oninput=up;up();})();</script>
+    </section>
+
+    <!-- === 章节 Part 3 === -->
+    <section class="slide c chapter" data-sec="3 · 强化学习：左右互搏" data-title="Part 3 · 强化学习：左右互搏">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 6.2</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">03</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 3</div>
+        <h2 class="reveal d2">强化学习：<em>左右互搏</em></h2>
+        <div class="s reveal d3">没有标准答案，只有“赢”或“输”</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>3.1</b>问题：一个人怎么进步</div>
+        <div><b>3.2</b>强化学习的语言</div>
+        <div><b>3.3</b>三个核心机制</div>
+        <div><b>3.4</b>自我对弈</div>
+      </div>
+    </section>
+
+    <!-- === 监督 vs 强化（交互） === -->
+    <section class="slide c" data-sec="3 · 强化学习：左右互搏" data-title="监督学习 vs 强化学习（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 问题：一个人怎么进步</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">强化学习：<em>从后果中学习</em></h2><div class="tabs reveal d2" id="srT"><button class="tab b on" data-k="0">监督学习</button><button class="tab b" data-k="1">强化学习</button></div></div>
+        <div class="flex gap32" style="margin-top:36px">
+          <div class="grow">
+            <svg id="srSvg" viewBox="0 0 980 470" style="width:100%;height:auto"></svg>
+          </div>
+          <div class="col gap16" style="width:620px;justify-content:center" id="srCards"></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P19–P20（监督 vs 强化的对照图）；Sutton & Barto（R12）。图为重绘</div>
+      <script>(function(){
+        const S=document.getElementById('srSvg');
+        const box=(x,y,w,h,t,c)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff" stroke="${c}" stroke-width="3"/><text x="${x+w/2}" y="${y+h/2+10}" text-anchor="middle" font-size="30" font-weight="700" fill="${c}">${t}</text>`;
+        const ar=(a,b,c,d,col,t,ty)=>`<path d="M${a} ${b} L${c} ${d}" stroke="${col}" stroke-width="4" fill="none" marker-end="url(#ah${col.slice(1)})"/>`+(t?`<text x="${(a+c)/2}" y="${ty}" text-anchor="middle" font-size="24" fill="${col}">${t}</text>`:'');
+        const defs=['#1d2433','#1f7a72','#c27a1a','#24509e'].map(c=>`<marker id="ah${c.slice(1)}" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto"><path d="M0 0 L10 6 L0 12 z" fill="${c}"/></marker>`).join('');
+        const V=[
+          `<defs>${defs}</defs>`+box(40,170,200,110,'样本 x','#1d2433')+ar(240,225,360,225,'#1d2433','','')+box(360,170,200,110,'模型 f','#24509e')+ar(560,225,680,225,'#24509e','预测 ŷ',205)+box(680,170,230,110,'标准答案 y','#1f7a72')+`<path class="" d="M795 280 L795 390 L460 390 L460 280" stroke="#c27a1a" stroke-width="4" fill="none" stroke-dasharray="10 8" marker-end="url(#ahc27a1a)"/><text x="630" y="425" text-anchor="middle" font-size="26" fill="#c27a1a">误差 → 修正模型</text>`,
+          `<defs>${defs}</defs>`+box(60,60,260,130,'智能体 π','#24509e')+box(560,60,300,130,'环境 / 对手','#1d2433')+ar(320,100,560,100,'#1f7a72','动作 a<tspan baseline-shift="sub" font-size="16">t</tspan>',84)+ar(560,160,320,160,'#c27a1a','状态 s<tspan baseline-shift="sub" font-size="16">t+1</tspan>, 奖励 r<tspan baseline-shift="sub" font-size="16">t</tspan>',200)+`<text x="460" y="320" text-anchor="middle" font-size="30" fill="#1d2433" font-weight="700">s₁ a₁ r₁ → s₂ a₂ r₂ → … → 终局</text><text x="460" y="380" text-anchor="middle" font-size="26" fill="#c27a1a">奖励往往只在终局出现：赢 +1 / 输 −1</text><text x="460" y="430" text-anchor="middle" font-size="26" fill="#4a5263">目标：最大化累计奖励 Σ r<tspan baseline-shift="sub" font-size="16">t</tspan></text>`];
+        const C=[[['输入 → 输出','x → y'],['数据','{(x<sub>i</sub>, y<sub>i</sub>)}：每个样本都有答案'],['目标','f(x<sub>i</sub>) ≈ y<sub>i</sub>']],[['输入 → 输出','状态 s → 动作 a'],['数据','(s,a,r,s′,…) 序列：由自己的行为产生'],['目标','最大化累计奖励，而非单步正确']]];
+        const bx=document.getElementById('srCards');
+        function set(k){document.querySelectorAll('#srT .tab').forEach(x=>x.classList.toggle('on',x.dataset.k==k));S.innerHTML=V[k];bx.innerHTML=C[k].map((c,i)=>`<div class="card ${k?'t':'b'}"><div class="n">${c[0]}</div><p style="font-size:28px">${c[1]}</p></div>`).join('');}
+        document.querySelectorAll('#srT .tab').forEach(b=>b.onclick=()=>set(+b.dataset.k));set(0);})();</script>
+    </section>
+
+    <!-- === 一个人下棋怎么进步 === -->
+    <section class="slide c" data-sec="3 · 强化学习：左右互搏" data-title="一个人下棋，怎么进步？">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 问题：一个人怎么进步</div><div class="pg"></div>
+      <div class="body">
+        <div class="mono blue reveal d1" style="font-size:24px;letter-spacing:.14em">QUESTION</div>
+        <h2 class="reveal d2" style="font-size:78px;margin-top:10px">一个人下棋，<em>怎么进步</em>？</h2>
+        <div class="flex gap32 st" style="margin-top:56px">
+          <div class="card b grow" style="min-height:430px"><div class="n">路径 ①</div><h3 style="font-size:44px">模仿高手</h3><p style="margin-top:14px">利用人类比赛牌谱，学“高手在这个局面打什么”。<br><b>监督学习。上限 ≈ 人类。</b></p></div>
+          <div class="card t grow" style="min-height:430px"><div class="n">路径 ②</div><h3 style="font-size:44px">左右互搏</h3><p style="margin-top:14px">自己和自己对局，只用输赢作为反馈，不断改进策略。<br><b>强化学习。可能超越人类。</b></p></div>
+          <div class="card o grow" style="min-height:430px"><div class="n">路径 ③ · 实战常用</div><h3 style="font-size:44px">先模仿，再互搏</h3><p style="margin-top:14px">用牌谱“热启动”，再用自我对弈精修。<br><b>AlphaGo、Suphx 均采用。</b></p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P21；AlphaGo（R1）；Suphx（R3）：先监督学习后强化学习</div>
+    </section>
+
+    <!-- === 人类牌谱 === -->
+    <section class="slide c" data-sec="3 · 强化学习：左右互搏" data-title="路径①：利用人类比赛牌谱">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 问题：一个人怎么进步</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div class="col" style="width:560px;gap:16px"><figure class="reveal d1 contain" style="height:330px"><img src="assets/p22_1.png" alt="牌谱 JSON"></figure><figure class="reveal d2 contain" style="height:330px"><img src="assets/p22_2.png" alt="牌谱 编码"></figure></div>
+        <div class="col grow gap24" style="justify-content:center">
+          <h2 class="reveal d1" style="font-size:62px">牌谱 = <em>(局面, 动作)</em> 配对</h2>
+          <p class="reveal d2">每条日志记录谁摸了什么牌、打了什么牌、是否吃碰杠。把它转成 4×9 矩阵，就得到海量带“标准答案”的样本。</p>
+          <div class="card b reveal d3"><div class="n">监督学习的上限</div><p>只能学到“人会怎么打”，而不是“怎么打最好”；人类的习惯与错误也会被一并学走。</p></div>
+        </div>
+        <figure class="reveal d4 contain" style="width:380px;height:560px;align-self:center"><img src="assets/p22_3.png" alt="天凤 四人打牌"><figcaption>天凤四人打牌牌谱公开列表</figcaption></figure>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P22（天凤牌谱日志、编码、公开对局列表）；监督学习预训练 → RL 精修：Suphx（R3）</div>
+    </section>
+
+    <!-- === 赢/输 → P(WIN) 交互（蒙特卡洛） === -->
+    <section class="slide c" data-sec="3 · 强化学习：左右互搏" data-title="只有“赢/输”：用大量对局估计 P(WIN)（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.3 三个核心机制</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">只有输赢，也能<em>估出胜率</em></h2><button class="btn fill reveal d2" id="mcBtn">重新模拟</button></div>
+        <div class="flex gap48" style="margin-top:20px">
+          <div class="col grow gap16">
+            <svg id="mcSvg" viewBox="0 0 1060 440" style="width:100%;height:auto;background:#fff;border:1px solid var(--rule)"></svg>
+            <div class="flex gap24 center"><span class="hint" style="white-space:nowrap">自我对弈局数 N</span><input type="range" id="mcN" min="0" max="100" value="30"></div>
+          </div>
+          <div class="col gap16" style="width:480px;justify-content:center">
+            <div class="stat"><div class="v" id="mcE" style="font-size:110px">—</div><div class="l">N = <b id="mcNv">—</b> 局后的 P(WIN) 估计</div></div>
+            <div class="card b"><p style="font-size:26px" id="mcCI"></p></div>
+            <figure class="contain" style="height:90px"><img src="assets/p25_1.png" alt="P(WIN)=0.874" style="border:none"></figure>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P23–P25（多局“赢/输”序列 → P(WIN)=0.874）。0.874 在此仅作为演示用“真实胜率”假设；区间为正态近似的 95% 置信区间</div>
+      <script>(function(){const p=0.874,M=1500;let path=[];
+        function sim(){let w=0;path=[];for(let i=1;i<=M;i++){w+=Math.random()<p?1:0;path.push(w/i);}draw();}
+        const W=1060,H=440,L=70,R=20,T=20,B=50;const X=n=>L+(W-L-R)*Math.log(n)/Math.log(M),Y=v=>T+(H-T-B)*(1-(v-0.4)/0.6);
+        function draw(){const n=Math.max(1,Math.round(Math.exp(+mcN.value/100*Math.log(M))));let s='';
+          [0.4,0.6,0.8,1.0].forEach(v=>s+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#e5e0d6"/><text x="${L-10}" y="${Y(v)+7}" text-anchor="end" font-size="20" fill="#8a90a0">${v}</text>`);
+          [1,10,100,1000].forEach(v=>s+=`<text x="${X(v)}" y="${H-18}" text-anchor="middle" font-size="20" fill="#8a90a0">${v}</text>`);
+          let up='',lo='';for(let i=1;i<=M;i+=3){const se=Math.sqrt(p*(1-p)/i)*1.96;up+=`${X(i)},${Y(Math.min(1,p+se))} `;lo=`${X(i)},${Y(Math.max(.4,p-se))} `+lo;}
+          s+=`<polygon points="${up}${lo}" fill="#24509e" opacity=".10"/><line x1="${L}" x2="${W-R}" y1="${Y(p)}" y2="${Y(p)}" stroke="#c27a1a" stroke-dasharray="8 6" stroke-width="2"/><text x="${W-R-6}" y="${Y(p)-8}" text-anchor="end" font-size="20" fill="#c27a1a">真实胜率（假设）0.874</text>`;
+          let pl='';for(let i=1;i<=n;i++)pl+=`${X(i)},${Y(Math.max(.4,path[i-1]))} `;s+=`<polyline points="${pl}" fill="none" stroke="#24509e" stroke-width="3"/><circle cx="${X(n)}" cy="${Y(Math.max(.4,path[n-1]))}" r="7" fill="#24509e"/>`;
+          mcSvg.innerHTML=s;const e=path[n-1],se=Math.sqrt(e*(1-e)/n)*1.96;mcE.textContent=e.toFixed(3);mcNv.textContent=n;mcCI.innerHTML='95% 区间 ≈ '+Math.max(0,e-se).toFixed(2)+' – '+Math.min(1,e+se).toFixed(2)+'<br>局数越多，估计越稳；区间宽度 ∝ 1/√N。';}
+        mcN.oninput=draw;mcBtn.onclick=sim;sim();})();</script>
+    </section>
+
+    <!-- === 强化学习的语言 === -->
+    <section class="slide c" data-sec="3 · 强化学习：左右互搏" data-title="强化学习的语言：状态、动作、奖励、策略、价值（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.2 强化学习的语言</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:56px">五个词，描述任何<em>序贯决策</em>问题</h2>
+        <div class="flex gap16 st" style="margin-top:36px" id="rlC"></div>
+        <div class="card b reveal d4" style="margin-top:34px;min-height:200px"><div class="n" id="rlN"></div><div class="flex gap48 center"><div style="width:540px"><div class="mono muted" style="font-size:20px">一般含义</div><h3 id="rlG" style="font-size:36px;margin-top:6px"></h3></div><div class="grow"><div class="mono blue" style="font-size:20px">在麻将里</div><h3 id="rlM" style="font-size:36px;margin-top:6px;color:var(--blue)"></h3></div></div></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P12–P18 的内容重新归纳；术语参照 Sutton & Barto（R12）。映射为教学归纳</div>
+      <script>(function(){const D=[['状态 s','智能体看到的局面','自己的手牌、牌河、副露、场风、点数等（4×9 矩阵的堆叠）'],['动作 a','能做出的选择','34 选 1 的打牌；吃 / 碰 / 杠 / 立直的 Y/N'],['奖励 r','环境给的反馈','一局结束时的得失分 / 名次（过程中大多为 0）'],['策略 π','状态 → 动作的规则','P(打某张牌 | 手牌)：CNN + softmax 的输出'],['价值 V','从此局面起的期望回报','P(WIN)：这手牌最终赢的概率有多大']];
+        const c=document.getElementById('rlC');D.forEach((d,i)=>{const b=document.createElement('div');b.className='card grow '+(i===3?'b':'g');b.style.cssText='cursor:pointer;min-height:230px;padding:24px 22px';b.innerHTML='<div class="n">'+(i+1)+'</div><h3 style="font-size:40px">'+d[0]+'</h3>';b.onclick=()=>{c.querySelectorAll('.card').forEach(x=>{x.classList.remove('b');x.classList.add('g');});b.classList.remove('g');b.classList.add('b');rlN.textContent=d[0];rlG.textContent=d[1];rlM.textContent=d[2];};c.appendChild(b);if(i===3)b.onclick();});})();</script>
+    </section>
+
+    <!-- === 回报与折扣 === -->
+    <section class="slide c" data-sec="3 · 强化学习：左右互搏" data-title="回报与折扣因子 γ（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.2 强化学习的语言</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:56px">远期的奖励，值多少？<em>折扣因子 γ</em></h2><div class="math reveal d2" style="font-size:42px">G = Σ<sub>t</sub> γ<sup>t</sup> r<sub>t</sub></div></div>
+        <div class="flex gap48" style="margin-top:30px">
+          <div class="col grow gap16">
+            <svg id="gmSvg" viewBox="0 0 1000 420" style="width:100%;height:auto;background:#fff;border:1px solid var(--rule)"></svg>
+            <div class="flex gap24 center"><span class="hint" style="white-space:nowrap">γ = <b id="gmV" class="mono" style="color:var(--ink)">0.90</b></span><input type="range" id="gmG" min="0" max="100" value="90"></div>
+          </div>
+          <div class="col gap16" style="width:500px;justify-content:center">
+            <div class="stat"><div class="v" id="gmGv" style="font-size:110px">—</div><div class="l">回报 G（终局 +10 在第 12 步）</div></div>
+            <div class="card t"><p style="font-size:26px"><b>γ→0</b>：只看眼前，近视；<br><b>γ→1</b>：同等重视未来，长远但难学。<br>麻将一局 ≈ 数十步，需要 γ 接近 1。</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 回报与折扣为 RL 标准定义（R12）；奖励序列（每步 0，第 12 步 +10）为教学设定</div>
+      <script>(function(){const n=12,rew=Array(n+1).fill(0);rew[n]=10;
+        function up(){const g=gmG.value/100;gmV.textContent=g.toFixed(2);let G=0;const W=1000,H=420,L=60,B=60,T=30,bw=(W-L-20)/(n+1);let s=`<line x1="${L}" x2="${W-10}" y1="${H-B}" y2="${H-B}" stroke="#1d2433"/>`;
+          for(let t=0;t<=n;t++){const w=Math.pow(g,t);G+=w*rew[t];const h=(H-B-T)*w;s+=`<rect x="${L+t*bw+8}" y="${H-B-h}" width="${bw-16}" height="${h}" fill="#24509e" opacity=".75"/><text x="${L+t*bw+bw/2}" y="${H-B+30}" text-anchor="middle" font-size="20" fill="#8a90a0">${t}</text>`;}
+          s+=`<text x="${L}" y="${T-6}" font-size="20" fill="#4a5263">蓝柱：第 t 步奖励的权重 γ<tspan baseline-shift="super" font-size="14">t</tspan></text><circle cx="${L+n*bw+bw/2}" cy="${H-B-(H-B-T)*Math.pow(g,n)-24}" r="16" fill="#c27a1a"/><text x="${L+n*bw+bw/2}" y="${H-B-(H-B-T)*Math.pow(g,n)-18}" text-anchor="middle" font-size="18" fill="#fff" font-weight="700">+10</text>`;
+          gmSvg.innerHTML=s;gmGv.textContent=G.toFixed(2);}
+        gmG.oninput=up;up();})();</script>
+    </section>
+
+    <!-- === 探索与利用（交互） === -->
+    <section class="slide c" data-sec="3 · 强化学习：左右互搏" data-title="探索 vs 利用：多臂老虎机（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.3 三个核心机制</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:56px">机制①　<em>探索</em>还是<em>利用</em>？</h2><div class="flex gap16"><button class="btn" id="bnR">重置</button><button class="btn fill" id="bn1">玩 100 次</button></div></div>
+        <div class="flex gap48" style="margin-top:28px">
+          <div class="col grow gap16" id="bnArms"></div>
+          <div class="col gap16" style="width:560px">
+            <div><div class="hint">探索率 ε：以此概率随机试一个臂</div><input type="range" id="bnE" min="0" max="100" value="10"></div>
+            <div class="mono" style="font-size:30px;color:var(--ink-2)">ε = <b id="bnEv" style="color:var(--ink)">0.10</b></div>
+            <div class="stat"><div class="v" id="bnRate" style="font-size:96px">—</div><div class="l" id="bnL">累计平均奖励（最优臂的平均奖励是：<b id="bnOpt">—</b>）</div></div>
+            <div class="card o"><p style="font-size:26px"><b>ε = 0</b> 可能一直锁死在次优臂；<b>ε 太大</b>则白白浪费。<br>试试几个不同的 ε，再重置。</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 多臂老虎机与 ε-greedy 为 RL 标准示例（R12）。各臂胜率为每次重置时随机生成的教学设定</div>
+      <script>(function(){let q,n,tr,tot,pulls,K=5;const A=document.getElementById('bnArms');const bars=[];
+        for(let i=0;i<K;i++){const r=document.createElement('div');r.className='hbar';r.innerHTML=`<span class="nm">臂 ${i+1}</span><span class="tr"><i></i></span><span class="vl"></span>`;A.appendChild(r);bars.push(r);}
+        function reset(){tr=Array.from({length:K},()=>0.15+Math.random()*0.7);q=Array(K).fill(0);n=Array(K).fill(0);tot=0;pulls=0;draw();}
+        function step(){const e=bnE.value/100;let a;if(Math.random()<e||pulls<K){a=pulls<K?pulls:Math.floor(Math.random()*K);}else a=q.indexOf(Math.max(...q));const r=Math.random()<tr[a]?1:0;n[a]++;q[a]+=(r-q[a])/n[a];tot+=r;pulls++;}
+        function draw(){bars.forEach((r,i)=>{r.querySelector('i').style.width=(n[i]?q[i]*100:0)+'%';r.querySelector('.vl').textContent=n[i]+' 次';});bnRate.textContent=pulls?(tot/pulls).toFixed(2):'—';bnOpt.textContent=Math.max(...tr).toFixed(2);bnEv.textContent=(bnE.value/100).toFixed(2);}
+        bn1.onclick=()=>{for(let i=0;i<100;i++)step();draw();};bnR.onclick=reset;bnE.oninput=draw;reset();})();</script>
+    </section>
+
+    <!-- === 策略梯度（交互） === -->
+    <section class="slide c" data-sec="3 · 强化学习：左右互搏" data-title="策略梯度：做对的事更常做（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.3 三个核心机制</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:56px">机制②　<em>赢了，就多做</em>刚才的动作</h2><div class="flex gap16"><button class="btn" id="pgR">重置</button><button class="btn" id="pg10">玩 10 局</button><button class="btn fill" id="pg200">玩 200 局</button></div></div>
+        <div class="flex gap48" style="margin-top:30px">
+          <div class="col grow gap16">
+            <div class="mono muted" style="font-size:22px">策略 π(a)：三种打法被选择的概率（初始均匀）</div>
+            <div id="pgB"></div>
+            <div class="math" style="font-size:34px;margin-top:10px">θ ← θ + α ( r − b ) ∇ log π(a)</div>
+          </div>
+          <div class="col gap16" style="width:520px;justify-content:center">
+            <div class="stat"><div class="v" id="pgAvg" style="font-size:100px">—</div><div class="l">最近 50 局平均胜率</div></div>
+            <div class="card b"><p style="font-size:26px">三种打法的真实胜率分别是 <b>30% / 50% / 80%</b>（AI 不知道）。AI 只看到每局的输赢，就能把概率逐步<b>推向最好的打法</b>。</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> REINFORCE 策略梯度（Williams 1992；R14）；三种打法与胜率为教学设定，学习率 α=0.1，b 为滑动平均基线</div>
+      <script>(function(){const tp=[.3,.5,.8],nm=['保守防守','均衡','积极进攻'];let th,b,rec;const B=document.getElementById('pgB');const rows=nm.map((x,i)=>{const r=document.createElement('div');r.className='hbar';r.innerHTML=`<span class="nm" style="width:180px">${x}</span><span class="tr" style="height:46px"><i></i></span><span class="vl" style="width:120px"></span>`;B.appendChild(r);return r;});
+        function reset(){th=[0,0,0];b=.5;rec=[];draw();}
+        function game(){const p=softmax(th,1);let u=Math.random(),a=0;while(a<2&&u>p[a]){u-=p[a];a++;}const r=Math.random()<tp[a]?1:0;for(let j=0;j<3;j++)th[j]+=0.1*(r-b)*((j===a?1:0)-p[j]);b+=0.02*(r-b);rec.push(r);}
+        function draw(){const p=softmax(th,1);rows.forEach((r,i)=>{r.querySelector('i').style.width=p[i]*100+'%';r.querySelector('.vl').textContent=(p[i]*100).toFixed(1)+'%';});const l=rec.slice(-50);pgAvg.textContent=l.length?(l.reduce((a,c)=>a+c,0)/l.length*100).toFixed(0)+'%':'—';}
+        pg10.onclick=()=>{for(let i=0;i<10;i++)game();draw();};pg200.onclick=()=>{for(let i=0;i<200;i++)game();draw();};pgR.onclick=reset;reset();})();</script>
+    </section>
+
+    <!-- === 网格世界 Q-learning（交互） === -->
+    <section class="slide c" data-sec="3 · 强化学习：左右互搏" data-title="价值学习：网格世界里的 Q-learning（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.3 三个核心机制</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:54px">机制③　<em>价值</em>：每一格值多少分</h2><div class="flex gap16"><button class="btn" id="qR">重置</button><button class="btn" id="q20">训练 20 回合</button><button class="btn" id="q300">训练 300 回合</button><button class="btn fill" id="qGo">演示一次</button></div></div>
+        <div class="flex gap48" style="margin-top:26px">
+          <div id="qG" style="display:grid;grid-template-columns:repeat(6,112px);gap:4px;position:relative"></div>
+          <div class="col gap16 grow" style="justify-content:center">
+            <div class="stat"><div class="v" id="qEp" style="font-size:90px">0</div><div class="l">已训练回合数</div></div>
+            <div class="card b"><p style="font-size:25px">起点在左下 <b class="blue">S</b>；终点 <b class="teal">+1</b>；陷阱 <b style="color:#b4402d">−1</b>；每走一步 −0.04（鼓励走近路）。</p></div>
+            <div class="card t"><p style="font-size:25px">格子底色 = 该格最大 Q 值；箭头 = 当前最优动作。<br>奖励<b>从终点向起点逐步“传播”</b>。</p></div>
+            <div class="math" style="font-size:28px">Q(s,a) ← Q + α [ r + γ max Q(s′,·) − Q ]</div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> Q-learning（Watkins 1989；Sutton & Barto，R12）。网格、奖励、超参数（α=0.5，γ=0.95，ε=0.2）为教学设定</div>
+      <script>(function(){const R=4,C=6,wall=new Set([7,13]),goal=5,pit=11,start=18;let Q,ep;const G=document.getElementById('qG'),cells=[];
+        for(let i=0;i<R*C;i++){const d=document.createElement('div');d.style.cssText='height:112px;display:flex;align-items:center;justify-content:center;font:700 56px var(--f-sans);border:1px solid var(--rule);background:#fff;position:relative;transition:background .25s';G.appendChild(d);cells.push(d);}
+        const dir=[[-1,0,'↑'],[0,1,'→'],[1,0,'↓'],[0,-1,'←']];
+        function nxt(s,a){const r=Math.floor(s/C),c=s%C;let nr=r+dir[a][0],nc=c+dir[a][1];if(nr<0||nr>=R||nc<0||nc>=C||wall.has(nr*C+nc))return s;return nr*C+nc;}
+        function rew(s){return s===goal?1:s===pit?-1:-0.04;}
+        function reset(){Q=Array.from({length:R*C},()=>[0,0,0,0]);ep=0;draw();}
+        function train(n){for(let e=0;e<n;e++){let s=start,k=0;while(s!==goal&&s!==pit&&k<200){const a=Math.random()<.2?Math.floor(Math.random()*4):Q[s].indexOf(Math.max(...Q[s]));const s2=nxt(s,a);const r=rew(s2);const t=(s2===goal||s2===pit)?0:Math.max(...Q[s2]);Q[s][a]+=0.5*(r+.95*t-Q[s][a]);s=s2;k++;}ep++;}draw();}
+        function draw(path){cells.forEach((d,i)=>{d.innerHTML='';d.style.outline='none';if(wall.has(i)){d.style.background='#cfcac0';return;}const m=Math.max(...Q[i]);let bg='#fff';if(i===goal)bg='#bfe3df';else if(i===pit)bg='#f0cbc4';else if(m>0.001)bg=`rgba(31,122,114,${Math.min(.55,m*.55)})`;else if(m<-0.001)bg=`rgba(180,64,45,${Math.min(.4,-m*.4)})`;d.style.background=bg;
+            if(i===goal)d.innerHTML='<span style="color:var(--teal);font-size:44px">+1</span>';else if(i===pit)d.innerHTML='<span style="color:#b4402d;font-size:44px">−1</span>';else{if(Math.max(...Q[i])!==0||Q[i].some(v=>v!==0))d.innerHTML='<span style="color:var(--ink)">'+dir[Q[i].indexOf(m)][2]+'</span>';if(i===start)d.innerHTML+='<span style="position:absolute;left:8px;top:6px;font:500 22px var(--f-mono);color:var(--blue)">S</span>';}
+            if(path&&path.includes(i))d.style.outline='4px solid var(--blue)';});qEp.textContent=ep;}
+        qGo.onclick=()=>{let s=start,p=[s],k=0;while(s!==goal&&s!==pit&&k<40){s=nxt(s,Q[s].indexOf(Math.max(...Q[s])));p.push(s);k++;}let i=0;const t=setInterval(()=>{draw(p.slice(0,++i));if(i>=p.length)clearInterval(t);},260);};
+        q20.onclick=()=>train(20);q300.onclick=()=>train(300);qR.onclick=reset;reset();})();</script>
+    </section>
+
+    <!-- === 自我对弈（交互/动画） === -->
+    <section class="slide c" data-sec="3 · 强化学习：左右互搏" data-title="自我对弈：左右互搏（动画）">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.4 自我对弈</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:60px">自己做对手，<em>水涨船高</em></h2><div class="flex gap16"><button class="btn" id="spR">重置</button><button class="btn fill" id="spN">迭代一代 ▶</button></div></div>
+        <div class="flex gap32" style="margin-top:20px">
+          <svg id="spA" viewBox="0 0 700 460" style="width:700px;flex:none;background:#fff;border:1px solid var(--rule)"></svg>
+          <svg id="spC" viewBox="0 0 960 460" style="width:960px;flex:none;background:#fff;border:1px solid var(--rule)"></svg>
+        </div>
+        <p class="reveal d3" style="margin-top:22px;font-size:28px"><b>循环：</b>当前策略 π<sub>k</sub> 四家自己打 → 产生对局数据与输赢 → 更新为 π<sub>k+1</sub> → 对手同步变强。<span class="muted">没有人类老师，也就没有人类的天花板。</span></p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P19（“强化学习——左右互搏”）、P21；AlphaGo Zero / AlphaZero 的自我对弈思想。右图曲线为示意（非实测），不对应任何具体系统</div>
+      <script>(function(){let g=0;const seats=[[350,60],[600,230],[350,400],[100,230]];
+        function drawA(){let s='<defs><marker id="spAh" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto"><path d="M0 0 L10 6 L0 12 z" fill="#24509e"/></marker></defs>';
+          seats.forEach((p,i)=>{s+=`<circle cx="${p[0]}" cy="${p[1]}" r="50" fill="#fff" stroke="#24509e" stroke-width="3"/><text x="${p[0]}" y="${p[1]-2}" text-anchor="middle" font-size="22" fill="#24509e" font-weight="700">π<tspan baseline-shift="sub" font-size="14">${g}</tspan></text><text x="${p[0]}" y="${p[1]+26}" text-anchor="middle" font-size="16" fill="#8a90a0">玩家 ${i+1}</text>`;});
+          s+=`<circle cx="350" cy="230" r="70" fill="none" stroke="#c27a1a" stroke-width="3" stroke-dasharray="8 6"><animateTransform attributeName="transform" type="rotate" from="0 350 230" to="360 350 230" dur="8s" repeatCount="indefinite"/></circle><text x="350" y="225" text-anchor="middle" font-size="22" fill="#c27a1a" font-weight="700">自我对弈</text><text x="350" y="252" text-anchor="middle" font-size="18" fill="#8a90a0">第 ${g} 代</text>`;
+          [[350,115,350,160],[545,230,500,230],[350,345,350,300],[155,230,200,230]].forEach(a=>s+=`<path d="M${a[0]} ${a[1]} L${a[2]} ${a[3]}" stroke="#24509e" stroke-width="3" marker-end="url(#spAh)"/>`);spA.innerHTML=s;}
+        const f=k=>-0*k+1000+1600*(1-Math.exp(-k/6))+ (k?Math.sin(k*2.3)*30:0);
+        function drawC(){const W=960,H=460,L=80,B=60,T=30,R=30,X=k=>L+(W-L-R)*k/20,Y=v=>H-B-(H-B-T)*(v-900)/(2800-900);let s=`<line x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}" stroke="#1d2433"/><line x1="${L}" x2="${L}" y1="${T}" y2="${H-B}" stroke="#1d2433"/><text x="${W/2}" y="${H-14}" text-anchor="middle" font-size="22" fill="#4a5263">自我对弈迭代代数</text><text x="22" y="${H/2}" font-size="22" fill="#4a5263" transform="rotate(-90 22 ${H/2})" text-anchor="middle">相对水平（示意）</text>`;
+          [0,5,10,15,20].forEach(k=>s+=`<text x="${X(k)}" y="${H-B+28}" text-anchor="middle" font-size="18" fill="#8a90a0">${k}</text>`);
+          const hy=Y(1900);s+=`<line x1="${L}" x2="${W-R}" y1="${hy}" y2="${hy}" stroke="#c27a1a" stroke-dasharray="8 6"/><text x="${W-R}" y="${hy-8}" text-anchor="end" font-size="20" fill="#c27a1a">监督学习（人类牌谱）的水平上限 ≈ 人类（示意）</text>`;
+          let pl='';for(let k=0;k<=g;k++)pl+=`${X(k)},${Y(f(k))} `;s+=`<polyline points="${pl}" fill="none" stroke="#24509e" stroke-width="4"/>`;for(let k=0;k<=g;k++)s+=`<circle cx="${X(k)}" cy="${Y(f(k))}" r="${k===g?9:5}" fill="#24509e"/>`;spC.innerHTML=s;}
+        function up(){drawA();drawC();}spN.onclick=()=>{if(g<20)g++;up();};spR.onclick=()=>{g=0;up();};up();})();</script>
+    </section>
+
+    <!-- === 章节 Part 4 === -->
+    <section class="slide c chapter" data-sec="4 · 麻将 AI 的前沿" data-title="Part 4 · 麻将 AI 的前沿">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 6.2</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">04</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 4</div>
+        <h2 class="reveal d2">麻将 AI 的<em>前沿</em></h2>
+        <div class="s reveal d3">Suphx、LuckyJ，以及我们自己的 AlphaHu</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>4.1</b>AlphaHu</div>
+        <div><b>4.2</b>Suphx：三项关键技术</div>
+        <div><b>4.3</b>谁最强？证据与口径</div>
+      </div>
+    </section>
+
+    <!-- === AlphaHu === -->
+    <section class="slide c alphahu-vid-slide" data-sec="4 · 麻将 AI 的前沿" data-title="AlphaHu：课程团队的麻将 AI">
+      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.1 AlphaHu</div><div class="pg"></div>
+      <div class="body flex gap40" style="align-items:stretch">
+        <div class="col gap24" style="width:640px;justify-content:center">
+          <div>
+            <div class="mono blue reveal d1" style="font-size:24px;letter-spacing:.14em">OUR OWN PROJECT</div>
+            <h2 class="reveal d2" style="font-size:88px;margin-top:10px;line-height:1.05">Alpha<em>Hu</em></h2>
+          </div>
+          <div class="card g reveal d3 grow"><div class="n">本讲对应</div><h3 style="font-size:40px;margin-top:8px">Part 2–3 的建模思路</h3><p style="font-size:28px;margin-top:14px"><b>数据化表示</b> → <b>CNN 输出概率</b> → <b>自我对弈</b>（原 PPT P18–P25）。</p></div>
+          <div class="reveal d4"><span class="pill">对战演示</span><span style="margin-left:16px;font:400 24px var(--f-sans);color:var(--ink-2)">翻页静音循环 · 可开声音</span></div>
+        </div>
+        <figure class="alphahu-vid-frame reveal d3 grow">
+          <video class="alphahu-vid" muted loop playsinline controls preload="metadata" poster="assets/game-mahjong-poster.png" aria-label="AlphaHu 麻将对局演示">
+            <source src="assets/alphahu-mahjong-demo.mp4" type="video/mp4">
+          </video>
+        </figure>
+      </div>
+      <style>
+        .alphahu-vid-slide .alphahu-vid-frame{flex:1;min-width:0;margin:0;display:flex;align-items:center;justify-content:center;padding:14px 18px;background:linear-gradient(165deg,#0c1220 0%,#1a2030 100%);border:1px solid var(--rule);box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);border-radius:2px;max-height:780px}
+        .alphahu-vid-slide .alphahu-vid{display:block;width:92%;height:92%;max-width:92%;max-height:92%;object-fit:contain;background:#000}
+      </style>
+      <script>(function(){
+        const sec=document.currentScript.closest('.slide');
+        const v=sec.querySelector('video.alphahu-vid');
+        if(!v)return;
+        new MutationObserver(()=>{
+          const on=sec.classList.contains('visible');
+          if(on){ v.play().catch(()=>{}); } else { v.pause(); try{v.currentTime=0;}catch(e){} }
+        }).observe(sec,{attributes:true,attributeFilter:['class']});
+        if(sec.classList.contains('visible')) v.play().catch(()=>{});
+      })();</script>
+      <div class="src"><b>参考</b> 原 PPT P28–P30（备注：“Yc 基金最后一轮”）；麻将对局视频复用 L1（`game-kof-demo-lite.mp4` ← 原稿 media2.mov，非 `game-mahjong-demo.mp4`）。⚠ AlphaHu 训练细节与成绩原稿未给出，请主讲人补充；此页不做成绩声明</div>
+    </section>
+
+    <!-- === Suphx（交互） === -->
+    <section class="slide c" data-sec="4 · 麻将 AI 的前沿" data-title="Suphx：三项关键技术（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.2 Suphx</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col gap16" style="width:560px">
+          <figure class="reveal d1" style="height:520px"><img src="assets/p26_1.jpg" alt="Suphx 在 WAIC" style="object-position:top"></figure>
+          <figcaption>Suphx 研究者在世界人工智能大会（WAIC）介绍（原 PPT 截图）</figcaption>
+        </div>
+        <div class="col grow gap24">
+          <h2 class="reveal d1" style="font-size:54px">微软 Suphx：<em>监督学习 + 强化学习</em> + 三项新技术</h2>
+          <div class="tabs reveal d2" id="sxT"><button class="tab b on" data-k="0">全局奖励预测</button><button class="tab b" data-k="1">Oracle 引导</button><button class="tab b" data-k="2">运行时策略适应</button></div>
+          <div class="card b reveal d3" style="min-height:300px"><div class="n" id="sxN"></div><h3 id="sxH" style="font-size:42px"></h3><p id="sxP" style="font-size:29px;margin-top:14px"></p></div>
+          <p class="reveal d4" style="font-size:26px">流程：人类牌谱监督学习 → 自我对弈强化学习（策略梯度）→ 对局中在线适应。</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P26；Li et al. “Suphx”，arXiv:2003.13590（R3）。三项技术的说明为对论文摘要与方法的概括</div>
+      <script>(function(){const D=[['问题：奖励太“稀”','Global Reward Prediction','麻将一场由多局（东风/南风）组成，名次取决于整场总分，而单局得分并不等于对整场的贡献。用模型<b>预测整场结局</b>，把它分解成每一局的奖励，学习信号更密。'],['问题：隐藏信息太多','Oracle Guiding','先训练一个能“偷看”对手手牌的 Oracle 智能体，再逐步<b>淡出这些偷看的特征</b>，把它的经验传给只能看到公开信息的正式智能体。'],['问题：每局牌都不一样','Run-time Policy Adaptation','拿到一副新牌时，在线用模拟对局<b>临时微调</b>策略，使其更适合眼前这局。']];
+        function set(k){document.querySelectorAll('#sxT .tab').forEach(x=>x.classList.toggle('on',x.dataset.k==k));sxN.textContent=D[k][0];sxH.textContent=D[k][1];sxP.innerHTML=D[k][2];}document.querySelectorAll('#sxT .tab').forEach(b=>b.onclick=()=>set(b.dataset.k));set(0);})();</script>
+    </section>
+
+    <!-- === 天凤对比（交互） === -->
+    <section class="slide c" data-sec="4 · 麻将 AI 的前沿" data-title="天凤特上房：稳定段位对比（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.3 谁最强</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap16">
+          <h2 class="reveal d1" style="font-size:54px">稳定段位：AI 已超过<em>顶级人类</em></h2>
+          <div class="flex gap16" style="margin:6px 0"><button class="btn fill" id="thA">稳定段位</button><button class="btn" id="thB">评测对局数</button></div>
+          <div id="thBars" class="reveal d3" style="margin-top:8px"></div>
+          <p style="font-size:24px;margin-top:14px">⚠ 各行来源、年份、对局数不同；对局数少时稳定段位<b>误差可达约 ±1 段</b>，不宜逐位精确排序。</p>
+        </div>
+        <div class="col gap16" style="width:520px;justify-content:center"><figure class="contain reveal d4" style="height:470px"><img src="assets/p27_1.png" alt="原 PPT 稳定段位对比"><figcaption>原 PPT 图（微软 / 顶级人类 / NAGA / 爆打）</figcaption></figure></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P27；Suphx 论文 Table 4（R3）：爆打 6.59（30,516 局）、NAGA 6.64（9,649 局）、顶级人类 7.46（8,031 局）、Suphx 8.74（5,760 局）；LuckyJ 10.68（1,321 局，腾讯 2023-07 公布，R4，⚠ 厂商自报）</div>
+      <script>(function(){const D=[['爆打（东京大学）',6.59,30516],['NAGA（Dwango，早期）',6.64,9649],['顶级人类',7.46,8031],['Suphx（微软，2019–20）',8.74,5760],['LuckyJ（腾讯，2023）',10.68,1321]];let m=0;const B=document.getElementById('thBars');
+        function draw(){B.innerHTML='';const mx=m?31000:11;D.forEach((d,i)=>{const v=m?d[2]:d[1];const r=document.createElement('div');r.className='hbar';r.innerHTML=`<span class="nm" style="width:290px">${d[0]}</span><span class="tr" style="height:44px"><i style="width:0;background:${i>=3?'var(--blue)':'#8fa5cf'}"></i></span><span class="vl" style="width:130px">${m?v.toLocaleString():v.toFixed(2)}</span>`;B.appendChild(r);requestAnimationFrame(()=>requestAnimationFrame(()=>r.querySelector('i').style.width=v/mx*100+'%'));});thA.classList.toggle('fill',!m);thB.classList.toggle('fill',!!m);}
+        thA.onclick=()=>{m=0;draw();};thB.onclick=()=>{m=1;draw();};draw();})();</script>
+    </section>
+
+    <!-- === LuckyJ + 2026 === -->
+    <section class="slide c" data-sec="4 · 麻将 AI 的前沿" data-title="2023–2026：LuckyJ 与最新动态">
+      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.3 谁最强</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:54px">自我对弈 + 遗憾最小化：<em>LuckyJ</em></h2>
+        <div class="flex gap32 st" style="margin-top:36px">
+          <div class="card b grow"><div class="n">2023-07</div><h3>天凤 10 段</h3><p>仅 1,321 局达到 10 段，稳定段位 10.68（腾讯公布）。</p></div>
+          <div class="card t grow"><div class="n">方法</div><h3>ACH + 非完美信息搜索</h3><p>强化学习（Actor-Critic）与遗憾最小化结合的自我对弈；搜索结果作为特征输入策略网络。</p></div>
+          <div class="card o grow"><div class="n">另一战场</div><h3>国标麻将</h3><p>线下邀请赛战胜 6 位职业选手（腾讯称首个）。</p></div>
+        </div>
+        <div class="card g reveal d4" style="margin-top:34px"><div class="n">2026 回访（截至 2026-11-14）</div><p style="font-size:27px">① 公开可核的人类对局记录中，LuckyJ 仍为最高；② 2026-10，NAGA 推出“自我改善型”新模型，称在 AI 间对局中优于旧版，但<b>无公开人类对局成绩</b>；③ 开源的 Mortal（深度 RL）无官方天凤段位。⚠ 以上来自第三方整理，未逐一核对原始公告。</p></div>
+      </div>
+      <div class="src"><b>参考</b> 腾讯公告/TechNode（R4）；ACH，ICLR 2022（R5）；Mahjong Engines（R16）；Qiita 综述（R15，⚠ 二手）</div>
+    </section>
+
+    <!-- === 章节 Part 5 === -->
+    <section class="slide c chapter" data-sec="5 · 超越游戏" data-title="Part 5 · 超越游戏">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 6.2</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">05</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 5</div>
+        <h2 class="reveal d2">超越<em>游戏</em></h2>
+        <div class="s reveal d3">同一套“试错 + 奖励”，如何训练大模型、机器人与汽车</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>5.1</b>大模型的推理：o1、R1</div>
+        <div><b>5.2</b>2026：RL 环境与智能体</div>
+        <div><b>5.3</b>具身智能与自动驾驶</div>
+        <div><b>5.4</b>对管理者意味着什么</div>
+      </div>
+    </section>
+
+    <!-- === o1 === -->
+    <section class="slide c" data-sec="5 · 超越游戏" data-title="2024：o1，强化学习让大模型会“想”">
+      <div class="toprule"></div><div class="tag"><b>PART 5</b> · 5.1 大模型的推理</div><div class="pg"></div>
+      <div class="body flex gap32">
+        <div class="col grow gap24" style="justify-content:center">
+          <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">2024.09</div>
+          <h2 class="reveal d2" style="font-size:72px">OpenAI <em>o1</em>：<br>先想，再答</h2>
+          <p class="reveal d3" style="font-size:32px">用大规模强化学习训练模型生成<b>很长的思维链</b>，推理时多花算力“多想一会儿”。</p>
+          <div class="card b reveal d4"><p style="font-size:27px">与 AlphaGo 同源：<b>不再只模仿人类文本</b>，而是用结果好坏来强化好的“思考过程”。</p></div>
+        </div>
+        <div class="col gap16" style="width:760px;justify-content:center"><figure class="reveal d2" style="height:380px"><img src="assets/p31_2.jpg" alt="OpenAI o1"></figure><figure class="reveal d3 contain" style="height:260px"><img src="assets/p32_1.jpg" alt="AI 发展时间线（红圈为 o1）" style="object-position:right"></figure></div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P31–P32（o1 与 AI 发展时间线，红圈标记 2024-09）；OpenAI o1 发布（2024-09-12）</div>
+    </section>
+
+    <!-- === DeepSeek-R1 === -->
+    <section class="slide c" data-sec="5 · 超越游戏" data-title="2025：DeepSeek-R1 与 Nature 论文">
+      <div class="toprule"></div><div class="tag"><b>PART 5</b> · 5.1 大模型的推理</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <figure class="reveal d1 contain" style="width:620px;height:620px;align-self:center"><img src="assets/p33_1.png" alt="DeepSeek-R1 Nature"></figure>
+        <div class="col grow gap24" style="justify-content:center">
+          <h2 class="reveal d1" style="font-size:54px">只靠<em>答案对错</em>作奖励，推理能力就会“长”出来</h2>
+          <div class="st col gap16">
+            <div class="kv"><span>2025-01</span><b style="font-size:28px">DeepSeek-R1 发布（arXiv）</b></div>
+            <div class="kv"><span>2025-09-17</span><b style="font-size:28px">Nature 645 刊出同行评议版</b></div>
+            <div class="kv"><span>算法</span><b style="font-size:28px">GRPO；奖励 = 答案正确 + 格式</b></div>
+            <div class="kv"><span>R1-Zero</span><b style="font-size:28px">RL 前跳过监督微调（SFT）</b></div>
+            <div class="kv"><span>训练成本</span><b style="font-size:28px">约 30 万美元 ⚠（仅 R1 阶段）</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P33；Guo et al., Nature 645, 633–638 (2025)（R7）；Nature 新闻 2025-09-17（R8）。⚠ 成本为 Nature 新闻报道口径，不含基座模型 DeepSeek-V3 的训练</div>
+    </section>
+
+    <!-- === GRPO 交互 === -->
+    <section class="slide c" data-sec="5 · 超越游戏" data-title="GRPO：同一道题，答对的“组内领先”（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 5</b> · 5.1 大模型的推理</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:54px">GRPO：和<em>同组</em>比，谁答对谁加分</h2><div class="flex gap16"><button class="btn" id="gpR">重新采样</button></div></div>
+        <div class="flex gap48" style="margin-top:24px">
+          <div class="col grow gap16">
+            <div class="hint">同一道数学题，模型采样 8 个回答。点击回答，翻转对 / 错（可验证奖励 r ∈ {0,1}）</div>
+            <div id="gpR8" class="col gap16" style="margin-top:6px"></div>
+          </div>
+          <div class="col gap16" style="width:600px;justify-content:center">
+            <div class="math" style="font-size:36px">A<sub>i</sub> = ( r<sub>i</sub> − mean(r) ) / std(r)</div>
+            <div class="flex gap24"><div class="stat"><div class="v" id="gpM" style="font-size:80px">—</div><div class="l">组平均奖励</div></div><div class="stat"><div class="v" id="gpS" style="font-size:80px;color:var(--teal)">—</div><div class="l">组内标准差</div></div></div>
+            <div class="card t"><p style="font-size:26px">优势 A &gt; 0：提高该回答的概率；A &lt; 0：降低。<br>若 8 个全对或全错，std = 0，<b>没有学习信号</b>——题目要“不难不易”。</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> GRPO 定义见 DeepSeek-R1 论文方法部分（R7）；此处省略 KL 正则、重要性比例与裁剪项。回答的对错为演示设定</div>
+      <script>(function(){let r;const B=document.getElementById('gpR8');const rows=[];
+        for(let i=0;i<8;i++){const d=document.createElement('div');d.className='hbar';d.style.cssText='cursor:pointer;margin:0';d.innerHTML=`<span class="nm" style="width:150px">回答 ${i+1}</span><span class="tr" style="height:44px;background:#fff;border:1px solid var(--rule)"><i style="left:50%;width:0"></i></span><span class="vl" style="width:230px;font-size:22px"></span>`;d.onclick=()=>{r[i]=1-r[i];draw();};B.appendChild(d);rows.push(d);}
+        function reset(){r=Array.from({length:8},()=>Math.random()<.4?1:0);draw();}
+        function draw(){const m=r.reduce((a,b)=>a+b,0)/8,sd=Math.sqrt(r.reduce((a,b)=>a+(b-m)**2,0)/8);rows.forEach((d,i)=>{const A=sd>0?(r[i]-m)/sd:0;const bar=d.querySelector('i');bar.style.left=A>=0?'50%':(50+A*14)+'%';bar.style.width=Math.abs(A)*14+'%';bar.style.background=A>=0?'var(--teal)':'#b4402d';d.querySelector('.vl').innerHTML=(r[i]?'✓ 对':'✗ 错')+' &nbsp; A = '+A.toFixed(2);});gpM.textContent=m.toFixed(2);gpS.textContent=sd.toFixed(2);}
+        gpR.onclick=reset;reset();})();</script>
+    </section>
+
+    <!-- === 2026：RL 环境 === -->
+    <section class="slide c" data-sec="5 · 超越游戏" data-title="2026：RLVR 成为前沿训练标配，走向智能体环境">
+      <div class="toprule"></div><div class="tag"><b>PART 5</b> · 5.2 2026：RL 环境与智能体</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:54px">从“答对一题”到<em>“完成一项工作”</em></h2>
+        <div class="flex gap32 st" style="margin-top:34px">
+          <div class="card b grow"><div class="n">① 可验证奖励 RLVR</div><h3>奖励 = 能执行的检查</h3><p>数学答案、单元测试、程序输出：不再依赖人类偏好打分。几乎所有主流实验室的推理模型都使用某种形式的 RL。</p></div>
+          <div class="card t grow"><div class="n">② RL 环境</div><h3>“模拟公司”里练手</h3><p>文档、表格、邮件组成的任务环境，每题配一个评分器。一家数据供应商报告：用 1,928 道专家任务做 RL，把某开源 397B 模型在 480 题留出集上的首次通过率由 16.1% 提到 27.3% ⚠。</p></div>
+          <div class="card o grow"><div class="n">③ AlphaGo 十年</div><h3>同一思想，延伸到数学与科学</h3><p>DeepMind 称其“RL + 搜索”思路延伸到 AlphaProof、Gemini Deep Think（2025 IMO 金牌水平）。</p></div>
+        </div>
+        <div class="card g reveal d4" style="margin-top:30px"><p style="font-size:27px"><b>对管理者：</b>企业的真实业务流程，就是潜在的 RL 环境；“能自动评分的任务”最先被智能体攻克。</p></div>
+      </div>
+      <div class="src"><b>参考</b> HuggingFace 博客《How frontier models train on outcomes in 2026》（R9，⚠ 二手综述）；RL Research 博客转述 Mercor 训练指南 2026-09-01（R10，⚠ 厂商自报、二手）；DeepMind “10 Years of AlphaGo”（R2）；The Atlantic 2026-03（R11）</div>
+    </section>
+
+    <!-- === 具身 === -->
+    <section class="slide c" data-sec="5 · 超越游戏" data-title="具身智能：机器人用强化学习学会走和用工具">
+      <div class="toprule"></div><div class="tag"><b>PART 5</b> · 5.3 具身智能与自动驾驶</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:54px">不止游戏与机器人：<em>真实世界的物理任务</em></h2>
+        <div class="flex gap32" style="margin-top:30px">
+          <div class="col grow"><figure class="reveal d2" style="height:540px"><img src="assets/p34_1.jpg" alt="四足机器人运动" style="object-fit:contain"></figure><figcaption>敏捷运动：Smith et al., “Learning and Adapting Agile Locomotion Skills by Transferring Experience”, 2022</figcaption></div>
+          <div class="col grow"><figure class="reveal d3" style="height:540px"><img src="assets/p35_1.jpg" alt="工具使用" style="object-fit:contain"></figure><figcaption>工具使用（Tool Use）：用工具完成操作任务</figcaption></div>
+        </div>
+        <p class="reveal d4" style="margin-top:20px;font-size:27px">共同点：<b>仿真中大量试错</b>，再迁移到真实机器人——仿真成本远低于真机，但存在“仿真—现实差距”。</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P34–P35（Berkeley，Smith et al. 2022，图片来源见原稿）。“仿真—现实差距”为通用说法</div>
+    </section>
+
+    <!-- === 自动驾驶 === -->
+    <section class="slide c" data-sec="5 · 超越游戏" data-title="自动驾驶与混合交通">
+      <div class="toprule"></div><div class="tag"><b>PART 5</b> · 5.3 具身智能与自动驾驶</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <figure class="reveal d2" style="width:900px;height:620px;align-self:center"><img src="assets/p36_1.png" alt="Not just games and robots" style="object-fit:contain"></figure>
+        <div class="col grow gap24" style="justify-content:center">
+          <h2 class="reveal d1" style="font-size:60px">智能体 ×<br><em>交通系统</em></h2>
+          <p class="reveal d3" style="font-size:30px">环形与“8”字形路网仿真：让少量自动驾驶车辆学会<b>平滑加减速</b>，缓解人类司机造成的“幽灵堵车”。</p>
+          <div class="card b reveal d4"><p style="font-size:26px">奖励 = 整个交通流的平均速度——<b>优化的是系统，而不是单辆车</b>。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P31、P36（图中讲者为 Cathy Wu，课题为混合自动驾驶交通控制）。⚠ 对原图细节的描述为概括，未核对原论文</div>
+    </section>
+
+    <!-- === 奖励设计（交互） === -->
+    <section class="slide c" data-sec="5 · 超越游戏" data-title="管理启示：奖励怎么设，AI 就怎么做（交互）">
+      <div class="toprule"></div><div class="tag"><b>PART 5</b> · 5.4 对管理者意味着什么</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:54px">奖励函数 = <em>KPI</em>：只奖励“赢”，AI 会变得莽撞</h2>
+        <div class="flex gap48" style="margin-top:20px">
+          <div class="col grow gap16">
+            <svg id="rwSvg" viewBox="0 0 1000 420" style="width:100%;height:auto;background:#fff;border:1px solid var(--rule)"></svg>
+            <div class="flex gap24 center"><span class="hint" style="white-space:nowrap">进攻程度 a</span><input type="range" id="rwA" min="0" max="100" value="30"></div>
+          </div>
+          <div class="col gap16" style="width:540px;justify-content:center">
+            <div class="kv"><span>和牌率</span><b id="rwW">—</b></div>
+            <div class="kv"><span>放铳率</span><b class="neg" id="rwD">—</b></div>
+            <div class="card b"><div class="n">两种奖励设计</div><p style="font-size:25px"><b class="ochre">赭线 · KPI-A</b>：只奖励和牌，最优在 a = 1。<br><b class="blue">蓝线 · KPI-B</b>：和牌 +1，放铳 −2，最优在<b>中间</b>。</p></div>
+            <p style="font-size:24px">真实案例：NAGA 2026 的两种新风格，一种“极力避免末位”，一种“极力争第一”，对应不同的名次奖励。⚠ 二手来源</p>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 曲线为教学模型：和牌率 w=0.15+0.20a，放铳率 d=0.06+0.22a²（假设值，非实测）；Goodhart 定律为通用管理学表述；NAGA 新风格见 Qiita 综述（R15，⚠）</div>
+      <script>(function(){const w=a=>.15+.2*a,d=a=>.06+.22*a*a,A=a=>w(a),B=a=>w(a)-2*d(a);
+        function up(){const a=rwA.value/100;const W=1000,H=420,L=70,Bt=50,T=30,R=20,X=x=>L+(W-L-R)*x,lo=-.2,hi=.4,Y=v=>H-Bt-(H-Bt-T)*(v-lo)/(hi-lo);let s=`<line x1="${L}" x2="${W-R}" y1="${Y(0)}" y2="${Y(0)}" stroke="#8a90a0"/><line x1="${L}" x2="${L}" y1="${T}" y2="${H-Bt}" stroke="#1d2433"/><text x="${W/2}" y="${H-12}" text-anchor="middle" font-size="22" fill="#4a5263">进攻程度 a（保守 → 激进）</text><text x="24" y="${H/2}" transform="rotate(-90 24 ${H/2})" text-anchor="middle" font-size="22" fill="#4a5263">每局期望奖励</text>`;
+          let pa='',pb='';for(let i=0;i<=50;i++){const x=i/50;pa+=`${X(x)},${Y(A(x))} `;pb+=`${X(x)},${Y(B(x))} `;}
+          let best=0,bv=-9;for(let i=0;i<=100;i++){const v=B(i/100);if(v>bv){bv=v;best=i/100;}}
+          s+=`<polyline points="${pa}" fill="none" stroke="#c27a1a" stroke-width="4"/><polyline points="${pb}" fill="none" stroke="#24509e" stroke-width="4"/><circle cx="${X(1)}" cy="${Y(A(1))}" r="9" fill="#c27a1a"/><circle cx="${X(best)}" cy="${Y(bv)}" r="9" fill="#24509e"/><text x="${X(best)}" y="${Y(bv)-16}" text-anchor="middle" font-size="20" fill="#24509e">KPI-B 最优 a≈${best.toFixed(2)}</text><line x1="${X(a)}" x2="${X(a)}" y1="${T}" y2="${H-Bt}" stroke="#1d2433" stroke-dasharray="6 6"/>`;
+          rwSvg.innerHTML=s;rwW.textContent=(w(a)*100).toFixed(1)+'%';rwD.textContent=(d(a)*100).toFixed(1)+'%';}
+        rwA.oninput=up;up();})();</script>
+    </section>
+
+    <!-- === 总结 === -->
+    <section class="slide c" data-sec="总结" data-title="小结：强化学习的五句话">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 6.2</b> · 总结</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:64px">带走<em>五句话</em></h2>
+        <div class="st col" style="margin-top:34px">
+          <div class="kv" style="justify-content:flex-start;gap:36px"><span class="mono blue">01</span><b style="font-size:34px;font-family:var(--f-serif-cn)">游戏是 AI 的试验场：越难的游戏，越接近真实商业决策。</b></div>
+          <div class="kv" style="justify-content:flex-start;gap:36px"><span class="mono blue">02</span><b style="font-size:34px;font-family:var(--f-serif-cn)">把决策问题数据化：状态 → 矩阵，动作 → 概率分布（softmax）。</b></div>
+          <div class="kv" style="justify-content:flex-start;gap:36px"><span class="mono blue">03</span><b style="font-size:34px;font-family:var(--f-serif-cn)">强化学习不需要标准答案，只需要奖励；机制是探索、策略更新、价值估计。</b></div>
+          <div class="kv" style="justify-content:flex-start;gap:36px"><span class="mono blue">04</span><b style="font-size:34px;font-family:var(--f-serif-cn)">自我对弈没有人类天花板：Suphx、LuckyJ 在天凤超过顶级人类。</b></div>
+          <div class="kv" style="justify-content:flex-start;gap:36px"><span class="mono blue">05</span><b style="font-size:34px;font-family:var(--f-serif-cn)">同一套方法训练了 o1 / R1 与机器人；奖励怎么设，AI 就怎么做。</b></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 本讲综合</div>
+    </section>
+
+    <!-- === 思考题 === -->
+    <section class="slide c" data-sec="总结" data-title="课堂讨论与延伸阅读（计时器）">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 6.2</b> · 总结</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col grow gap24">
+          <h2 class="reveal d1" style="font-size:58px">讨论：你所在行业里的<em>“麻将”</em>是什么？</h2>
+          <div class="st col gap16">
+            <div class="card b"><p style="font-size:29px"><b>① 什么是你的“状态、动作、奖励”？</b>（例：定价、库存补货、广告竞价、信贷审批）</p></div>
+            <div class="card t"><p style="font-size:29px"><b>② 能否有一个“可以放心试错”的模拟环境？</b>谁来建？成本多大？</p></div>
+            <div class="card o"><p style="font-size:29px"><b>③ 你会怎样设计奖励，避免被“钻空子”？</b></p></div>
+          </div>
+        </div>
+        <div class="col gap16" style="width:480px;justify-content:center;align-items:center">
+          <div class="card g" style="text-align:center;width:100%"><div class="n">DISCUSSION TIMER</div><div id="tmV" style="font:900 120px/1 var(--f-serif-en);color:var(--blue)">05:00</div><div class="flex gap16" style="justify-content:center;margin-top:20px"><button class="btn fill" id="tmB">开始</button><button class="btn" id="tmR">重置</button></div></div>
+          <p style="font-size:22px;color:var(--ink-3)">延伸阅读：Sutton &amp; Barto《Reinforcement Learning: An Introduction》；Suphx 论文；DeepSeek-R1 Nature 论文</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> Sutton & Barto（R12）；Suphx（R3）；DeepSeek-R1（R7）</div>
+      <script>(function(){let t=300,h=null;const f=()=>{tmV.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');};
+        tmB.onclick=()=>{if(h){clearInterval(h);h=null;tmB.textContent='继续';}else{h=setInterval(()=>{if(t>0){t--;f();}else{clearInterval(h);h=null;tmB.textContent='开始';}},1000);tmB.textContent='暂停';}};
+        tmR.onclick=()=>{clearInterval(h);h=null;t=300;f();tmB.textContent='开始';};f();})();</script>
+    </section>
+
+    <!-- === 谢谢 === -->
+    <section class="slide c" data-sec="总结" data-title="谢谢">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 6.2</b> · 结束</div><div class="pg"></div>
+      <div class="body flex center" style="justify-content:space-between">
+        <div class="col gap24"><h2 class="reveal d1" style="font-size:150px">谢谢！</h2><p class="reveal d2" style="font-size:36px">下一讲：<b>L7 · AI 4.0 预训练大模型、提示词工程与智能体</b></p><p class="reveal d3 mono muted" style="font-size:24px">常象宇 · 西安交通大学 管理学院 · xiangyuchang@xjtu.edu.cn</p></div>
+        <figure class="contain reveal d3" style="width:620px;height:780px"><img src="assets/p37_1.png" alt="谢谢（多语种）" style="border:none"></figure>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P37</div>
+    </section>
+
+    <!-- === 参考文献 === -->
+    <section class="slide c" data-sec="附录" data-title="参考文献">
+      <div class="toprule"></div><div class="tag"><b>附录</b> · 参考文献</div><div class="pg"></div>
+      <div class="body"><h2 class="reveal d1" style="font-size:52px;margin-bottom:18px">参考文献 <em>R1–R16</em></h2>
+        <div style="columns:2;column-gap:56px;font:400 18px/1.5 var(--f-mono);color:var(--ink-2)">
+          <p style="font:inherit;margin:0 0 9px"><b>R1</b> Silver et al.: Mastering the game of Go with deep neural networks and tree search. Nature 529, 484–489 (2016).</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R2</b> Google DeepMind: From games to biology and beyond: 10 years of AlphaGo’s impact, 2026 — deepmind.google/blog/10-years-of-alphago/</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R3</b> Li et al.: Suphx: Mastering Mahjong with Deep Reinforcement Learning. arXiv:2003.13590 (Microsoft Research Asia).</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R4</b> 腾讯：绝艺 LuckyJ 登顶天凤（2023-07-11）— news.qq.com/rain/a/20230711A03ZZ500；TechNode 2023-07-12。⚠ 厂商公布</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R5</b> ACH（Actor-Critic Hedge），ICLR 2022；转引自 mahjongengines.com/engines/luckyj/</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R6</b> Brown &amp; Sandholm: Superhuman AI for multiplayer poker (Pluribus). Science 365 (2019).</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R7</b> Guo et al.: DeepSeek-R1 incentivizes reasoning in LLMs through reinforcement learning. Nature 645, 633–638 (2025) — nature.com/articles/s41586-025-09422-z</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R8</b> Gibney: Secrets of DeepSeek AI model revealed in landmark paper. Nature News, 2025-09-17.</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R9</b> Hugging Face blog: How frontier models train on outcomes in 2026 — huggingface.co/blog/sergiopaniego/agentic-rl-2026 ⚠ 二手综述</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R10</b> RL Research: RL environments just moved a 397B model, 转述 Mercor 训练指南（2026-09-01）— rlresearch.ai/blog/environments-move-frontier-models/ ⚠ 二手</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R11</b> The Atlantic: A Game Plan for the AI Boom, 2026-03.</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R12</b> Sutton &amp; Barto: Reinforcement Learning: An Introduction (2nd ed., 2018).</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R13</b> Smith et al.: Learning and Adapting Agile Locomotion Skills by Transferring Experience (2022)，引自原 PPT P34。</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R14</b> Williams: Simple statistical gradient-following algorithms for connectionist RL (REINFORCE), 1992.</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R15</b> Cryolite: 2026年11月現在における最強の麻雀 AI は？— qiita.com/Cryolite/items/ca471277c4a45e06f820 ⚠ 个人整理</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R16</b> Mahjong Engines（麻将 AI 索引）— mahjongengines.com ⚠ 第三方索引</p>
+          <p style="font:inherit;margin:0 0 9px"><b>P</b> 原 PPT：Materials/Lecture_6.2_RL.pptx（图片多来自原稿，来源见各页）</p>
+        </div></div>
+    </section>
+
+  </div>
+</div>
+
+<!-- 底部控制条（舞台之外） -->
+<div class="deck-controls">
+  <button id="bPrev" title="上一页 ←">◀</button>
+  <button id="bOutline" title="目录 O">OUTLINE</button>
+  <span id="counter"></span>
+  <button id="bNext" title="下一页 →">▶</button>
+</div>
+
+<!-- 目录浮层：由各页 data-title / data-sec 自动生成 -->
+<div id="outline"><div class="close">ESC ✕</div></div>
+
+<!-- 侧边导航栏 -->
+<div id="sbTab" title="导航栏 S">导航</div>
+<aside id="sidebar"><div class="sbh"><b>Lecture 6.2 · 强化<span>学习</span></b><button id="sbClose">关闭 ✕</button></div><div class="sbl" id="sbList"></div></aside>
+
+<script>
+/* === 舞台缩放：整体等比缩放到窗口，保持 16:9 === */
+const stage = document.getElementById('stage');
+function fit() {
+  const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+  stage.style.transform = `translate(${(innerWidth - 1920 * s) / 2}px, ${(innerHeight - 1080 * s) / 2}px) scale(${s})`;
+}
+addEventListener('resize', fit); fit();
+
+/* === 翻页状态 === */
+const slides = [...document.querySelectorAll('.slide')];
+const counter = document.getElementById('counter');
+let cur = 0;
+slides.forEach((s, k) => { const p = s.querySelector('.pg'); if (p) p.textContent = `${String(k + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`; });
+function show(i) {
+  cur = Math.max(0, Math.min(slides.length - 1, i));
+  slides.forEach((s, k) => { s.classList.toggle('active', k === cur); s.classList.toggle('visible', k === cur); });
+  counter.textContent = `${cur + 1} / ${slides.length}`;
+  history.replaceState(null, '', '#' + (cur + 1));
+  document.querySelectorAll('#outline a').forEach((a, k) => a.classList.toggle('cur', +a.dataset.i === cur));
+  if (window.syncSidebar) syncSidebar();
+}
+
+/* === 目录（Outline）=== */
+const ol = document.getElementById('outline');
+(function buildOutline() {
+  const secs = []; let last = null;
+  slides.forEach((s, k) => {
+    const sec = s.dataset.sec; if (!sec) return;
+    if (!last || last.name !== sec) { last = { name: sec, items: [] }; secs.push(last); }
+    last.items.push({ i: k, t: s.dataset.title || '' });
+  });
+  let h = '<h1>Lecture 6.2 · 强化<span>学习</span></h1>';
+  secs.forEach(sc => {
+    h += `<div class="sec"><h4>${sc.name}</h4><div class="items">` +
+      sc.items.map(it => `<a data-i="${it.i}"><i>${String(it.i + 1).padStart(2, '0')}</i><span>${it.t}</span></a>`).join('') + '</div></div>';
+  });
+  ol.insertAdjacentHTML('beforeend', h);
+  ol.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { show(+a.dataset.i); toggleOutline(false); }));
+})();
+function toggleOutline(f) { ol.classList.toggle('open', f === undefined ? !ol.classList.contains('open') : f); }
+document.getElementById('bOutline').onclick = () => toggleOutline();
+document.getElementById('bPrev').onclick = () => show(cur - 1);
+document.getElementById('bNext').onclick = () => show(cur + 1);
+ol.querySelector('.close').onclick = () => toggleOutline(false);
+
+/* === 侧边导航栏：折叠分组，当前页高亮，可跳到任意页 === */
+const sb = document.getElementById('sidebar'), sbList = document.getElementById('sbList');
+(function buildSidebar() {
+  const secs = []; let last = null;
+  slides.forEach((s, k) => {
+    const sec = s.dataset.sec; if (!sec) return;
+    if (!last || last.name !== sec) { last = { name: sec, items: [] }; secs.push(last); }
+    last.items.push({ i: k, t: s.dataset.title || '' });
+  });
+  sbList.innerHTML = secs.map(sc => `<div class="sbs"><div class="sbt">${sc.name}<em>${sc.items.length}</em></div><div class="sbi">` +
+    sc.items.map(it => `<a data-i="${it.i}"><i>${String(it.i + 1).padStart(2, '0')}</i><span>${it.t}</span></a>`).join('') + '</div></div>').join('');
+  sbList.querySelectorAll('.sbt').forEach(t => t.addEventListener('click', () => t.parentNode.classList.toggle('open')));
+  sbList.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { show(+a.dataset.i); a.blur(); }));
+})();
+window.syncSidebar = function () {
+  sbList.querySelectorAll('a').forEach(a => a.classList.toggle('cur', +a.dataset.i === cur));
+  const c = sbList.querySelector('a.cur'); if (!c) return;
+  const g = c.closest('.sbs');
+  if (!g.classList.contains('open')) { sbList.querySelectorAll('.sbs.open').forEach(x => x.classList.remove('open')); g.classList.add('open'); }
+  if (sb.classList.contains('open')) c.scrollIntoView({ block: 'nearest' });
+};
+function toggleSidebar(f) { sb.classList.toggle('open', f === undefined ? !sb.classList.contains('open') : f); if (sb.classList.contains('open')) syncSidebar(); }
+document.getElementById('sbTab').onclick = () => toggleSidebar();
+document.getElementById('sbClose').onclick = () => toggleSidebar(false);
+document.addEventListener('mousedown', e => { if (sb.classList.contains('open') && !sb.contains(e.target) && e.target.id !== 'sbTab') toggleSidebar(false); });
+
+/* === 键盘 === */
+addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea')) return;
+  if (e.key === 'Escape') { toggleOutline(false); toggleSidebar(false); }
+  if (e.key === 's' || e.key === 'S') toggleSidebar();
+  if (e.key === 'o' || e.key === 'O') toggleOutline();
+  if (ol.classList.contains('open')) return;
+  if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); show(cur + 1); }
+  if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); show(cur - 1); }
+  if (e.key === 'Home') show(0);
+  if (e.key === 'End') show(slides.length - 1);
+});
+requestAnimationFrame(() => requestAnimationFrame(() => show((parseInt(location.hash.slice(1)) || 1) - 1)));
+</script>
+</body>
+</html>

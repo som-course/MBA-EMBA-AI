@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 8 · 智能产业实践</title>
+
+<!-- Fonts: Noto Serif SC (中文标题) / Source Serif 4 (英文衬线) / Noto Sans SC (正文) / IBM Plex Mono (标签) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@600;700;900&family=Source+Serif+4:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+<style>
+/* === THEME ===
+   暖白纸面 + 墨色 + 唯一强调蓝；青、赭仅用于示意图 */
+:root {
+  --paper: #faf8f4;
+  --paper-2: #f2eee6;
+  --ink: #1d2433;
+  --ink-2: #4a5263;
+  --ink-3: #8a90a0;
+  --blue: #24509e;
+  --teal: #1f7a72;
+  --ochre: #c27a1a;
+  --rule: #cfcac0;
+
+  --f-serif-cn: 'Noto Serif SC', 'Source Serif 4', serif;
+  --f-serif-en: 'Source Serif 4', 'Noto Serif SC', serif;
+  --f-sans: 'Noto Sans SC', sans-serif;
+  --f-mono: 'IBM Plex Mono', monospace;
+
+  --stage-bg: #e9e5dc;
+  --slide-bg: var(--paper);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* === VIEWPORT-BASE (固定 1920×1080 舞台) === */
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-viewport { position: fixed; inset: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; background: var(--slide-bg, #fff); }
+.slide { position: absolute; inset: 0; width: 1920px; height: 1080px; overflow: hidden; display: block; visibility: hidden; opacity: 0; pointer-events: none; background: var(--slide-bg, #fff); }
+.slide.active, .slide.visible { visibility: visible; opacity: 1; pointer-events: auto; z-index: 1; }
+img, video, canvas, svg { max-width: 100%; max-height: 100%; }
+.deck-controls { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 1000; }
+@media print {
+  html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+  .deck-viewport { position: static; overflow: visible; background: #fff; }
+  .deck-stage { position: static; width: auto; height: auto; transform: none !important; background: none; }
+  .slide { position: relative; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 1920px; height: 1080px; break-after: page; page-break-after: always; }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+  .deck-controls { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+}
+
+/* === 动效：进入页面时依次浮现 === */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .9s var(--ease), transform .9s var(--ease); }
+.slide.visible .reveal { opacity: 1; transform: none; }
+.d1 { transition-delay: .10s; } .d2 { transition-delay: .25s; } .d3 { transition-delay: .40s; }
+.d4 { transition-delay: .55s; } .d5 { transition-delay: .70s; } .d6 { transition-delay: .85s; }
+
+/* === COVER 封面 === */
+.cover .toprule { position: absolute; left: 96px; right: 96px; top: 56px; height: 3px; background: var(--ink); }
+.cover .kicker {
+  position: absolute; left: 96px; top: 92px;
+  font: 500 22px/1 var(--f-mono); letter-spacing: .16em; color: var(--ink-3); text-transform: uppercase;
+}
+.cover .kicker b { color: var(--blue); font-weight: 500; }
+
+.cover .title { position: absolute; left: 96px; top: 140px; width: 980px; }
+.cover h1 { font: 900 144px/1.08 var(--f-serif-cn); color: var(--ink); letter-spacing: .02em; }
+.cover h1 span { color: var(--blue); display: block; }
+.cover .sub {
+  margin-top: 28px; font: 700 38px/1.5 var(--f-serif-cn); color: var(--ink);
+}
+
+/* 本讲结构 = outline（对应原稿"papers in this talk"） */
+.cover .outline { position: absolute; left: 96px; top: 650px; width: 940px; }
+.cover .outline .hd {
+  font: 500 18px/1 var(--f-mono); letter-spacing: .18em; color: var(--ink-3);
+  padding-bottom: 14px; border-bottom: 1px solid var(--rule); margin-bottom: 4px;
+}
+.cover .outline .row {
+  display: flex; align-items: baseline; gap: 28px; padding: 11px 0;
+  border-bottom: 1px solid var(--paper-2);
+}
+.cover .outline .no { font: 500 20px/1 var(--f-mono); letter-spacing: .12em; color: var(--blue); width: 120px; white-space: nowrap; }
+.cover .outline .en { font: 600 28px/1.2 var(--f-serif-en); color: var(--ink); }
+.cover .outline .cn { font: 400 24px/1.2 var(--f-sans); color: var(--ink-2); margin-left: auto; }
+
+/* 主讲人 + 校徽 */
+.cover .who { position: absolute; left: 96px; bottom: 56px; display: flex; align-items: center; gap: 28px; }
+.cover .who img { width: 124px; height: 124px; }
+.cover .who .name { font: 700 34px/1.2 var(--f-serif-cn); color: var(--ink); }
+.cover .who .org { font: 400 24px/1.55 var(--f-sans); color: var(--ink-2); margin-top: 6px; }
+.cover .who .meta { font: 400 20px/1.6 var(--f-mono); color: var(--ink-3); letter-spacing: .02em; }
+
+/* 右侧示意图：AI 四次浪潮 */
+.cover .fig { position: absolute; left: 1120px; top: 190px; width: 704px; height: 760px; }
+.fig svg { width: 100%; height: 100%; max-width: none; max-height: none; overflow: visible; }
+.fig .curve { stroke-dasharray: 1200; stroke-dashoffset: 1200; transition: stroke-dashoffset 2.2s .5s var(--ease); }
+.slide.visible .fig .curve { stroke-dashoffset: 0; }
+.fig .node { opacity: 0; transform-box: fill-box; transform-origin: center; transform: scale(.2); transition: opacity .6s var(--ease), transform .6s var(--ease); }
+.slide.visible .fig .node { opacity: 1; transform: none; }
+.fig .n1 { transition-delay: .6s; } .fig .n2 { transition-delay: 1.0s; } .fig .n3 { transition-delay: 1.4s; } .fig .n4 { transition-delay: 1.9s; }
+.fig .lab { opacity: 0; transition: opacity .8s ease; }
+.slide.visible .fig .lab { opacity: 1; }
+.fig .l1 { transition-delay: .8s; } .fig .l2 { transition-delay: 1.2s; } .fig .l3 { transition-delay: 1.6s; } .fig .l4 { transition-delay: 2.1s; }
+.fig text { font-family: var(--f-sans); }
+.fig .ver { font-family: var(--f-mono); font-weight: 500; }
+.fig .cap { font-family: var(--f-serif-en); font-style: italic; }
+
+/* === 页码/导航（舞台之外的 UI） === */
+.deck-controls { font: 500 14px var(--f-mono); color: var(--ink-3); letter-spacing: .1em; user-select: none; }
+
+/* =====================================================
+   CONTENT SLIDES（内页通用组件）
+   ===================================================== */
+.c .toprule { position: absolute; left: 96px; right: 96px; top: 56px; height: 3px; background: var(--ink); }
+.c .tag { position: absolute; left: 96px; top: 80px; font: 500 20px/1 var(--f-mono); letter-spacing: .16em; color: var(--ink-3); text-transform: uppercase; }
+.c .tag b { color: var(--blue); font-weight: 500; }
+.c .pg  { position: absolute; right: 96px; top: 80px; font: 500 20px/1 var(--f-mono); letter-spacing: .1em; color: var(--ink-3); }
+.c .body { position: absolute; left: 96px; right: 96px; top: 140px; bottom: 96px; }
+.c .src { position: absolute; left: 96px; right: 96px; bottom: 34px; padding-top: 10px; border-top: 1px solid var(--rule);
+          font: 400 17px/1.45 var(--f-mono); color: var(--ink-3); letter-spacing: .01em; }
+.c .src b { color: var(--ink-2); font-weight: 500; }
+
+.c h2 { font: 900 72px/1.18 var(--f-serif-cn); color: var(--ink); letter-spacing: .01em; }
+.c h2 em { font-style: normal; color: var(--blue); }
+.c h3 { font: 700 36px/1.3 var(--f-serif-cn); color: var(--ink); }
+.c .lede { font: 400 34px/1.65 var(--f-sans); color: var(--ink-2); }
+.c .lede b, .c p b { color: var(--ink); font-weight: 700; }
+.c p { font: 400 30px/1.65 var(--f-sans); color: var(--ink-2); }
+.c .mono { font-family: var(--f-mono); }
+.c .blue { color: var(--blue); } .c .teal { color: var(--teal); } .c .ochre { color: var(--ochre); }
+.c .muted { color: var(--ink-3); }
+.c .en { font-family: var(--f-serif-en); font-style: italic; }
+
+/* 布局 */
+.c .abs { position: absolute; }
+.c .flex { display: flex; } .c .col { display: flex; flex-direction: column; }
+.c .gap16 { gap: 16px; } .c .gap24 { gap: 24px; } .c .gap32 { gap: 32px; } .c .gap48 { gap: 48px; }
+.c .grow { flex: 1; } .c .center { align-items: center; } .c .between { justify-content: space-between; }
+
+/* 图片 */
+.c figure { margin: 0; position: relative; }
+.c figure img { display: block; width: 100%; height: 100%; object-fit: cover; border: 1px solid var(--rule); background: #fff; }
+.c figure.contain img { object-fit: contain; }
+.c figcaption { margin-top: 10px; font: 400 18px/1.4 var(--f-mono); color: var(--ink-3); }
+
+/* 卡片 */
+.c .card { background: #fff; border: 1px solid var(--rule); border-top: 4px solid var(--ink); padding: 28px 30px; }
+.c .card.b { border-top-color: var(--blue); } .c .card.t { border-top-color: var(--teal); } .c .card.o { border-top-color: var(--ochre); } .c .card.g { border-top-color: var(--ink-3); }
+.c .card h3 { font-size: 34px; margin-bottom: 12px; }
+.c .card p { font-size: 27px; line-height: 1.6; }
+.c .card .n { font: 500 20px/1 var(--f-mono); letter-spacing: .14em; color: var(--ink-3); margin-bottom: 14px; }
+
+/* 大数字 */
+.c .stat .v { font: 900 120px/1 var(--f-serif-en); color: var(--blue); letter-spacing: -.02em; }
+.c .stat .v small { font-size: 52px; font-weight: 700; margin-left: 4px; }
+.c .stat .l { font: 400 26px/1.45 var(--f-sans); color: var(--ink-2); margin-top: 10px; }
+
+/* 引用 */
+.c .quote { font: 700 56px/1.4 var(--f-serif-cn); color: var(--ink); }
+.c .quote .en { display: block; margin-top: 22px; font: 400 italic 34px/1.5 var(--f-serif-en); color: var(--ink-2); }
+.c .quote-mark { font: 900 200px/0.6 var(--f-serif-en); color: var(--blue); opacity: .18; }
+
+/* 表格 */
+.c table { border-collapse: collapse; width: 100%; }
+.c th { font: 500 20px/1 var(--f-mono); letter-spacing: .12em; text-align: left; color: var(--ink-3); padding: 0 20px 14px 0; border-bottom: 2px solid var(--ink); text-transform: uppercase; }
+.c td { font: 400 27px/1.5 var(--f-sans); color: var(--ink-2); padding: 18px 20px 18px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.c td:first-child { font-weight: 700; color: var(--ink); white-space: nowrap; }
+
+/* 标签/药丸 */
+.c .pill { display: inline-block; white-space: nowrap; flex: none; font: 500 20px/1 var(--f-mono); letter-spacing: .08em; padding: 8px 14px; border: 1.5px solid currentColor; border-radius: 99px; }
+.c .pill.fill { color: #fff; background: var(--blue); border-color: var(--blue); }
+
+/* 章节页 */
+.chapter .big { position: absolute; left: 96px; top: 150px; font: 900 420px/1 var(--f-serif-en); color: var(--blue); opacity: .10; letter-spacing: -.04em; }
+.chapter .ttl { position: absolute; left: 96px; top: 420px; }
+.chapter .ttl .k { font: 500 24px/1 var(--f-mono); letter-spacing: .2em; color: var(--blue); margin-bottom: 26px; }
+.chapter .ttl h2 { font-size: 150px; line-height: 1.1; }
+.chapter .ttl .s { margin-top: 28px; font: 400 40px/1.5 var(--f-sans); color: var(--ink-2); }
+.chapter .subs { position: absolute; left: 96px; right: 96px; bottom: 100px; display: flex; gap: 0; border-top: 1px solid var(--rule); }
+.chapter .subs div { flex: 1; padding-top: 20px; font: 400 26px/1.4 var(--f-sans); color: var(--ink-2); }
+.chapter .subs div b { display: block; font: 500 20px/1 var(--f-mono); letter-spacing: .14em; color: var(--blue); margin-bottom: 10px; }
+
+/* 逐项浮现 */
+.st > * { opacity: 0; transform: translateY(22px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
+.slide.visible .st > * { opacity: 1; transform: none; }
+.st > *:nth-child(1) { transition-delay: .15s; } .st > *:nth-child(2) { transition-delay: .3s; } .st > *:nth-child(3) { transition-delay: .45s; }
+.st > *:nth-child(4) { transition-delay: .6s; } .st > *:nth-child(5) { transition-delay: .75s; } .st > *:nth-child(6) { transition-delay: .9s; }
+.st > *:nth-child(7) { transition-delay: 1.05s; } .st > *:nth-child(8) { transition-delay: 1.2s; }
+
+/* 交互控件 */
+.c .tabs { display: flex; gap: 12px; }
+.c .tab { font: 500 22px/1 var(--f-mono); letter-spacing: .06em; padding: 16px 24px; border: 1.5px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; transition: all .2s; }
+.c .tab:hover { background: var(--paper-2); }
+.c .tab.on { background: var(--ink); color: #fff; }
+.c .tab.b.on { background: var(--blue); border-color: var(--blue); }
+.c .hint { font: 400 20px/1 var(--f-mono); color: var(--ink-3); letter-spacing: .06em; }
+
+/* outline 浮层 */
+#outline { position: fixed; inset: 0; z-index: 2000; background: rgba(250,248,244,.97); display: none; overflow: auto; padding: 5vh 6vw; font-family: var(--f-sans); color: var(--ink); }
+#outline.open { display: block; }
+#outline h1 { font: 900 clamp(28px,3.4vw,52px)/1.2 var(--f-serif-cn); margin-bottom: 3vh; }
+#outline h1 span { color: var(--blue); }
+#outline .sec { margin-bottom: 3vh; }
+#outline .sec h4 { font: 500 clamp(12px,1vw,16px)/1 var(--f-mono); letter-spacing: .16em; color: var(--blue); border-bottom: 1px solid var(--rule); padding-bottom: 1vh; margin-bottom: 1.4vh; }
+#outline .items { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(220px,22vw,360px), 1fr)); gap: .6vh 2vw; }
+#outline a { display: flex; gap: 12px; padding: .8vh 0; color: var(--ink); text-decoration: none; font-size: clamp(14px,1.2vw,20px); line-height: 1.4; cursor: pointer; border-bottom: 1px dotted var(--rule); }
+#outline a i { font: normal 500 clamp(11px,.9vw,14px)/1.8 var(--f-mono); color: var(--ink-3); min-width: 2.2em; }
+#outline a:hover { color: var(--blue); }
+#outline a.cur { color: var(--blue); font-weight: 700; }
+#outline .close { position: fixed; right: 3vw; top: 3vh; font: 500 14px var(--f-mono); letter-spacing: .1em; color: var(--ink-3); cursor: pointer; }
+.deck-controls { display: flex; gap: 22px; align-items: center; background: rgba(250,248,244,.85); padding: 6px 16px; border-radius: 99px; }
+.deck-controls button { all: unset; cursor: pointer; color: var(--ink-2); font: 500 14px var(--f-mono); letter-spacing: .1em; }
+.deck-controls button:hover { color: var(--blue); }
+
+/* 侧边导航栏 */
+#sbTab { position: fixed; left: 0; top: 50%; transform: translateY(-50%); z-index: 1500; width: 26px; height: 96px; background: rgba(250,248,244,.9); border: 1px solid var(--rule); border-left: none; border-radius: 0 8px 8px 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font: 500 13px var(--f-mono); color: var(--ink-3); writing-mode: vertical-rl; letter-spacing: .2em; transition: opacity .25s, color .2s; opacity: .55; }
+#sbTab:hover { opacity: 1; color: var(--blue); }
+#sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 340px; z-index: 1800; background: rgba(250,248,244,.98); border-right: 1px solid var(--rule); box-shadow: 6px 0 24px rgba(29,36,51,.08); transform: translateX(-102%); transition: transform .3s cubic-bezier(.16,1,.3,1); display: flex; flex-direction: column; font-family: var(--f-sans); color: var(--ink); }
+#sidebar.open { transform: none; }
+#sidebar .sbh { padding: 18px 20px 12px; border-bottom: 1px solid var(--rule); display: flex; align-items: center; justify-content: space-between; }
+#sidebar .sbh b { font: 900 17px var(--f-serif-cn); } #sidebar .sbh b span { color: var(--blue); }
+#sidebar .sbh button { all: unset; cursor: pointer; font: 500 12px var(--f-mono); color: var(--ink-3); letter-spacing: .1em; }
+#sidebar .sbh button:hover { color: var(--blue); }
+#sidebar .sbl { overflow-y: auto; flex: 1; padding: 6px 0 24px; }
+#sidebar .sbs > .sbt { display: flex; align-items: center; gap: 8px; padding: 11px 20px; cursor: pointer; font: 500 12px var(--f-mono); letter-spacing: .1em; color: var(--blue); border-top: 1px solid var(--rule); user-select: none; }
+#sidebar .sbs:first-child > .sbt { border-top: none; }
+#sidebar .sbt:before { content: '▸'; font-size: 11px; transition: transform .2s; }
+#sidebar .sbs.open > .sbt:before { transform: rotate(90deg); }
+#sidebar .sbt em { margin-left: auto; font-style: normal; color: var(--ink-3); }
+#sidebar .sbi { display: none; }
+#sidebar .sbs.open .sbi { display: block; }
+#sidebar .sbi a { display: flex; gap: 10px; padding: 7px 20px 7px 34px; font-size: 14px; line-height: 1.4; color: var(--ink-2); cursor: pointer; text-decoration: none; border-left: 3px solid transparent; }
+#sidebar .sbi a i { font: normal 500 11px/1.9 var(--f-mono); color: var(--ink-3); min-width: 1.9em; }
+#sidebar .sbi a:hover { background: #f0ece3; color: var(--ink); }
+#sidebar .sbi a.cur { color: var(--blue); font-weight: 700; border-left-color: var(--blue); background: #eef2fa; }
+@media print { #sbTab, #sidebar { display: none !important; } }
+
+/* =====================================================
+   LECTURE 8 专用组件
+   ===================================================== */
+:root { --lD: #1f7a72; --lI: #c27a1a; --lF: #24509e; --lA: #5a6272; }
+.c .chip { display: inline-block; font: 500 24px/1.2 var(--f-sans); padding: 12px 20px; border: 1.5px solid var(--ink); background: #fff; color: var(--ink); }
+.c .chip.b { border-color: var(--blue); color: var(--blue); } .c .chip.t { border-color: var(--teal); color: var(--teal); } .c .chip.o { border-color: var(--ochre); color: var(--ochre); }
+.c .chip.sm { font-size: 21px; padding: 9px 15px; }
+.c .hb { display: flex; align-items: center; gap: 20px; margin: 12px 0; }
+.c .hb .lb { width: 270px; font: 500 26px/1.2 var(--f-sans); color: var(--ink); }
+.c .hb .tr { flex: 1; height: 34px; background: var(--paper-2); position: relative; }
+.c .hb .fl { height: 100%; background: var(--blue); width: 0; transition: width 1s var(--ease); }
+.slide.visible .hb .fl { width: var(--w); }
+.c .hb .fl.t { background: var(--teal); } .c .hb .fl.o { background: var(--ochre); } .c .hb .fl.g { background: var(--ink-3); } .c .hb .fl.n { background: #c9453b; }
+.c .hb .vl { width: 150px; font: 500 26px/1 var(--f-mono); color: var(--ink-2); }
+.c .shot { border: 1px solid var(--rule); background: #fff; display: block; }
+.c .kv { display: flex; gap: 18px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--rule); }
+.c .kv > b { font: 500 22px/1.3 var(--f-mono); color: var(--blue); width: 170px; flex: none; }
+.c .kv > span b { color: var(--ink); font-weight: 700; }
+.c .kv span { font: 400 28px/1.45 var(--f-sans); color: var(--ink-2); }
+.c .arrow { font: 400 54px/1 var(--f-serif-en); color: var(--ink-3); align-self: center; }
+.c input[type=range] { accent-color: var(--blue); height: 6px; }
+
+/* 公司方块 */
+.c .tiles { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; }
+.c .tile { position: relative; height: 84px; padding: 10px 10px 0; background: var(--tc); color: #fff; cursor: pointer; display: flex; align-items: flex-start; transition: opacity .25s, transform .15s, outline-color .15s; outline: 3px solid transparent; outline-offset: 2px; overflow: hidden; }
+.c .tile span { font: 700 21px/1.18 var(--f-sans); }
+.c .tile:hover { transform: translateY(-3px); }
+.c .tile.sel { outline-color: var(--ink); }
+.c .tile.dim { opacity: .14; }
+.c .tile.nw::after { content: 'NEW'; position: absolute; right: 7px; bottom: 6px; font: 500 14px/1 var(--f-mono); letter-spacing: .1em; color: #fff; background: rgba(0,0,0,.28); padding: 3px 5px; }
+.c .legend { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.c .legend i { display: inline-block; width: 18px; height: 18px; margin-right: 8px; vertical-align: -2px; }
+
+/* 层叠示意 */
+.c .stack { display: flex; flex-direction: column; gap: 12px; }
+.c .lyr { display: flex; align-items: stretch; background: #fff; border: 1.5px solid var(--rule); cursor: pointer; transition: all .2s; border-left: 14px solid var(--lc); }
+.c .lyr:hover { border-color: var(--lc); }
+.c .lyr.on { background: color-mix(in srgb, var(--lc) 9%, #fff); border-color: var(--lc); }
+.c .lyr .k { width: 340px; padding: 22px 26px; flex: none; }
+.c .lyr .k b { display: block; font: 700 36px/1.2 var(--f-serif-cn); color: var(--ink); }
+.c .lyr .k i { display: block; margin-top: 6px; font: 500 20px/1.2 var(--f-mono); letter-spacing: .08em; color: var(--lc); font-style: normal; }
+.c .lyr .v { flex: 1; padding: 22px 26px 22px 8px; display: flex; align-items: center; font: 400 26px/1.45 var(--f-sans); color: var(--ink-2); }
+.c .lyr .n { width: 150px; flex: none; display: flex; align-items: center; justify-content: center; font: 900 64px/1 var(--f-serif-en); color: var(--lc); }
+.c .lyr .n small { font: 400 20px/1 var(--f-sans); color: var(--ink-3); margin-left: 8px; }
+
+/* 公司小卡片 */
+.c .co { background: #fff; border: 1px solid var(--rule); border-top: 4px solid var(--cc, var(--ink)); padding: 20px 24px; }
+.c .co .nm { font: 700 30px/1.2 var(--f-serif-cn); color: var(--ink); display: flex; align-items: baseline; gap: 12px; }
+.c .co .nm em { font: 500 17px/1 var(--f-mono); letter-spacing: .1em; font-style: normal; color: #fff; background: var(--blue); padding: 4px 7px; }
+.c .co .ds { margin-top: 8px; font: 400 24px/1.45 var(--f-sans); color: var(--ink-2); }
+.c .co .mt { margin-top: 12px; display: flex; gap: 22px; font: 500 21px/1 var(--f-mono); color: var(--ink-3); }
+.c .co .mt b { color: var(--ink); font-weight: 500; }
+.c .co .xx { margin-top: 10px; font: 400 21px/1.45 var(--f-sans); color: var(--ink-3); }
+.c .thumb { width: 100%; height: 100%; object-fit: cover; object-position: top left; border: 1px solid var(--rule); background: #fff; display: block; }
+
+/* 时间线 */
+.c .tl { position: relative; display: flex; gap: 0; border-top: 3px solid var(--ink); }
+.c .tl > div { flex: 1; padding: 26px 20px 0 0; position: relative; }
+.c .tl > div::before { content: ''; position: absolute; left: 0; top: -12px; width: 20px; height: 20px; border-radius: 50%; background: var(--blue); }
+.c .tl .d { font: 500 20px/1 var(--f-mono); letter-spacing: .1em; color: var(--blue); }
+.c .tl h4 { margin-top: 12px; font: 700 29px/1.3 var(--f-serif-cn); color: var(--ink); }
+.c .tl p { margin-top: 8px; font-size: 23px; line-height: 1.5; }
+
+.c .sw { display: inline-flex; border: 1.5px solid var(--ink); }
+.c .sw button { all: unset; cursor: pointer; padding: 13px 22px; font: 500 21px/1 var(--f-mono); letter-spacing: .06em; color: var(--ink); }
+.c .sw button.on { background: var(--ink); color: #fff; }
+.c .num-big { font: 900 96px/1 var(--f-serif-en); color: var(--blue); letter-spacing: -.02em; }
+.c .num-big small { font-size: 40px; font-weight: 700; margin-left: 4px; }
+.cover h1 { font-size: 128px; }
+.cover .outline { top: 596px; }
+
+.co.sm .nm{font-size:25px;line-height:1.2}.co.sm .nm em{font-size:13px}
+.co.sm .mt{margin-top:4px;font-size:18px}
+</style>
+</head>
+<body>
+
+<div class="deck-viewport">
+  <div class="deck-stage" id="stage">
+<script>
+/* Forbes AI 50 · 2026（2026-04-16 发布）。
+   f = 融资（十亿美元，Forbes 口径，经 foundevo / note.com 汇总 ⚠）；v = 估值（十亿美元，2026-04 前后公开报道 ⚠，null=未披露）；
+   n = 2026 新晋；th = 原 PPT 官网截图（2025 年）；L: 0 数据与知识 1 开发与算力 2 基础模型 3 应用 */
+window.LAYERS = [
+  { k: 'D', n: '数据与知识层', e: 'Data & Knowledge', c: '#1f7a72', d: '训练数据、企业数据与知识——模型的“原料”和“记忆”' },
+  { k: 'I', n: '开发与算力层', e: 'Dev & Compute', c: '#c27a1a', d: '推理云、芯片、数据中心，以及 AI 编程工具——模型的“产线”' },
+  { k: 'F', n: '基础模型层', e: 'Foundation Models', c: '#24509e', d: '通用大模型与前沿研究——能力的“发动机”' },
+  { k: 'A', n: '应用层', e: 'Applications', c: '#5a6272', d: '面向行业与岗位的产品——价值的“出口”' }
+];
+window.DOMAINS = ['知识工作', '客服与运营', '医疗与生命科学', '法律与金融', '教育', '创意与多媒体', '机器人与自动驾驶'];
+window.CO = [
+  // 数据与知识层
+  { id: 'Databricks', L: 0, f: 20, v: 134, th: 'databricks', cn: '数据 + AI 湖仓平台', x: '2026-08 融资 50 亿美元、估值 1,900 亿；年化收入 > 70 亿' },
+  { id: 'Glean', L: 0, f: .77, v: 7.2, th: 'glean', cn: '企业知识搜索与工作助手', x: '连接上百个企业应用，带权限地检索与问答' },
+  { id: 'Surge AI', L: 0, f: 0, v: 24, n: 1, cn: '人类评估与高质量标注数据', x: '融资为 0（未接受外部融资）；估值 ≈240 亿为估计 ⚠' },
+  { id: 'Mercor', L: 0, f: .483, v: 10, th: 'mercor', cn: '专家人才市场 + AI 训练数据', x: '从“AI 招聘”转向为实验室提供专家数据 ⚠ 归类为本课判断' },
+  { id: 'Cyera', L: 0, f: 1.7, v: 9, n: 1, cn: '云端数据发现、分类与安全', x: '半年内估值由 60 亿升至 90 亿' },
+  // 开发与算力层
+  { id: 'Baseten', L: 1, f: .585, v: 5, th: 'baseten', cn: '模型推理与部署平台', x: '把模型变成可自动扩缩容的生产 API' },
+  { id: 'Fireworks AI', L: 1, f: .327, v: 4, th: 'fireworks', cn: '开放模型的高速推理云', x: '女性创始人公司；托管 400+ 种开放权重模型' },
+  { id: 'Together AI', L: 1, f: .548, v: 3.3, th: 'together', cn: '开放模型的训练与推理云', x: '客户包括 Zoom、Salesforce' },
+  { id: 'Fal', L: 1, f: .33, v: 4.5, n: 1, cn: '图像、视频、音频模型的推理基础设施', x: '收入一年增长约 10 倍' },
+  { id: 'Crusoe', L: 1, f: 2.9, v: 10, th: 'crusoe', cn: 'AI 数据中心与云 GPU', x: '从电力到机房一体化；在得州 Abilene 建超大数据中心' },
+  { id: 'SambaNova', L: 1, f: 1.5, v: null, th: 'sambanova', cn: 'AI 专用芯片与系统', x: '2026 发布第五代 SN50 芯片' },
+  { id: 'Cursor', L: 1, f: 3.3, v: 29.3, th: 'cursor', cn: 'AI 原生代码编辑器', x: '2026-06 被 SpaceX 以 600 亿美元收购（8 月完成）' },
+  { id: 'Cognition', L: 1, f: 1, v: 10.2, n: 1, cn: '自主软件工程智能体 Devin', x: '2026-09 估值 480 亿；收购了 Windsurf 余下部分' },
+  { id: 'Replit', L: 1, f: .88, v: null, n: 1, cn: '浏览器内“从想法到部署”的开发环境', x: '' },
+  { id: 'Lovable', L: 1, f: .552, v: 6, n: 1, cn: '用自然语言生成网页与应用', x: '上线 8 个月年化收入破 1 亿美元（据报道）' },
+  // 基础模型层
+  { id: 'OpenAI', L: 2, f: 182.6, v: 852, th: 'openai', cn: 'GPT 系列、ChatGPT、Codex', x: '2026-11 新一轮估值 1.25 万亿；IPO 推迟到 2027' },
+  { id: 'Anthropic', L: 2, f: 60, v: 380, th: 'anthropic', cn: 'Claude 系列；强调安全与企业场景', x: '2026-05 估值 9,650 亿；2026-11 IPO 路演' },
+  { id: 'Mistral AI', L: 2, f: 3.1, v: 14, th: 'mistral', cn: '欧洲的开放权重大模型', x: '2026-09 融资 30 亿欧元、估值 > 210 亿欧元' },
+  { id: 'Cohere', L: 2, f: 1.6, v: 7, th: 'cohere', cn: '可私有化部署的企业大模型', x: '主打“North”企业平台与主权部署' },
+  { id: 'SSI', L: 2, f: 3, v: 32, n: 1, cn: 'Safe Superintelligence：只做安全超级智能研究', x: '无产品、无收入；Ilya Sutskever 联合创立' },
+  { id: 'Thinking Machines', L: 2, f: 2, v: 12, th: 'thinking-machines', cn: 'Mira Murati 创办；Tinker 微调 API', x: '女性创始人公司；估值 120 亿（洽谈 ≥ 400 亿 ⚠）' },
+  { id: 'Reflection', L: 2, f: 2.1, v: 8, n: 1, cn: '美国的开放权重模型挑战者', x: '2024 年成立；尚未公开发布自有模型' },
+  { id: 'Black Forest Labs', L: 2, f: .45, v: 3.3, n: 1, cn: 'FLUX 图像/视频生成模型', x: '客户含 Adobe、Canva、Meta、微软' },
+  { id: 'World Labs', L: 2, f: 1, v: null, th: 'world-labs', cn: '李飞飞创办：空间智能 / 世界模型', x: '女性创始人公司；2026-02 融资 10 亿美元' },
+  // 应用层
+  { id: 'Perplexity', L: 3, d: 0, f: 1.7, v: 20, th: 'perplexity', cn: '带来源的 AI 搜索与研究', x: '最近一轮估值约 200 亿 ⚠' },
+  { id: 'Notion', L: 3, d: 0, f: .33, v: 11, th: 'notion', cn: '笔记、知识库与项目管理一体化', x: '2013 年成立，榜单上最老的公司之一' },
+  { id: 'Gamma', L: 3, d: 0, f: .091, v: 2.1, n: 1, cn: '一句话生成演示文稿与网页', x: '约 50 人、年化收入 > 1 亿美元；2023 年起盈利' },
+  { id: 'Genspark', L: 3, d: 0, f: .545, v: 1.6, n: 1, cn: '通用 Agent：调研、做 PPT、打电话', x: '一年内年化收入 > 2 亿美元（据报道）' },
+  { id: 'Clay', L: 3, d: 0, f: .204, v: 5, th: 'clay', cn: '销售线索挖掘与个性化触达', x: '2025-12 年化收入达 1 亿美元' },
+  { id: 'Listen Labs', L: 3, d: 0, f: .1, v: .5, n: 1, cn: 'AI 访谈用户并做研究分析', x: '已完成 100 万次以上访谈' },
+  { id: 'Sierra', L: 3, d: 1, f: .635, v: 10, th: 'sierra', cn: '企业客户服务 Agent', x: '能操作后台：查单、改期、退款' },
+  { id: 'Decagon', L: 3, d: 1, f: .481, v: 4.5, th: 'decagon', cn: '客服 Agent，可执行退款与改合同', x: '客户含 Duolingo、Hertz、Notion' },
+  { id: 'EliseAI', L: 3, d: 1, f: .392, v: null, n: 1, cn: '房产与医疗前台的对话 Agent', x: '美国大型物业公司 80% 以上在用；女性创始人公司' },
+  { id: 'Abridge', L: 3, d: 2, f: .83, v: 5.3, th: 'abridge', cn: '医患对话 → 病历与计费信息', x: '落地于 Johns Hopkins 等医疗机构' },
+  { id: 'OpenEvidence', L: 3, d: 2, f: .7, v: 12, th: 'openevidence', cn: '医生专用的循证问答', x: '估值较上年 4 月增长约 12 倍 ⚠' },
+  { id: 'Chai Discovery', L: 3, d: 2, f: .225, v: 1.3, n: 1, cn: '设计蛋白与抗体的药物发现模型', x: '成立约两年；OpenAI 为早期投资人' },
+  { id: 'Harvey', L: 3, d: 3, f: 1, v: 11, th: 'harvey', cn: '律所与法务的 AI 助手', x: '2026-09 估值 155 亿；1,300 家机构、约 10 万法律人士' },
+  { id: 'Legora', L: 3, d: 3, f: .815, v: 5.55, n: 1, cn: '批量审阅合同的欧洲法律 AI', x: '总部斯德哥尔摩，向美国扩张' },
+  { id: 'Rogo', L: 3, d: 3, f: .15, v: null, n: 1, cn: '投行与资管的研究与分析助手', x: '约 25,000 名银行家/投资者在用' },
+  { id: 'Speak', L: 3, d: 4, f: .162, v: 1, th: 'speak', cn: '与 AI 导师做口语对话练习', x: '2016 年成立，估值约 10 亿' },
+  { id: 'Midjourney', L: 3, d: 5, f: 0, v: null, th: 'midjourney', cn: '提示词生成图像', x: '零外部融资、盈利（2024 年收入约 3 亿美元 ⚠）' },
+  { id: 'ElevenLabs', L: 3, d: 5, f: .8, v: 11, th: 'elevenlabs', cn: '语音合成、克隆与配音', x: '2025 年盈利约 1.16 亿美元（据报道）' },
+  { id: 'Runway', L: 3, d: 5, f: .86, v: 5.3, th: 'runway', cn: '生成式视频制作与编辑', x: '被用于《The Late Show》制作' },
+  { id: 'Synthesia', L: 3, d: 5, f: .535, v: 4, th: 'synthesia', cn: 'AI 数字人视频，用于培训与营销', x: '总部伦敦' },
+  { id: 'HeyGen', L: 3, d: 5, f: .074, v: null, n: 1, cn: 'AI 数字人视频与视频翻译', x: '2025-11 月收入约 1,400 万美元，近 20 万付费客户' },
+  { id: 'Krea', L: 3, d: 5, f: .083, v: .5, n: 1, cn: '图像与视频的生成、编辑、放大一体化', x: '' },
+  { id: 'Suno', L: 3, d: 5, f: .375, v: 2.45, th: 'suno', cn: '文字生成带人声的完整歌曲', x: '约 200 万付费用户（据报道）；版权争议' },
+  { id: 'Skild AI', L: 3, d: 6, f: 2, v: 14, th: 'skild', cn: '通用机器人“大脑”', x: '' },
+  { id: 'Physical Intelligence', L: 3, d: 6, f: 1, v: 5.6, n: 1, cn: '面向多种机器人的视觉-语言-动作模型', x: '' },
+  { id: 'Applied Intuition', L: 3, d: 6, f: .85, v: 15, n: 1, cn: '自动驾驶仿真与车载软件', x: '客户含大众、通用；估计收入约 8 亿美元 ⚠' }
+];
+window.DROPPED = ['Captions', 'Coactive', 'DeepL', 'Figure', 'Hebbia', 'Hugging Face', 'Lambda', 'LangChain', 'Luminance', 'Photoroom', 'Pika', 'Sakana', 'Scale AI', 'Snorkel', 'StackBlitz', 'Vannevar Labs', 'VAST Data', 'Windsurf', 'Writer', 'xAI'];
+window.fmtB = (x) => x >= 100 ? x.toFixed(x % 1 ? 1 : 0) + 'B' : x >= 10 ? x.toFixed(x % 1 ? 1 : 0) + 'B' : x >= 1 ? x.toFixed(1).replace(/\.0$/, '') + 'B' : Math.round(x * 1000) + 'M';
+window.coCard = (id, o = {}) => {
+  const c = CO.find(x => x.id === id), l = LAYERS[c.L];
+  return `<div class="co${o.nods?' sm':''}" style="--cc:${l.c};${o.st || ''}"><div class="nm">${c.id}${c.n ? '<em>NEW</em>' : ''}</div><div class="ds" ${o.nods ? 'style="display:none"' : o.dsz ? `style="font-size:${o.dsz}px"` : ''}>${c.cn}</div>
+  <div class="mt"><span>融资 <b>${c.f ? fmtB(c.f) : '0'}</b></span><span>估值 <b>${c.v ? fmtB(c.v) : '—'}</b></span></div>${o.nox || !c.x ? '' : `<div class="xx" ${o.xsz ? `style="font-size:${o.xsz}px"` : ''}>${c.x}</div>`}</div>`;
+};
+</script>
+
+    <!-- === SLIDE 1 · 封面 === -->
+    <section class="slide cover" data-sec="开场" data-title="封面">
+      <div class="toprule"></div>
+      <div class="kicker reveal d1"><b>Lecture 8</b> &nbsp;·&nbsp; 人工智能产业实践 &nbsp;·&nbsp; MBA / EMBA</div>
+
+      <div class="title">
+        <h1 class="reveal d2">智能产业<span>实践</span></h1>
+        <p class="sub reveal d3">读懂 Forbes AI 50（2026）：<br>谁在做 · 在哪一层 · 改变了什么</p>
+      </div>
+
+      <div class="outline reveal d4">
+        <div class="hd">IN THIS LECTURE</div>
+        <div class="row"><span class="no">PART 1</span><span class="en">The AI 50</span><span class="cn">榜单：50 家公司与一年的变化</span></div>
+        <div class="row"><span class="no">PART 2</span><span class="en">Four Layers</span><span class="cn">四层产业栈：数据 · 算力 · 模型 · 应用</span></div>
+        <div class="row"><span class="no">PART 3</span><span class="en">Business &amp; Value</span><span class="cn">商业与价值：钱、人、结局</span></div>
+        <div class="row"><span class="no">PART 4</span><span class="en">What Changes</span><span class="cn">认知改变：个人 · 组织 · 系统</span></div>
+      </div>
+
+      <div class="who reveal d5">
+        <img src="assets/logo-xjtu-red.png" alt="西安交通大学校徽">
+        <div>
+          <div class="name">常象宇 <span style="font-family:var(--f-serif-en);font-weight:600;font-size:28px;color:var(--ink-2)">Xiangyu Chang</span></div>
+          <div class="org">西安交通大学 管理学院</div>
+          <div class="meta">xiangyuchang@xjtu.edu.cn</div>
+        </div>
+      </div>
+
+      <!-- 示意图：50 家 = 26 应用 + 9 模型 + 10 开发算力 + 5 数据；实心 = 2026 新晋 -->
+      <div class="fig reveal d3">
+        <svg viewBox="0 0 704 760" id="cvSvg" aria-label="AI 50 的四层结构"></svg>
+      </div>
+      <script>(function () {
+        const cnt = L => CO.filter(c => c.L === L).length, nw = L => CO.filter(c => c.L === L && c.n).length;
+        const rows = [
+          { n: '应用层', e: 'APPLICATIONS', c: '#5a6272', y: 70, L: 3 },
+          { n: '基础模型层', e: 'FOUNDATION MODELS', c: '#24509e', y: 270, L: 2 },
+          { n: '开发与算力层', e: 'DEV & COMPUTE', c: '#c27a1a', y: 420, L: 1 },
+          { n: '数据与知识层', e: 'DATA & KNOWLEDGE', c: '#1f7a72', y: 570, L: 0 }
+        ];
+        rows.forEach(r => { r.cnt = cnt(r.L); r.nw = nw(r.L); });
+        let h = '<line x1="10" y1="690" x2="694" y2="690" stroke="#1d2433" stroke-width="3"/>', k = 0;
+        rows.forEach(r => {
+          h += `<g class="lab l1" style="transition-delay:${.6 + k * .25}s"><text x="10" y="${r.y - 22}" font-size="28" font-weight="700" fill="${r.c}">${r.n}</text><text x="694" y="${r.y - 22}" text-anchor="end" font-size="19" fill="#8a90a0" font-family="IBM Plex Mono" letter-spacing="2">${r.e} · ${r.cnt}</text></g>`;
+          const per = r.cnt > 13 ? 13 : r.cnt;
+          for (let i = 0; i < r.cnt; i++) {
+            const row = Math.floor(i / per), col = i % per, cx = 26 + col * 50, cy = r.y + 14 + row * 56;
+            const nw = i < r.nw;
+            h += `<g class="node" style="transition-delay:${.7 + k * .25 + i * .03}s"><circle cx="${cx}" cy="${cy}" r="19" fill="${nw ? r.c : '#faf8f4'}" stroke="${r.c}" stroke-width="3.5"/></g>`;
+          }
+          k++;
+        });
+        h += `<g class="lab l4"><circle cx="30" cy="728" r="11" fill="#1d2433"/><text x="52" y="736" font-size="22" fill="#1d2433">2026 新晋 20</text><circle cx="270" cy="728" r="11" fill="#faf8f4" stroke="#1d2433" stroke-width="3"/><text x="292" y="736" font-size="22" fill="#1d2433">留任 30</text></g>`;
+        document.getElementById('cvSvg').innerHTML = h;
+      })();</script>
+    </section>
+
+    <!-- === SLIDE 2 · 三个问题 === -->
+    <section class="slide c" data-sec="开场" data-title="这一讲回答三个问题">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 8</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1">这一讲，回答<em>三个问题</em></h2>
+        <p class="lede reveal d2" style="margin-top:22px">用一份榜单——<b>Forbes AI 50（2026）</b>——读一遍这一轮人工智能产业。</p>
+        <div class="flex gap32 st" style="margin-top:50px">
+          <div class="card b grow" style="padding:38px 36px"><div class="n">Q1 · PART 1–2</div><h3 style="font-size:46px">谁在做？</h3><p style="margin-top:14px">50 家最有潜力的非上市 AI 公司<br>一年里谁进、谁出、谁涨了</p></div>
+          <div class="card t grow" style="padding:38px 36px"><div class="n">Q2 · PART 2</div><h3 style="font-size:46px">在哪一层做？</h3><p style="margin-top:14px">数据 → 算力 → 模型 → 应用<br>四层产业栈里的位置与护城河</p></div>
+          <div class="card o grow" style="padding:38px 36px"><div class="n">Q3 · PART 3–4</div><h3 style="font-size:46px">为什么重要？</h3><p style="margin-top:14px">钱、人与结局；个人、组织、系统<br>这一轮到底在改变什么</p></div>
+        </div>
+        <div class="flex gap24 center reveal d5" style="margin-top:56px;padding-top:26px;border-top:1px solid var(--rule)">
+          <span class="pill fill">方法</span>
+          <p style="font-size:27px">原 PPT 一页介绍一家公司（共 50 页）。本讲改为<b>按层归类 + 可点击的全景图</b>，并用 2026 年的数据重新调研。</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P1–P3、P54–P57；R1–R4 Forbes 2026 AI 50</div>
+    </section>
+
+    <!-- === SLIDE 3 · 课程位置 === -->
+    <section class="slide c" data-sec="开场" data-title="课程位置：最后一讲">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 8</b> · 课程位置</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1">Data → AI → <em>Business Value</em></h2>
+        <p class="lede reveal d2" style="margin-top:14px">八讲走到这里：方法论与工具已经就绪，现在看<b>产业</b>。</p>
+        <div class="flex gap16 st" style="margin-top:44px" id="cp"></div>
+        <div class="flex gap24 center reveal d4" style="margin-top:48px">
+          <div class="card b grow" style="padding:26px 30px"><div class="n">L1–L2</div><h3 style="font-size:32px">世界观</h3><p style="font-size:25px">AI 的四次浪潮；数据的价值</p></div>
+          <div class="arrow">→</div>
+          <div class="card t grow" style="padding:26px 30px"><div class="n">L3–L7</div><h3 style="font-size:32px">方法</h3><p style="font-size:25px">AI 1.0 → 4.0：规则、回归、机器学习、深度学习、预训练模型与智能体</p></div>
+          <div class="arrow">→</div>
+          <div class="card o grow" style="padding:26px 30px"><div class="n">L8</div><h3 style="font-size:32px">产业</h3><p style="font-size:25px">智能产业实践：价值落在哪里</p></div>
+        </div>
+      </div>
+      <script>(function(){
+        const L=[['L1','人工智能初探'],['L2','数据价值初探'],['L3','数据科学与 AI 1.0'],['L4','AI 2.0 回归分析'],['L5','AI 2.0 机器学习'],['L6','AI 3.0 深度学习 + 强化学习'],['L7','AI 4.0 预训练模型 · 提示词 · 智能体'],['L8','智能产业实践']];
+        document.getElementById('cp').innerHTML=L.map((x,i)=>`<div style="flex:1;padding:22px 16px 22px 20px;background:${i===7?'var(--blue)':'#fff'};border:1.5px solid ${i===7?'var(--blue)':'var(--rule)'};min-height:190px"><div style="font:500 22px/1 var(--f-mono);letter-spacing:.1em;color:${i===7?'#dfe7f6':'var(--blue)'}">${x[0]}</div><div style="margin-top:14px;font:700 25px/1.4 var(--f-serif-cn);color:${i===7?'#fff':'var(--ink)'}">${x[1]}</div></div>`).join('');
+      })();</script>
+      <div class="src"><b>参考</b> 原 PPT 课程规划（Lecture 1 P3）；AGENTS.md 课程规划</div>
+    </section>
+
+    <!-- === SLIDE 4 · 章节 Part 1 === -->
+    <section class="slide c chapter" data-sec="1 · AI 50 榜单" data-title="Part 1 · The AI 50">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 8</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">01</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 1</div>
+        <h2 class="reveal d2">The <em>AI 50</em></h2>
+        <div class="s reveal d3">50 家最有潜力的非上市 AI 公司：谁进了名单，一年里发生了什么</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>1.1</b>榜单怎么来的</div>
+        <div><b>1.2</b>一年换血：30 留、20 进、20 出</div>
+        <div><b>1.3</b>全景图：可点击的 50 家</div>
+        <div><b>1.4</b>钱：集中度与估值变化</div>
+      </div>
+    </section>
+
+    <!-- === SLIDE 5 · 榜单怎么来的 === -->
+    <section class="slide c" data-sec="1 · AI 50 榜单" data-title="Forbes AI 50 是怎么评出来的">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.1 榜单</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col" style="width:760px">
+          <h2 class="reveal d1" style="font-size:62px">Forbes <em>AI 50</em></h2>
+          <p class="reveal d2" style="margin-top:14px;font-size:28px">与 Sequoia、Meritech 合作，自 2019 年起每年发布</p>
+          <figure class="reveal d3" style="margin-top:26px"><img class="shot" style="width:760px;height:354px;object-fit:cover" src="assets/forbes-ai50-cover.jpg" alt="Forbes AI 50 封面"><figcaption>原 PPT P2 · Forbes AI 50 官方视觉</figcaption></figure>
+          <div class="flex gap16 reveal d4" style="margin-top:22px;flex-wrap:wrap"><span class="chip b sm">第八届 · 2026-04-16</span><span class="chip sm">不排名 · 按字母序</span><span class="chip sm">全球非上市公司</span><span class="chip sm">无申请费</span></div>
+          <div class="flex gap24 center reveal d5" style="margin-top:34px"><div class="stat"><div class="v" style="font-size:84px">数千</div><div class="l" style="font-size:22px">候选</div></div><span class="arrow">→</span><div class="stat"><div class="v" style="font-size:84px">70</div><div class="l" style="font-size:22px">进评委</div></div><span class="arrow">→</span><div class="stat"><div class="v" style="font-size:84px">50</div><div class="l" style="font-size:22px">入选</div></div></div>
+        </div>
+        <div class="grow col st" style="justify-content:center;gap:18px">
+          <div class="card b" style="padding:24px 30px"><div class="n">STEP 1</div><h3 style="font-size:32px">公开提名 + 定向邀请</h3><p style="font-size:25px">数千家候选公司提交业务模式、技术团队、估值、收入、融资；可保密提交</p></div>
+          <div class="card t" style="padding:24px 30px"><div class="n">STEP 2</div><h3 style="font-size:32px">算法初筛</h3><p style="font-size:25px">Sequoia 合伙人 Konstantine Buhler 设计的模型：融资史、客户进展、员工满意度等</p></div>
+          <div class="card o" style="padding:24px 30px"><div class="n">STEP 3</div><h3 style="font-size:32px">前 70 家交评委</h3><p style="font-size:25px">学界/研究者（MIT 的 Aude Oliva、Stanford 的 Chris Manning、Joy Buolamwini）+ 投资人（Sarah Guo 等）；有利益关系者回避</p></div>
+          <div class="card g" style="padding:24px 30px"><div class="n">STEP 4</div><h3 style="font-size:32px">Forbes 编辑定稿</h3><p style="font-size:25px">50 家入选；2026 年新增 <b>Brink List</b>（20 家种子/A 轮公司）</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P2；R2 Forbes 新闻稿、R4《How Forbes Compiled…》；⚠ “自 2019 年起”据第八届推算</div>
+    </section>
+
+    <!-- === SLIDE 6 · 一年换血（交互） === -->
+    <section class="slide c" data-sec="1 · AI 50 榜单" data-title="一年换血：30 留、20 进、20 出（交互）" id="s-churn">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 变化</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:60px">一年之内，<em>40%</em> 的名单换了人</h2><div class="hint">点击切换</div></div>
+        <div class="tabs reveal d2" id="chT" style="margin-top:26px"></div>
+        <div class="reveal d3" style="margin-top:34px;min-height:420px"><div id="chC" class="flex gap16" style="flex-wrap:wrap"></div></div>
+        <div class="card o reveal d4" id="chN" style="margin-top:20px;padding:22px 30px"></div>
+      </div>
+      <script>(function(){
+        const col=['#1f7a72','#c27a1a','#24509e','#5a6272'];
+        const keep=CO.filter(c=>!c.n).map(c=>c.id), nw=CO.filter(c=>c.n).map(c=>c.id);
+        const acq={'Scale AI':'CEO 加入 Meta','xAI':'并入 SpaceX','Windsurf':'Google 聘走联创并授权技术；Cognition 收购余下部分'};
+        const T=[['留任 30',keep,'b','30 家连续两年入选：模型层与基础设施的“老面孔”居多（OpenAI、Anthropic、Databricks、Cohere、Mistral……），也有 Cursor、Harvey、Midjourney 这样的应用。'],
+                 ['新晋 20',nw,'t','新面孔集中在两端：<b>编程 Agent</b>（Cognition、Replit、Lovable）与<b>垂直行业</b>（Legora、Rogo、EliseAI、Chai），以及 SSI、Reflection 等“新实验室”。'],
+                 ['退出 20',DROPPED,'o','只有 <b>3 家有一手说明</b>：Scale AI（CEO 去 Meta）、xAI（并入 SpaceX）、Windsurf（被拆分）。其余 17 家只是<b>未入选</b>，原因榜单没有披露，不应读成“失败”。']];
+        const B=document.getElementById('chT');B.innerHTML=T.map((t,i)=>`<button class="tab b" data-i="${i}" style="font-size:25px;padding:17px 28px">${t[0]}</button>`).join('');
+        function pick(i){B.querySelectorAll('.tab').forEach((b,k)=>b.classList.toggle('on',k===i));const t=T[i];
+          document.getElementById('chC').innerHTML=t[1].map(n=>{const c=CO.find(x=>x.id===n);const st=i===2?(acq[n]?'border-color:var(--ochre);color:var(--ochre);font-weight:700':'color:var(--ink-3);border-color:var(--rule)'):'border-color:'+col[c.L]+';color:'+col[c.L];return `<span class="chip" style="font-size:28px;padding:14px 22px;${st}" title="${acq[n]||''}">${n}</span>`}).join('');
+          const n=document.getElementById('chN');n.innerHTML='<p style="font-size:26px;color:var(--ink)">'+t[3]+'</p>'+(i===2?'<p style="font-size:22px;margin-top:8px;color:var(--ink-2)">'+Object.entries(acq).map(([k,v])=>'<b style="color:var(--ochre)">'+k+'</b>：'+v).join('　·　')+'</p>':'<p class="hint" style="margin-top:10px">颜色 = 所在层：<span style="color:#1f7a72">数据</span> · <span style="color:#c27a1a">开发算力</span> · <span style="color:#24509e">模型</span> · <span style="color:#5a6272">应用</span></p>');}
+        B.querySelectorAll('.tab').forEach(b=>b.onclick=()=>pick(+b.dataset.i));pick(0);})();</script>
+      <div class="src"><b>参考</b> 原 PPT P4–P53（2025 名单）对比 R1 Forbes 2026 名单（本课自行比对）；R3 三家被收购/人才收购的说明；⚠ Windsurf、xAI 的处理方式以 Forbes 报道为准</div>
+    </section>
+
+    <!-- === SLIDE 7 · 五大趋势 === -->
+    <section class="slide c" data-sec="1 · AI 50 榜单" data-title="2026 的主题：从“主导”到“独立”">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 变化</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:60px">从 AI <em>Dominance</em> 到 AI <em>Independence</em></h2>
+        <p class="reveal d2" style="margin-top:14px;font-size:29px">Forbes 的判断：成功不再只是“谁的模型最强”，而是<b>谁掌控它、怎么用它、运行它要花多少钱</b>。</p>
+        <div class="flex gap16 st" style="margin-top:50px">
+          <div class="card b grow" style="padding:38px 28px"><div class="n">01</div><h3 style="font-size:36px;line-height:1.35">摆脱对 Big AI 的依赖</h3><p style="font-size:27px;margin-top:14px">开放权重、私有化部署、自有模型</p></div>
+          <div class="card t grow" style="padding:38px 28px"><div class="n">02</div><h3 style="font-size:36px;line-height:1.35">效率优于规模</h3><p style="font-size:27px;margin-top:14px">成本与性能与规模同等重要</p></div>
+          <div class="card o grow" style="padding:38px 28px"><div class="n">03</div><h3 style="font-size:36px;line-height:1.35">行业专用 AI 增长</h3><p style="font-size:27px;margin-top:14px">从医疗到法律，贴着行业做</p></div>
+          <div class="card b grow" style="padding:38px 28px"><div class="n">04</div><h3 style="font-size:36px;line-height:1.35">Agent 进入职场</h3><p style="font-size:27px;margin-top:14px">软件开始承担过去需要整个团队的任务</p></div>
+          <div class="card t grow" style="padding:38px 28px"><div class="n">05</div><h3 style="font-size:36px;line-height:1.35">算力是竞争优势</h3><p style="font-size:27px;margin-top:14px">谁能拿到、买得起底层算力，谁占先机</p></div>
+        </div>
+        <div class="flex gap24 center reveal d5" style="margin-top:60px;padding:34px 36px;background:var(--paper-2)">
+          <span class="pill" style="color:var(--ink-3)">2025（原 PPT）</span>
+          <p style="font-size:28px;flex:1">不再一味追逐模型规模与聊天界面，而是把模型用于<b>实际业务场景</b>，做出能完成<b>完整工作流程</b>的产品；应用爆发催生<b>算力基础设施</b>提供商。</p>
+          <span class="arrow" style="font-size:40px">→</span>
+          <span class="pill fill">2026</span>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P3；R2 Forbes 新闻稿（五项 Key Trends，中文为本课意译）</div>
+    </section>
+
+    <!-- === SLIDE 8 · 全景图（交互） === -->
+    <section class="slide c" data-sec="1 · AI 50 榜单" data-title="全景图：可点击的 50 家（交互）" id="s-map">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.3 全景图</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center" style="margin-top:-6px">
+          <div class="legend" id="mpL"></div>
+          <div class="sw" id="mpF"><button class="on" data-f="all">全部 50</button><button data-f="new">新晋 20</button><button data-f="old">留任 30</button></div>
+        </div>
+        <div class="tiles" id="mpT" style="margin-top:14px"></div>
+        <div class="flex gap32" id="mpD" style="margin-top:18px;height:268px"></div>
+      </div>
+      <script>(function(){
+        const T=document.getElementById('mpT'),D=document.getElementById('mpD'),Lg=document.getElementById('mpL');
+        let fl='all',ly=-1,sel='OpenAI';
+        const order=[...CO].sort((a,b)=>a.L-b.L||(a.d||0)-(b.d||0)||b.f-a.f);
+        Lg.innerHTML=LAYERS.map((l,i)=>`<span class="chip sm" data-l="${i}" style="cursor:pointer;border-color:${l.c};padding:8px 14px"><i style="background:${l.c}"></i>${l.n} ${CO.filter(c=>c.L===i).length}</span>`).join('');
+        function draw(){
+          T.innerHTML=order.map(c=>{const on=(fl==='all'||(fl==='new'&&c.n)||(fl==='old'&&!c.n))&&(ly<0||ly===c.L);return `<div class="tile${c.n?' nw':''}${on?'':' dim'}${c.id===sel?' sel':''}" data-id="${c.id}" style="--tc:${LAYERS[c.L].c}"><span>${c.id}</span></div>`}).join('');
+          T.querySelectorAll('.tile').forEach(t=>t.onclick=()=>{sel=t.dataset.id;draw();});
+          const c=CO.find(x=>x.id===sel),l=LAYERS[c.L];
+          const dm=c.L===3?' · '+DOMAINS[c.d]:'';
+          D.innerHTML=`<div style="width:370px;height:268px;flex:none">${c.th?`<img class="thumb" src="assets/co-${c.th}.jpg" alt="${c.id}"><div class="hint" style="margin-top:6px">原 PPT · 官网截图（2025）</div>`:`<div style="height:238px;background:${l.c};color:#fff;display:flex;align-items:center;justify-content:center;font:900 90px/1 var(--f-serif-en)">${c.id[0]}</div><div class="hint" style="margin-top:6px">2026 新晋 · 原 PPT 无此公司</div>`}</div>
+          <div class="grow col" style="justify-content:center">
+            <div class="flex gap16 center"><h3 style="font-size:50px">${c.id}</h3><span class="pill" style="color:${l.c}">${l.n}${dm}</span>${c.n?'<span class="pill fill">2026 新晋</span>':'<span class="pill" style="color:var(--ink-3)">留任</span>'}</div>
+            <p style="font-size:29px;margin-top:12px;color:var(--ink)">${c.cn}</p>
+            <div class="flex gap48" style="margin-top:18px"><div class="stat"><div class="l" style="margin:0">融资（Forbes 口径 ⚠）</div><div class="v" style="font-size:64px">${c.f?fmtB(c.f):'0'}</div></div><div class="stat"><div class="l" style="margin:0">估值（2026-04 前后 ⚠）</div><div class="v" style="font-size:64px;color:var(--ink-2)">${c.v?fmtB(c.v):'—'}</div></div></div>
+            ${c.x?`<p style="font-size:23px;margin-top:10px;color:var(--ink-3)">${c.x}</p>`:''}
+          </div>`;
+        }
+        document.getElementById('mpF').querySelectorAll('button').forEach(b=>b.onclick=()=>{fl=b.dataset.f;document.querySelectorAll('#mpF button').forEach(x=>x.classList.toggle('on',x===b));draw();});
+        Lg.querySelectorAll('.chip').forEach(ch=>ch.onclick=()=>{const i=+ch.dataset.l;ly=ly===i?-1:i;Lg.querySelectorAll('.chip').forEach(x=>x.style.background=(+x.dataset.l===ly)?'#eef2fa':'#fff');draw();});
+        draw();})();</script>
+      <div class="src"><b>参考</b> 原 PPT P4–P53（逐家介绍）；R1 Forbes 2026 名单；R6 foundevo、R7 note.com（融资/估值二手整理 ⚠；融资合计与 Forbes 的 3,056 亿美元一致）；“层”的归类为本课判断</div>
+    </section>
+
+    <!-- === SLIDE 9 · 榜单画像 === -->
+    <section class="slide c" data-sec="1 · AI 50 榜单" data-title="榜单画像：两家占了 80% 的钱">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 钱</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:60px">50 家，合计融资 <em>3,056 亿美元</em></h2>
+        <div class="flex gap48 st" style="margin-top:56px">
+          <div class="stat grow"><div class="v" style="font-size:150px">80<small>%</small></div><div class="l" style="font-size:28px">来自 <b>OpenAI + Anthropic</b>（2,426 亿美元）；其余 48 家合计约 630 亿</div></div>
+          <div class="stat grow"><div class="v" style="font-size:150px">7.4<small>亿</small></div><div class="l" style="font-size:28px">50 家融资额的<b>中位数</b>（美元）⚠ 二手计算</div></div>
+          <div class="stat grow"><div class="v" style="font-size:150px">33</div><div class="l" style="font-size:28px">家总部在<b>加州</b>；旧金山一地约 25 家 ⚠</div></div>
+          <div class="stat grow"><div class="v" style="font-size:150px">28</div><div class="l" style="font-size:28px">家成立于 <b>2022 年及以后</b>——与 ChatGPT 同龄 ⚠</div></div>
+        </div>
+        <div class="flex gap32 reveal d5" style="margin-top:80px">
+          <div class="card b grow" style="padding:36px 40px"><h3 style="font-size:38px">两个世界</h3><p style="font-size:29px;margin-top:14px">前沿模型是<b>资本密集型</b>：几百亿美元起步。应用层是<b>资本轻型</b>：Gamma 融资 9,100 万美元、Midjourney 为零，却已有数亿美元收入。</p></div>
+          <div class="card o grow" style="padding:36px 40px"><h3 style="font-size:38px">地理集中</h3><p style="font-size:29px;margin-top:14px">名单面向全球，但海外只有少数几家：<b>Mistral</b>（巴黎）、<b>Legora、Lovable</b>（斯德哥尔摩）、<b>Black Forest Labs</b>（弗莱堡）、<b>Cohere</b>（多伦多）、<b>Synthesia</b>（伦敦）。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R2、R3 Forbes（3,056 亿、OpenAI+Anthropic 2,426 亿、33 家加州）；R6、R7 二手（中位数 7.35 亿、28 家 2022 年后成立、旧金山 25 家 ⚠ 本课用二手表复算）</div>
+    </section>
+
+    <!-- === SLIDE 10 · 融资条形图（交互） === -->
+    <section class="slide c" data-sec="1 · AI 50 榜单" data-title="钱在哪里：线性 vs 对数（交互）" id="s-fund">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 钱</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:60px">融资额前 14 名：<em>换一把尺子</em>再看</h2>
+          <div class="sw reveal d2" id="fdS"><button class="on" data-m="lin">线性</button><button data-m="log">对数</button></div></div>
+        <div class="flex gap48" style="margin-top:20px">
+          <div class="grow" id="fdB" style="min-height:640px"></div>
+          <div class="col" style="width:520px;justify-content:center;gap:22px">
+            <div class="card b" style="padding:24px 28px"><h3 style="font-size:30px" id="fdH"></h3><p style="font-size:24px;margin-top:8px" id="fdP"></p></div>
+            <p class="hint" style="font-size:19px;line-height:1.6">其余 36 家融资均不超过 10 亿美元，其中 Midjourney 与 Surge AI 为 0。</p>
+          </div>
+        </div>
+      </div>
+      <script>(function(){
+        const top=[...CO].sort((a,b)=>b.f-a.f).slice(0,14);const B=document.getElementById('fdB');
+        const col=['t','o','','g'];
+        function draw(m){
+          B.innerHTML='<div class="bchart">'+top.map(c=>{const w=m==='lin'?c.f/182.6:Math.log10(c.f*1000+1)/Math.log10(182601);return `<div class="hb" style="margin:15px 0"><div class="lb" style="width:290px;font-size:29px">${c.id}</div><div class="tr" style="height:40px"><div class="fl ${col[c.L]}" style="--w:${(w*100).toFixed(1)}%;width:${(w*100).toFixed(1)}%"></div></div><div class="vl" style="width:140px;font-size:29px">${fmtB(c.f)}</div></div>`}).join('')+'</div>';
+          document.getElementById('fdH').textContent=m==='lin'?'线性：只看得见两个人':'对数：每格是 10 倍';
+          document.getElementById('fdP').textContent=m==='lin'?'OpenAI 1,826 亿、Anthropic 600 亿，第三名 Databricks 200 亿都已被压成一小截。资本集中度是榜单最醒目的结构特征。':'换成对数尺，才看得出第 3–14 名的梯度：几十亿 → 十几亿美元。差别不只是“多一点”，而是数量级。';
+        }
+        document.getElementById('fdS').querySelectorAll('button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#fdS button').forEach(x=>x.classList.toggle('on',x===b));draw(b.dataset.m);});
+        draw('lin');})();</script>
+      <div class="src"><b>参考</b> R1 Forbes 2026；R6、R7 融资额二手整理 ⚠；颜色 = 所在层（青：数据；赭：开发算力；蓝：模型；灰：应用）</div>
+    </section>
+
+    <!-- === SLIDE 11 · 一年估值变化（交互） === -->
+    <section class="slide c" data-sec="1 · AI 50 榜单" data-title="一年估值：有人 12 倍，有人原地不动（交互）" id="s-val">
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.4 钱</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:60px">留任公司：估值<em>高度分化</em></h2>
+          <div class="sw reveal d2" id="vlS"><button class="on" data-m="x">按增长倍数</button><button data-m="v">按 2026 估值</button></div></div>
+        <p class="reveal d2" style="margin-top:8px;font-size:26px">原 PPT（2025 榜单）的估值 → 2026 榜单前后的公开估值（单位：十亿美元）</p>
+        <div id="vlB" style="margin-top:12px"></div>
+      </div>
+      <script>(function(){
+        const P=[['Cursor',2.5,29.3],['Skild AI',1.5,14],['Crusoe',2.8,10],['Runway',1.5,5.3],['Harvey',5,11],['Clay',3.1,5],['Synthesia',2.1,4],['Databricks',100,134],['Notion',10,11],['Perplexity',18,20],['Cohere',6.8,7],['Glean',7.2,7.2],['Together AI',3.3,3.3],['Sierra',10,10],['Speak',1,1]];
+        const f=x=>x>=100?x.toFixed(0):x>=10?x.toFixed(x%1?1:0):x.toFixed(1);
+        function draw(m){
+          const R=[...P].sort((a,b)=>m==='x'?(b[2]/b[1]-a[2]/a[1]):(b[2]-a[2]));const mx=m==='x'?12:134;
+          document.getElementById('vlB').innerHTML=R.map(r=>{const x=r[2]/r[1],w=(m==='x'?x/mx:r[2]/mx)*100;return `<div class="hb" style="margin:7px 0"><div class="lb" style="width:240px;font-size:27px">${r[0]}</div><div class="tr" style="height:34px"><div class="fl ${x>=3?'':x>1.2?'t':'g'}" style="--w:${w.toFixed(1)}%;width:${w.toFixed(1)}%"></div></div><div class="vl" style="width:400px;font-size:26px;color:var(--ink)">${f(r[1])} → ${f(r[2])}　<b style="color:${x>=3?'var(--blue)':'var(--ink-3)'}">×${x.toFixed(1)}</b></div></div>`}).join('');
+        }
+        document.getElementById('vlS').querySelectorAll('button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#vlS button').forEach(x=>x.classList.toggle('on',x===b));draw(b.dataset.m);});
+        draw('x');})();</script>
+      <div class="src"><b>参考</b> 原 PPT 各公司页（2025 估值）；2026 估值见 R7 / R16 ⚠ 二手；OpenAI 原稿为历史对价，不可比，未列入</div>
+    </section>
+
+    <!-- === SLIDE 12 · 章节 Part 2 === -->
+    <section class="slide c chapter" data-sec="2 · 四层产业栈" data-title="Part 2 · Four Layers">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 8</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">02</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 2</div>
+        <h2 class="reveal d2">Four <em>Layers</em></h2>
+        <div class="s reveal d3">数据与知识 → 开发与算力 → 基础模型 → 应用：每一层的玩家、逻辑与护城河</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>2.1</b>数据与知识层</div>
+        <div><b>2.2</b>开发与算力层（含 AI 编程）</div>
+        <div><b>2.3</b>基础模型层</div>
+        <div><b>2.4</b>应用层：七个行业域</div>
+      </div>
+    </section>
+
+    <!-- === SLIDE 13 · 回看 2024 地图 === -->
+    <section class="slide c" data-sec="2 · 四层产业栈" data-title="回看：两年前的 AI 50 地图">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.0 地图</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col" style="width:1100px">
+          <h2 class="reveal d1" style="font-size:58px">同一类图，<em>两年前</em>长这样</h2>
+          <figure class="reveal d2" style="margin-top:24px"><img class="shot" style="width:1100px;height:574px;object-fit:contain" src="assets/ai50-2024-map.png" alt="AI 50 2024 Visualized"><figcaption>原 PPT P3 · AI 50 2024 Visualized（Forbes × Sequoia × Meritech）</figcaption></figure>
+        </div>
+        <div class="grow col st" style="justify-content:center;gap:20px">
+          <div class="card b" style="padding:24px 28px"><div class="n">2024 · 两大块</div><h3 style="font-size:32px">Apps ／ Infrastructure</h3><p style="font-size:24px">应用：消费、企业栈、行业垂直；基础设施：推理、框架、模型库、基础模型、存储与算力、硬件。</p></div>
+          <div class="card t" style="padding:24px 28px"><div class="n">本讲 · 四层</div><h3 style="font-size:32px">把基础设施再拆开</h3><p style="font-size:24px"><b>数据与知识</b>、<b>开发与算力</b>、<b>基础模型</b>三层，加上<b>应用</b>层——与原 PPT P54–P57 的归类一致。</p></div>
+          <div class="card o" style="padding:24px 28px"><div class="n">值得注意</div><h3 style="font-size:32px">地图每年都在重画</h3><p style="font-size:24px">2024 地图上的许多名字，今天已不在榜单；而榜单上新增了编程 Agent 与机器人。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P3、P54–P57；⚠ “四层”为课程归类，不是 Forbes 官方分类</div>
+    </section>
+
+    <!-- === SLIDE 14 · 四层总图（交互） === -->
+    <section class="slide c" data-sec="2 · 四层产业栈" data-title="四层产业栈（交互）" id="s-stack">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.0 总图</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">50 家，<em>四层</em></h2><div class="hint">点击一层，查看成员</div></div>
+        <div class="stack reveal d2" id="skS" style="margin-top:22px"></div>
+        <div class="reveal d3" id="skC" style="margin-top:24px;display:flex;flex-wrap:wrap;gap:12px"></div>
+      </div>
+      <script>(function(){
+        const moat=['独特数据、专家网络、合规与信任','规模经济：谁能拿到并用好算力','资金、算力、人才；以及生态位','行业流程、数据闭环、分发与品牌'];
+        const order=[3,2,1,0];let cur=3;
+        const S=document.getElementById('skS'),C=document.getElementById('skC');
+        function draw(){
+          S.innerHTML=order.map(i=>{const l=LAYERS[i],n=CO.filter(c=>c.L===i).length;return `<div class="lyr${i===cur?' on':''}" data-i="${i}" style="--lc:${l.c}"><div class="k"><b>${l.n}</b><i>${l.e.toUpperCase()}</i></div><div class="v"><div>${l.d}<br><span class="hint" style="font-size:20px;letter-spacing:0">护城河（本课判断）：${moat[i]}</span></div></div><div class="n">${n}<small>家</small></div></div>`}).join('');
+          S.querySelectorAll('.lyr').forEach(r=>r.onclick=()=>{cur=+r.dataset.i;draw();});
+          const l=LAYERS[cur];
+          C.innerHTML=CO.filter(c=>c.L===cur).sort((a,b)=>(a.d||0)-(b.d||0)||b.f-a.f).map(c=>`<span class="chip" style="font-size:25px;border-color:${l.c};color:${l.c}">${c.id}${c.n?' ·新':''}</span>`).join('');
+        }
+        draw();})();</script>
+      <div class="src"><b>参考</b> 原 PPT P54–P57（四层归类）；R1 Forbes 2026 名单；⚠ 归类与护城河为课堂判断；“·新”= 2026 新晋</div>
+    </section>
+
+    <!-- === SLIDE 15 · 数据与知识层 === -->
+    <section class="slide c" data-sec="2 · 四层产业栈" data-title="数据与知识层：模型的原料与记忆">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.1 数据与知识层</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:58px"><em>数据</em>与知识：模型的原料与记忆</h2>
+        <div class="flex gap24 st" style="margin-top:34px;flex-wrap:wrap" id="dtG"></div>
+        <div class="flex gap24 center reveal d5" style="margin-top:34px;padding:26px 34px;background:var(--paper-2)">
+          <span class="pill" style="color:var(--ink-3)">2025 → 2026</span>
+          <p style="font-size:26px;flex:1">原 PPT 数据层：<b>Scale AI、Snorkel、Coactive、Hebbia、VAST Data</b>（标注、合成、检索、存储）→ 本届只剩 Databricks、Glean、Mercor；新增 <b>Surge AI、Cyera</b>。重心从“标注工具”移向<b>专家数据</b>与<b>数据安全治理</b> ⚠</p>
+        </div>
+      </div>
+      <script>(function(){document.getElementById('dtG').innerHTML=['Databricks','Glean','Mercor','Surge AI','Cyera'].map(id=>coCard(id,{st:'width:560px',dsz:26,xsz:22})).join('')+'<div class="co" style="width:560px;--cc:var(--ink-3);display:flex;flex-direction:column;justify-content:center"><div class="nm" style="font-size:26px">为什么数据仍是一层？</div><div class="ds" style="font-size:24px">模型越强，<b>独特的数据与知识</b>越稀缺：企业私有数据、专家判断、合规可用的数据，没法靠“更大的模型”替代。</div></div>';})();</script>
+      <div class="src"><b>参考</b> 原 PPT P54（数据与知识层）、P13、P19、P21、P26、P38、P41、P49；R1 Forbes；R7、R12 Reuters（Databricks 2026-08）；⚠ Mercor 归入此层、Surge AI 估值与收入为二手/估计</div>
+    </section>
+
+    <!-- === SLIDE 16 · 推理与算力 === -->
+    <section class="slide c" data-sec="2 · 四层产业栈" data-title="开发与算力层（一）：推理云、数据中心与芯片">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.2 开发与算力层</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:58px">模型要跑起来：<em>推理</em>与<em>算力</em></h2>
+        <p class="reveal d2" style="margin-top:12px;font-size:27px">Forbes 的判断之一：<b>能不能拿到、买不买得起算力</b>，是竞争优势。</p>
+        <div class="flex gap24 st" style="margin-top:30px;flex-wrap:wrap" id="cmG"></div>
+        <div class="flex gap24 center reveal d5" style="margin-top:30px;padding:22px 32px;background:var(--paper-2)">
+          <span class="pill fill">2026 Q3</span>
+          <p style="font-size:26px;flex:1">Crunchbase：Crusoe 在 Q3 单轮融资超 <b>30 亿美元</b>；当季数据中心、半导体、能源等“物理基础设施”行业各融资超 <b>100 亿美元</b>。</p>
+        </div>
+      </div>
+      <script>(function(){document.getElementById('cmG').innerHTML=['Baseten','Fireworks AI','Together AI','Fal','Crusoe','SambaNova'].map(id=>coCard(id,{st:'width:560px',dsz:26,xsz:22})).join('');})();</script>
+      <div class="src"><b>参考</b> 原 PPT P55（开发与部署平台、计算能力与硬件）；R1、R2 Forbes；R7；R17 Crunchbase Q3 2026；⚠ 原 P55 中 Hugging Face、LangChain、Lambda、StackBlitz、Windsurf 本届未入选</div>
+    </section>
+
+    <!-- === SLIDE 17 · AI 编程 === -->
+    <section class="slide c" data-sec="2 · 四层产业栈" data-title="开发与算力层（二）：AI 编程是最激烈的战场">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.2 AI 编程</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col" style="width:960px">
+          <h2 class="reveal d1" style="font-size:56px">AI <em>编程</em>：一年三次洗牌</h2>
+          <div class="flex gap16 st" style="margin-top:28px;flex-wrap:wrap" id="cdG"></div>
+          <p class="reveal d5" style="margin-top:24px;font-size:25px">上一届的 <b>Windsurf</b>：Google 以 24 亿美元聘走联创并授权技术，<b>Cognition</b> 收购余下部分——一家公司被“拆开”。</p>
+        </div>
+        <div class="grow col reveal d3" style="justify-content:flex-start">
+          <div class="hint" style="font-size:22px">Cursor 的估值轨迹（十亿美元）</div>
+          <div id="cdB" style="margin-top:14px"></div>
+          <div class="card o" style="margin-top:26px;padding:22px 28px"><p style="font-size:24px"><b>年化收入</b>：2025 年榜单时约 1 亿美元 → 2026-02/03 超过 <b>20 亿</b>；公司内部预测年底 > 60 亿（<span class="mono" style="font-size:20px">⚠ 预测</span>）。同时 Claude Code、Codex 等“模型公司自己的编程工具”在抢同一批开发者。</p></div>
+        </div>
+      </div>
+      <script>(function(){document.getElementById('cdG').innerHTML=['Cursor','Cognition','Replit','Lovable'].map(id=>coCard(id,{st:'width:466px',dsz:24,xsz:21})).join('');
+        const R=[['2025-04 · AI 50 2025',2.5,'g'],['2025-11 · 融资',29.3,''],['2026-04 · 洽谈中 ⚠',50,'t'],['2026-06 · SpaceX 收购价',60,'o']];
+        document.getElementById('cdB').innerHTML=R.map(r=>`<div class="hb" style="margin:12px 0;flex-wrap:wrap;gap:6px"><div class="lb" style="width:100%;font-size:21px;color:var(--ink-3)">${r[0]}</div><div class="tr" style="height:36px"><div class="fl ${r[2]}" style="--w:${(r[1]/60*100).toFixed(1)}%;width:${(r[1]/60*100).toFixed(1)}%"></div></div><div class="vl" style="width:100px;font-size:26px">${r[1]}</div></div>`).join('');})();</script>
+      <div class="src"><b>参考</b> R23 Forbes AI 50 2025（Anysphere 25 亿）；R11 TechCrunch（>20 亿年化收入、500 亿估值洽谈）；R10 Forbes（SpaceX 600 亿，8 月完成 ⚠ 二手）；R13 Bloomberg（Cognition 480 亿）；R3（Windsurf）</div>
+    </section>
+
+    <!-- === SLIDE 18 · 基础模型层 === -->
+    <section class="slide c" data-sec="2 · 四层产业栈" data-title="基础模型层：9 家，各走各的路">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 基础模型层</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:58px">能力的发动机：<em>9 家</em>，各走各的路</h2>
+        <table class="reveal d2" style="margin-top:28px" id="fmT"></table>
+      </div>
+      <script>(function(){
+        const kind={'OpenAI':'闭源前沿 · 消费 + 企业','Anthropic':'闭源前沿 · 安全 · 企业与编程','Mistral AI':'开放权重 · 欧洲主权','Cohere':'企业私有化部署','SSI':'纯研究 · 无产品','Thinking Machines':'研究 + 微调工具（Tinker）','Reflection':'开放权重（美国方案）','Black Forest Labs':'图像/视频生成模型','World Labs':'世界模型 · 空间智能'};
+        const F=CO.filter(c=>c.L===2).sort((a,b)=>b.f-a.f);
+        document.getElementById('fmT').innerHTML='<tr><th>公司</th><th>做什么</th><th>类型（本课归类）</th><th style="text-align:right">融资</th><th style="text-align:right">估值 2026-04</th></tr>'+F.map(c=>`<tr><td style="font-size:26px">${c.id}${c.n?' <span class="pill fill" style="font-size:14px;padding:3px 7px">NEW</span>':''}</td><td style="font-size:25px">${c.cn}</td><td style="font-size:23px;color:var(--ink-3)">${kind[c.id]}</td><td style="text-align:right;font:500 25px/1.5 var(--f-mono);white-space:nowrap">${fmtB(c.f)}</td><td style="text-align:right;font:500 25px/1.5 var(--f-mono);white-space:nowrap">${c.v?fmtB(c.v):'—'}</td></tr>`).join('');
+      })();</script>
+      <div class="src"><b>参考</b> 原 PPT P56（基础模型与通用平台层：OpenAI、Anthropic、Cohere、Mistral、xAI……）；R1 Forbes；R6、R7 ⚠ 融资/估值二手；“类型”为课堂归类；xAI 已并入 SpaceX</div>
+    </section>
+
+    <!-- === SLIDE 19 · OpenAI vs Anthropic（交互） === -->
+    <section class="slide c" data-sec="2 · 四层产业栈" data-title="两家的七个月：发榜时 vs 今天（交互）" id="s-duo">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 基础模型层</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">OpenAI 与 Anthropic：<em>七个月</em></h2>
+          <div class="sw reveal d2" id="duS"><button class="on" data-m="0">发榜时 · 2026-04</button><button data-m="1">今天 · 2026-11</button></div></div>
+        <div class="flex gap32" style="margin-top:34px" id="duC"></div>
+        <p class="hint" id="duN" style="margin-top:22px;font-size:20px;line-height:1.6;letter-spacing:0"></p>
+      </div>
+      <script>(function(){
+        const D=[
+          [{n:'OpenAI',c:'b',rows:[['累计融资','$182.6B'],['估值','$852B（2026-03/04 一轮 $122B）'],['年化收入','> $25B（2026 年 2 月末，报道）'],['状态','私有；传将 IPO']]},
+           {n:'Anthropic',c:'t',rows:[['累计融资','$60B'],['估值','$380B'],['年化收入','> $30B（2026 年 4 月初，公司称）'],['状态','私有；Claude 登顶 App Store 下载榜']]}],
+          [{n:'OpenAI',c:'b',rows:[['新一轮','已入账 $11B，估值 <b>$1.25T</b>（原计划 $30B）'],['IPO','推迟，<b>预计 2027</b>'],['结构','企业收入占比 > 40%，预计年底与消费者持平'],['API','每分钟处理 > 150 亿 token（DevDay 2025：60 亿）']]},
+           {n:'Anthropic',c:'t',rows:[['2026-05','融资 $65B，投后 <b>$965B</b>'],['IPO','11-10 路演；$70–78 × 8.25 亿股；<b>11-18 定价、11-19 在 Nasdaq 以 ANT 上市（拟）</b>'],['估值','完全稀释约 $1.3–1.45T（口径不一 ⚠）'],['收入','年化 ≈ $65B（2026 年 7 月末，二手 ⚠）']]}]];
+        const note=['来源：Forbes AI 50 页面（融资、估值）；OpenAI/Anthropic 收入为发榜前后媒体与公司口径。','来源：Bloomberg/The Verge、Reuters、CNBC、Anthropic 公告、OpenAI 企业更新；⚠ Anthropic 估值区间在不同媒体口径不同（NBC/Reuters 另有“最高约 $1.02T”表述），IPO 尚未定价，课堂上请再核对。'];
+        function draw(m){
+          document.getElementById('duC').innerHTML=D[m].map(x=>`<div class="card ${x.c} grow" style="padding:32px 38px"><h3 style="font-size:48px">${x.n}</h3>${x.rows.map(r=>`<div class="kv" style="padding:16px 0"><b style="width:140px;font-size:21px">${r[0]}</b><span style="font-size:27px">${r[1]}</span></div>`).join('')}</div>`).join('');
+          document.getElementById('duN').innerHTML=note[m];
+        }
+        document.getElementById('duS').querySelectorAll('button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#duS button').forEach(x=>x.classList.toggle('on',x===b));draw(+b.dataset.m);});
+        draw(0);})();</script>
+      <div class="src"><b>参考</b> R1–R3 Forbes（2026-04）；R8 Anthropic/CNBC/Yahoo（2026-11）；R9 Bloomberg/Verge（OpenAI $1.25T）；R20 OpenAI 企业更新；R16 BlockWest ⚠</div>
+    </section>
+
+    <!-- === SLIDE 20 · 摆脱依赖 === -->
+    <section class="slide c" data-sec="2 · 四层产业栈" data-title="不想只依赖两家：开放权重、主权与微调">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 基础模型层</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:58px">Breaking dependence on <em>Big AI</em></h2>
+        <p class="reveal d2" style="margin-top:12px;font-size:27px">Forbes 2026 的第一条趋势：客户与创业公司都在找<b>不被少数平台绑定</b>的路。三条路：</p>
+        <div class="flex gap24 st" style="margin-top:34px">
+          <div class="card b grow" style="padding:30px 32px"><div class="n">路 1</div><h3 style="font-size:38px">开放权重</h3><p style="font-size:25px;margin-top:10px">模型权重公开，可下载、可改。<br><b>Mistral</b>（欧洲）、<b>Reflection</b>（美国，$8B，尚未发布自有模型）。Forbes：中国的 DeepSeek 等在开放权重上领先，美国政府乐见本土替代。</p></div>
+          <div class="card t grow" style="padding:30px 32px"><div class="n">路 2</div><h3 style="font-size:38px">私有化与主权</h3><p style="font-size:25px;margin-top:10px">数据不出域、可在内网运行。<br><b>Cohere</b> 的 North 平台；<b>Mistral</b> 的客户含欧洲政府机构（法国、希腊、卢森堡 ⚠）。主权 AI 成为卖点。</p></div>
+          <div class="card o grow" style="padding:30px 32px"><div class="n">路 3</div><h3 style="font-size:38px">微调与自建</h3><p style="font-size:25px;margin-top:10px">把开放模型调成自己的。<br><b>Thinking Machines</b> 的 Tinker（LoRA 微调 API）；<b>Fireworks、Together</b> 托管数百种开放模型；Harvey 在 2026-09 发布首个后训练开放权重模型。</p></div>
+        </div>
+        <div class="flex gap24 center reveal d5" style="margin-top:36px;padding:24px 32px;background:var(--paper-2)">
+          <span class="pill" style="color:var(--ink-3)">管理含义</span>
+          <p style="font-size:26px;flex:1">选模型不只是选“最强的”：要同时看<b>成本、可控性、数据边界、供应商集中度</b>。</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R2、R3 Forbes（Reflection、Mistral）；R7 note.com（Cohere、Mistral 客户、Tinker）⚠ 二手；R14 Harvey 官方博客（2026-09-09）；“三条路”为课堂归纳</div>
+    </section>
+
+    <!-- === SLIDE 21 · 应用层七个域（交互） === -->
+    <section class="slide c" data-sec="2 · 四层产业栈" data-title="应用层：七个行业域（交互）" id="s-apps">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 应用层</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">应用层：<em>26 家</em>，七个域</h2><div class="hint">点击行业域</div></div>
+        <div class="tabs reveal d2" id="apT" style="margin-top:24px;flex-wrap:wrap"></div>
+        <div class="flex gap16 reveal d3" id="apC" style="margin-top:20px;gap:10px;flex-wrap:wrap;align-content:flex-start;min-height:560px"></div>
+      </div>
+      <script>(function(){
+        const A=CO.filter(c=>c.L===3);const icon=['📚','🎧','🩺','⚖️','🎓','🎨','🤖'];
+        const B=document.getElementById('apT');
+        B.innerHTML='<button class="tab b" data-i="-1" style="font-size:23px">全部 26</button>'+DOMAINS.map((d,i)=>`<button class="tab b" data-i="${i}" style="font-size:23px">${d} ${A.filter(c=>c.d===i).length}</button>`).join('');
+        function pick(i){B.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',+b.dataset.i===i));
+          const L=A.filter(c=>i<0||c.d===i).sort((a,b)=>b.f-a.f);
+          document.getElementById('apC').innerHTML=L.map(c=>coCard(c.id,{st:`width:${L.length>9?'272':'560'}px;${L.length>9?'padding:10px 16px':''}`,dsz:L.length>9?22:25,nods:L.length>9,nox:L.length>9,xsz:22})).join('');}
+        B.querySelectorAll('.tab').forEach(b=>b.onclick=()=>pick(+b.dataset.i));pick(-1);})();</script>
+      <div class="src"><b>参考</b> 原 PPT P57（客服 / 法律与合规 / 创意与多媒体 / 机器人与自动化 / 企业服务 / 医疗 / 教育与语言 / 国防与公共安全）；R1 Forbes 2026；⚠ 国防域（原 Vannevar Labs）本届无入选；行业域归类为课堂判断</div>
+    </section>
+
+    <!-- === SLIDE 22 · 医疗 === -->
+    <section class="slide c" data-sec="2 · 四层产业栈" data-title="应用 · 医疗：先从文书与检索开始">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 医疗与生命科学</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:58px">医疗：先替医生<em>省下时间</em></h2>
+        <div class="flex gap24 st" style="margin-top:34px">
+          <div class="card t grow" style="padding:30px 32px"><div class="n">ABRIDGE · 文书</div><h3 style="font-size:36px">医患对话 → 病历</h3><p style="font-size:25px;margin-top:10px">监听问诊，自动生成病历与计费信息，写回电子病历系统。落地于 Johns Hopkins 等机构（⚠ 二手）。融资 8.3 亿，估值 53 亿。</p></div>
+          <div class="card b grow" style="padding:30px 32px"><div class="n">OPENEVIDENCE · 检索</div><h3 style="font-size:36px">医生的循证问答</h3><p style="font-size:25px;margin-top:10px">从文献与指南里检索并生成可用答案。估值较上年 4 月约增长 <b>12 倍</b>（⚠），到 120 亿美元。</p></div>
+          <div class="card o grow" style="padding:30px 32px"><div class="n">CHAI DISCOVERY · 药物</div><h3 style="font-size:36px">设计蛋白与抗体</h3><p style="font-size:25px;margin-top:10px">成立约两年、估值 13 亿美元的药物发现模型公司；OpenAI 是早期投资人。</p></div>
+        </div>
+        <div class="flex gap24 st" style="margin-top:34px">
+          <div class="co grow" style="--cc:var(--ink-3)"><div class="nm" style="font-size:26px">Brink List · Latent Health</div><div class="ds" style="font-size:24px">AI Agent 替医生填写保险文书，让患者更快拿到处方药；估值 6 亿美元。</div></div>
+          <div class="co grow" style="--cc:var(--ink-3)"><div class="nm" style="font-size:26px">Brink List · Certuma</div><div class="ds" style="font-size:24px">目标是首个获 FDA 批准、可诊断并开处方的 AI 系统——从“替医生省时间”走向“替医生做判断”。</div></div>
+        </div>
+        <p class="reveal d5" style="margin-top:30px;font-size:27px"><b>规律</b>：监管越严的行业，AI 越先从<b>文书、检索、流程</b>切入，再逐步靠近临床判断。（课堂归纳）</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P4、P31；R1、R3、R5 Forbes（Brink List）；R7 note.com ⚠ 二手；L1 中“AI 病历助手研究”可对照</div>
+    </section>
+
+    <!-- === SLIDE 23 · 法律与金融 === -->
+    <section class="slide c" data-sec="2 · 四层产业栈" data-title="应用 · 法律与金融：当 Agent 碰到专业服务">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 法律与金融</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:58px">专业服务：<em>按小时收费</em>的行业被重估</h2>
+        <div class="flex gap48" style="margin-top:34px">
+          <div class="col st" style="width:1020px;gap:18px">
+            <div class="co" style="--cc:#5a6272;padding:24px 30px"><div class="nm" style="font-size:34px">Harvey</div><div class="ds" style="font-size:26px">律所与法务的 AI 助手：研究、起草、并购尽调。约 <b>10 万</b>法律人士、<b>1,300</b> 家机构（⚠）；<b>2026-09 估值 155 亿美元</b>，并发布首个后训练开放权重模型与 Harvey LAB 基准。</div></div>
+            <div class="co" style="--cc:#5a6272;padding:24px 30px"><div class="nm" style="font-size:34px">Legora <em>NEW</em></div><div class="ds" style="font-size:26px">欧洲（斯德哥尔摩）。把大量合同拆成“一行一份文件、一列一个问题”的表格，找出差异；2026-03 融资 5.5 亿美元（⚠），向美国扩张。</div></div>
+            <div class="co" style="--cc:#5a6272;padding:24px 30px"><div class="nm" style="font-size:34px">Rogo <em>NEW</em></div><div class="ds" style="font-size:26px">投行与资管的分析助手：约 <b>25,000</b> 名银行家/投资者在用；收入由 2024 年约 200 万美元增至 2025 年 1,500 万美元以上（⚠ 二手）。</div></div>
+          </div>
+          <div class="grow col reveal d4" style="justify-content:center">
+            <div class="card o" style="padding:34px 36px"><div class="n">2026 年 2 月</div><h3 style="font-size:36px">“SaaSpocalypse”</h3><p style="font-size:26px;margin-top:12px">Anthropic 发布面向企业流程自动化的 <b>Claude Cowork</b>，据 Forbes：SaaS、IT 与法律服务类股票<b>市值一度蒸发约 2,850 亿美元</b>。</p>
+              <p style="font-size:24px;margin-top:14px;color:var(--ink-3)">信号：模型公司直接进入应用层，应用层公司必须回答“我比模型公司多什么”。</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P20、P21、P25；R1 Forbes（Anthropic 条目：2,850 亿美元）；R14 Harvey 博客；R7 note.com ⚠ 二手（用户数、融资额、收入）</div>
+    </section>
+
+    <!-- === SLIDE 24 · 客服与企业 Agent === -->
+    <section class="slide c" data-sec="2 · 四层产业栈" data-title="应用 · 客服与运营：从聊天机器人到“能办事”">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 客服与运营</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:58px">客服 Agent：从“能说”到<em>“能办”</em></h2>
+        <div class="flex gap24 st" style="margin-top:34px">
+          <div class="card b grow" style="padding:30px 32px"><div class="n">SIERRA</div><h3 style="font-size:36px">接入政策与后台</h3><p style="font-size:25px;margin-top:10px">连接企业规则与内部系统，<b>直接执行</b>查单、改期、退款。估值 100 亿美元；客户含 Sonos、The North Face（⚠）。</p></div>
+          <div class="card t grow" style="padding:30px 32px"><div class="n">DECAGON</div><h3 style="font-size:36px">处理退款与改合同</h3><p style="font-size:25px;margin-top:10px">不只回答，还<b>办理</b>。客户含 Duolingo、Hertz、Notion（⚠）。估值 45 亿美元。</p></div>
+          <div class="card o grow" style="padding:30px 32px"><div class="n">ELISEAI · NEW</div><h3 style="font-size:36px">房产与医疗前台</h3><p style="font-size:25px;margin-top:10px">美国大型物业管理公司中 <b>80% 以上</b>在用：约看房、报修、续租；2023 年扩展到医疗。</p></div>
+        </div>
+        <div class="flex gap24 center reveal d5" style="margin-top:44px;padding:30px 36px;background:var(--paper-2)">
+          <div class="flex gap16 center"><span class="chip">问答</span><span class="arrow" style="font-size:36px">→</span><span class="chip b">查询</span><span class="arrow" style="font-size:36px">→</span><span class="chip t">办理</span></div>
+          <p style="font-size:27px;flex:1">差别在<b>能不能操作后台系统</b>。这正是 L7 里“工具使用”能力的商业落点；下一页之后会看到它如何改变“系统”。</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P14、P39；R3 Forbes（EliseAI 条目）；R7 note.com ⚠ 二手（客户与估值）；L7《AI 4.0：工具使用 / 智能体》</div>
+    </section>
+
+    <!-- === SLIDE 25 · 创意与多媒体 === -->
+    <section class="slide c" data-sec="2 · 四层产业栈" data-title="应用 · 创意与多媒体：最先盈利的一类">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 创意与多媒体</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:58px">创意：<em>最先赚到钱</em>的一类</h2>
+        <div class="flex gap16 st" style="margin-top:30px;flex-wrap:wrap" id="crG"></div>
+        <div class="flex gap24 reveal d5" style="margin-top:30px">
+          <div class="card g grow" style="padding:22px 28px"><div class="n">盈利</div><p style="font-size:24px"><b>ElevenLabs</b>：2025 年盈利约 1.16 亿美元；<b>Midjourney</b>：零外部融资且盈利；<b>Gamma</b>：2023 年起盈利（⚠ 均为报道口径）。</p></div>
+          <div class="card o grow" style="padding:22px 28px"><div class="n">争议</div><p style="font-size:24px"><b>Suno</b> 用文字生成完整歌曲、约 200 万付费用户，也带来“训练数据与版权”问题——生成式内容的法律边界尚未稳定。</p></div>
+        </div>
+      </div>
+      <script>(function(){document.getElementById('crG').innerHTML=['Midjourney','ElevenLabs','Runway','Synthesia','HeyGen','Krea','Suno'].map(id=>coCard(id,{st:'width:420px',dsz:23,xsz:20})).join('')+'<div class="co" style="width:420px;--cc:#24509e"><div class="nm" style="font-size:28px">Black Forest Labs <em>NEW</em></div><div class="ds" style="font-size:23px">FLUX 图像/视频模型（归基础模型层）；客户含 Adobe、Canva、Meta、微软</div></div>';})();</script>
+      <div class="src"><b>参考</b> 原 PPT P8、P16、P27、P33–P35、P44–P45；R7 note.com ⚠ 二手；R1 Forbes；Black Forest Labs 在本课归入基础模型层</div>
+    </section>
+
+    <!-- === SLIDE 26 · 机器人与自动驾驶 === -->
+    <section class="slide c" data-sec="2 · 四层产业栈" data-title="应用 · 物理 AI：从屏幕走向现实世界">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 机器人与自动驾驶</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:58px">物理 AI：<em>数据</em>从哪里来？</h2>
+        <div class="flex gap24 st" style="margin-top:34px">
+          <div class="card o grow" style="padding:30px 32px"><div class="n">SKILD AI · 估值 140 亿</div><h3 style="font-size:36px">通用机器人“大脑”</h3><p style="font-size:25px;margin-top:10px">一套模型适配不同硬件与任务；强调用<b>仿真 + 人类示教</b>训练（原 PPT P40）。融资 20 亿美元。</p></div>
+          <div class="card b grow" style="padding:30px 32px"><div class="n">PHYSICAL INTELLIGENCE · NEW</div><h3 style="font-size:36px">视觉-语言-动作</h3><p style="font-size:25px;margin-top:10px">融资 10 亿美元；让真人<b>遥操作</b>人形机器人在厨房、卧室等真实环境里采集数据（Forbes）。</p></div>
+          <div class="card t grow" style="padding:30px 32px"><div class="n">APPLIED INTUITION · NEW</div><h3 style="font-size:36px">仿真与车载软件</h3><p style="font-size:25px;margin-top:10px">自动驾驶仿真、测试与车载软件；客户含大众、通用；估值约 150 亿（⚠）。</p></div>
+        </div>
+        <div class="flex gap24 st" style="margin-top:30px">
+          <div class="co grow" style="--cc:#24509e"><div class="nm" style="font-size:26px">World Labs · 李飞飞</div><div class="ds" style="font-size:23px">空间智能 / 世界模型：生成可操作的 3D 空间；2026-02 融资 10 亿美元。</div></div>
+          <div class="co grow" style="--cc:var(--ink-3)"><div class="nm" style="font-size:26px">Brink List · Advanced Machine Intelligence</div><div class="ds" style="font-size:23px">LeCun 联合创立（巴黎）：从视频、传感器等真实世界数据中学习；2026 年成立即融资超 10 亿美元。</div></div>
+        </div>
+        <p class="reveal d5" style="margin-top:28px;font-size:27px"><b>问题</b>：语言有互联网上的海量文本，<b>动作</b>没有——谁掌握物理世界的数据，谁就掌握下一层护城河。（课堂讨论）</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P17、P40、P51；R1、R3、R5 Forbes（Physical Intelligence、Brink List）；R7 ⚠；R17 Crunchbase（物理 AI 融资）；原 PPT P17 的 Figure 本届未入选</div>
+    </section>
+
+    <!-- === SLIDE 27 · 章节 Part 3 === -->
+    <section class="slide c chapter" data-sec="3 · 商业与价值" data-title="Part 3 · Business & Value">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 8</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">03</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 3</div>
+        <h2 class="reveal d2">Business <em>&amp; Value</em></h2>
+        <div class="s reveal d3">从岗位、人效、用量，到资本与结局：这 50 家告诉了我们什么</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>3.1</b>替代了谁的哪份工作</div>
+        <div><b>3.2</b>人效、用量与中国的另一张榜</div>
+        <div><b>3.3</b>下一批：Brink List</div>
+        <div><b>3.4</b>资本、结局与评估框架</div>
+      </div>
+    </section>
+
+    <!-- === SLIDE 28 · 岗位 × AI 公司（交互） === -->
+    <section class="slide c" data-sec="3 · 商业与价值" data-title="替代了谁的哪份工作？（交互）" id="s-jobs">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 岗位</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">价值从“模型”走向<em>“工作流”</em></h2><div class="hint">点击一个岗位</div></div>
+        <div class="flex gap32" style="margin-top:28px">
+          <div class="reveal d2" id="jbL" style="width:640px;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-content:start"></div>
+          <div class="grow col reveal d3" id="jbR"></div>
+        </div>
+      </div>
+      <script>(function(){
+        const J=[['医生写病历','Abridge','问诊后花大量时间补写病历与计费文书','监听医患对话，自动生成病历并写回系统'],
+          ['医生查文献','OpenEvidence','在海量论文与指南里找依据','用自然语言提问，返回有出处的循证答案'],
+          ['律师审合同','Harvey','逐份阅读合同、做尽调与起草','批量审阅、起草、研究；与 Legora 同类'],
+          ['投行分析师','Rogo','在财报与研报里提数据、做对比','自动研究与分析；约 25,000 人在用'],
+          ['客服专员','Sierra','接电话、查订单、改期、退款','Agent 读政策、调用后台，直接办理'],
+          ['程序员','Cursor','手写、查文档、跨文件重构','读整个仓库，提出并执行多文件修改'],
+          ['销售开发','Clay','手工找线索、写开场白','聚合多源信息并个性化触达；年化收入达 1 亿美元'],
+          ['招聘与专家众包','Mercor','简历筛选、人工面试','AI 面试并撮合专家，为 AI 实验室提供评估数据'],
+          ['做演示文稿','Gamma','在 PowerPoint 里排版几小时','一句话生成幻灯片、网页；约 50 人、年化收入 > 1 亿'],
+          ['用户访谈','Listen Labs','约人、访谈、整理记录','AI 主持访谈并分析；已超 100 万次'],
+          ['配音与视频','ElevenLabs','请配音演员、请剧组','文字转语音、克隆音色、多语配音'],
+          ['口语陪练','Speak','请外教、凑时间','AI 导师实时对话与纠错']];
+        const L=document.getElementById('jbL'),R=document.getElementById('jbR');let cur=0;
+        function draw(){L.innerHTML=J.map((j,i)=>`<button class="tab${i===cur?' on':''}" data-i="${i}" style="font-size:28px;padding:34px 16px;text-align:center;font-family:var(--f-sans);font-weight:500">${j[0]}</button>`).join('');
+          L.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{cur=+b.dataset.i;draw();});
+          const j=J[cur],c=CO.find(x=>x.id===j[1]),l=LAYERS[c.L];
+          R.innerHTML=`<div class="flex gap24 center"><div class="card g grow" style="padding:32px 34px;min-height:290px"><div class="n">过去</div><p style="font-size:33px;color:var(--ink)">${j[2]}</p></div><div class="arrow">→</div><div class="card b grow" style="padding:32px 34px;min-height:290px"><div class="n">现在</div><p style="font-size:33px;color:var(--ink)">${j[3]}</p></div></div>
+          ${coCard(j[1],{st:'margin-top:26px;padding:34px 38px',dsz:34,xsz:28})}
+          <p class="hint" style="margin-top:18px;font-size:20px;letter-spacing:0">${c.id} · ${l.n}${c.L===3?' · '+DOMAINS[c.d]:''}　${c.th?'':'（2026 新晋）'}</p>`;}
+        draw();})();</script>
+      <div class="src"><b>参考</b> 原 PPT P4–P53 的“用途”；R1–R3 Forbes；R7 note.com ⚠ 二手（用户数、收入）；“过去/现在”为课堂归纳</div>
+    </section>
+
+    <!-- === SLIDE 29 · 人效（交互） === -->
+    <section class="slide c" data-sec="3 · 商业与价值" data-title="人效：通往“一人独角兽”（交互）" id="s-lean">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.2 人效</div><div class="pg"></div>
+      <div class="body flex gap48">
+        <div class="col" style="width:880px">
+          <h2 class="reveal d1" style="font-size:56px">人均收入：<em>一人独角兽</em>还有多远</h2>
+          <figure class="reveal d2" style="margin-top:22px"><img class="shot" style="width:880px;height:600px;object-fit:cover;object-position:top left" src="assets/lean-board-table.jpg" alt="Lean AI Native Companies Leaderboard"><figcaption>原 PPT P65 · Lean AI Native Companies Leaderboard（2025 年快照）</figcaption></figure>
+          <p class="reveal d4" style="margin-top:20px;font-size:26px">入选门槛：年化收入 > 500 万美元、员工 < 50 人、成立 < 5 年。</p>
+        </div>
+        <div class="grow col reveal d3">
+          <div class="hint" style="font-size:25px">点击一行：按这家的人效，赚到 <b style="color:var(--ink)">10 亿美元</b>需要多少人？</div>
+          <div id="lnB" style="margin-top:12px"></div>
+          <div class="card b" id="lnR" style="margin-top:28px;padding:30px 34px"></div>
+        </div>
+      </div>
+      <script>(function(){
+        const R=[['Telegram ⚠',33.3,'年收入 10 亿、30 人；是否“AI 原生”有争议'],['Midjourney',12.5,'年收入约 5 亿、40 人，零融资'],['Surge AI',9.1,'年收入约 10 亿、110 人，零融资'],['Cursor（2025 快照）',5.0,'年化收入 1 亿、20 人（此后已大幅扩张）'],['Gamma（2026）',2.0,'年化收入 > 1 亿、约 50 人（Forbes）']];
+        const B=document.getElementById('lnB');let cur=1;
+        function draw(){B.innerHTML=R.map((r,i)=>`<div class="hb" data-i="${i}" style="margin:26px 0;cursor:pointer;opacity:${i===cur?1:.55}"><div class="lb" style="width:300px;font-size:28px">${r[0]}</div><div class="tr" style="height:48px"><div class="fl ${i===cur?'':'g'}" style="--w:${(r[1]/33.3*100).toFixed(1)}%;width:${(r[1]/33.3*100).toFixed(1)}%"></div></div><div class="vl" style="width:190px;font-size:28px">$${r[1].toFixed(1)}M/人</div></div>`).join('');
+          B.querySelectorAll('.hb').forEach(h=>h.onclick=()=>{cur=+h.dataset.i;draw();});
+          const r=R[cur];document.getElementById('lnR').innerHTML=`<div class="n mono" style="font-size:18px;letter-spacing:.1em;color:var(--ink-3)">${r[0]}</div><p style="font-size:32px;margin-top:8px;color:var(--ink)">按 <b>$${r[1].toFixed(1)}M/人</b>，10 亿美元收入只需约 <b class="blue" style="font-size:52px">${Math.round(1000/r[1])}</b> 人</p><p style="font-size:25px;margin-top:8px;color:var(--ink-3)">${r[2]}</p>`;}
+        draw();})();</script>
+      <div class="src"><b>参考</b> 原 PPT P64–P65（leanaileaderboard.com，2025 快照；⚠ 2026 实时数据网页为动态加载，未能核对）；R3 Forbes（Gamma）；人均收入 = 年收入 ÷ 员工数；不同口径（年收入 / 年化收入）仅作量级参照</div>
+    </section>
+
+    <!-- === SLIDE 30 · token 用量 === -->
+    <section class="slide c" data-sec="3 · 商业与价值" data-title="用量：万亿 token 客户名单里的 AI 50">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.2 用量</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:56px">谁在大量调用模型？<em>1 万亿 token</em> 俱乐部</h2>
+        <div class="flex gap32" style="margin-top:22px">
+          <div class="flex gap16 reveal d2" style="width:1010px">
+            <figure style="width:497px"><img class="shot" style="width:497px;height:480px;object-fit:contain" src="assets/tokens-1t-a.jpg" alt="OpenAI 万亿 token 客户 1–15"></figure>
+            <figure style="width:497px"><img class="shot" style="width:497px;height:480px;object-fit:contain" src="assets/tokens-1t-b.jpg" alt="OpenAI 万亿 token 客户 16–30"></figure>
+          </div>
+          <div class="grow col st" style="justify-content:center;gap:18px">
+            <div class="card b" style="padding:22px 28px"><div class="n">30 家里的 AI 50</div><p style="font-size:25px">Abridge、Notion、Decagon、Harvey、Cognition、Perplexity、Genspark——<b>7 家</b>是 2026 榜单公司；OpenRouter、Rox 在 Brink List。</p></div>
+            <div class="card t" style="padding:22px 28px"><div class="n">2026</div><p style="font-size:25px">OpenAI：API 每分钟处理 > <b>150 亿</b> token（DevDay 2025 为 60 亿）；约 <b>200</b> 家组织累计超 1 万亿 token（⚠ 二手转述）。</p></div>
+          </div>
+        </div>
+        <p class="reveal d5" style="margin-top:22px;font-size:26px"><b>读法</b>：AI 50 里的应用公司，本身就是模型的<b>大客户</b>——应用层的“成本结构”，一半是别人的模型调用费。</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P59–P60（OpenAI DevDay 2025 的 30 家万亿 token 客户）；R20 OpenAI 企业更新；R21 shuaiguan.io 转述 OpenAI 企业报告 ⚠；对照名单为本课自行比对</div>
+    </section>
+
+    <!-- === SLIDE 31 · 中国（交互） === -->
+    <section class="slide c" data-sec="3 · 商业与价值" data-title="中国的另一张榜：谁拥有用户（交互）" id="s-cn">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.2 中国</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">中国：<em>入口</em>之争</h2>
+          <div class="sw reveal d2" id="cnS"><button class="on" data-m="0">2025-09 · 原 PPT</button><button data-m="1">2026-09 · QuestMobile</button></div></div>
+        <div class="flex gap48" style="margin-top:24px">
+          <div class="grow" id="cnB" style="min-height:560px"></div>
+          <div class="col" style="width:640px" id="cnR"></div>
+        </div>
+      </div>
+      <script>(function(){
+        const D=[[['百度 AI 搜索',61590],['豆包',21510],['DeepSeek',15434],['美图秀秀',10464],['作业帮',9863],['美颜相机',4089],['腾讯元宝',3824],['小猿搜题',3577],['大学搜题酱',3521],['小猿口算',3279]],
+                 [['豆包',41908,'+143.6%'],['千问',15817,'+5076.6%'],['DeepSeek',12265,'−15.2%'],['元宝',3733,'+13.6% ⚠'],['蚂蚁阿福',3479,'+342.9%'],['豆包爱学',2128,''],['Lovekey',898,'+228.6%']]];
+        const B=document.getElementById('cnB'),Rr=document.getElementById('cnR');
+        function draw(m){const d=D[m],mx=m?42000:62000;
+          B.innerHTML=d.map(r=>`<div class="hb" style="margin:${m?30:16}px 0"><div class="lb" style="width:230px;font-size:27px">${r[0]}</div><div class="tr" style="height:${m?42:34}px"><div class="fl ${m?'':'g'}" style="--w:${(r[1]/mx*100).toFixed(1)}%;width:${(r[1]/mx*100).toFixed(1)}%"></div></div><div class="vl" style="width:${m?250:130}px;font-size:25px">${(r[1]/10000).toFixed(2)}亿${r[2]?'　<span style="color:'+(r[2][0]==='−'?'#c9453b':'var(--blue)')+'">'+r[2]+'</span>':''}</div></div>`).join('');
+          Rr.innerHTML=m?`<div class="card b" style="padding:24px 30px"><div class="n">AI 原生 App 月活 TOP</div><p style="font-size:25px">豆包一家 <b>4.19 亿</b>月活；千问同比 +5076%（低基数），DeepSeek 同比 −15%。</p></div>
+            <div class="card t" style="margin-top:18px;padding:24px 30px"><div class="n">下一个入口：办公 Agent</div><p style="font-size:25px">办公 Agent 榜：腾讯 WorkBuddy 月活 <b>3,235 万</b>居首。从“聊天”走向“办事”，与 Part 2 的 Agent 同一趋势。</p></div>
+            <div class="card o" style="margin-top:18px;padding:24px 30px"><div class="n">对照 AI 50</div><p style="font-size:25px">Forbes 2026 名单里<b>没有中国公司</b>（据名单判断）；中国的竞争在“入口 + 场景”，而不是上榜。</p></div>`
+            :`<figure><img class="shot" style="width:640px;height:520px;object-fit:cover;object-position:top" src="assets/china-ai-app50-2025.jpg" alt="CHINA AI APP 50 by MAU"><figcaption>原 PPT P58 · CHINA AI APP 50（非凡产研，2025-09）</figcaption></figure><p style="margin-top:12px;font-size:23px">当时榜首是<b>AI 搜索</b>，教育类 App 占多席。</p>`;}
+        document.getElementById('cnS').querySelectorAll('button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#cnS button').forEach(x=>x.classList.toggle('on',x===b));draw(+b.dataset.m);});
+        draw(0);})();</script>
+      <div class="src"><b>参考</b> 原 PPT P58（非凡产研，国内 AI App，月活）；R19 QuestMobile 2026-09（经 199IT、快科技、虎嗅转载）；⚠ 两榜口径不同（前者含 AI 搜索与美图类 App，后者为“AI 原生 App”），<b>不能直接比较</b>；元宝同比来自 36 氪转引</div>
+    </section>
+
+    <!-- === SLIDE 32 · Brink List（交互） === -->
+    <section class="slide c" data-sec="3 · 商业与价值" data-title="下一批：AI 50 Brink List（交互）" id="s-brink">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.3 下一批</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">Brink List：<em>平均成立 24 个月</em></h2><div class="hint">点击公司</div></div>
+        <p class="reveal d2" style="margin-top:8px;font-size:26px">2026 新设：20 家种子/A 轮公司，合计融资 > <b>35 亿美元</b>；其中 3 家由女性领导。</p>
+        <div class="flex gap12 reveal d3" id="brC" style="margin-top:22px;flex-wrap:wrap;gap:10px"></div>
+        <div class="card b reveal d4" id="brD" style="margin-top:24px;padding:28px 36px;min-height:300px"></div>
+      </div>
+      <script>(function(){
+        const K=[['Accordance','2024','旧金山','13M','80M','帮会计师加速报税、审计与财务报告'],['Advanced Machine Intelligence','2026','巴黎','1.03B','4.53B*','从视频、传感器等真实世界数据中学习'],['Axiom','2025','帕洛阿尔托','264M','1.6B','解复杂数学问题的 AI 数学家'],['Certuma','2024','奥斯汀','10M','60M','能诊断并建议治疗的 AI 医生'],['Flapping Airplanes','2026','旧金山','180M*','1.5B*','需要更少数据的模型'],['Giga','2024','旧金山','61M','350M','客服 AI Agent'],['Humans&','2025','旧金山','500M','4.5B','更善于与人协作的模型'],['Irregular','2023','旧金山','80M','450M','测试 AI 模型的风险与弱点'],['Latent Health','2022','旧金山','80M','600M','替患者填写保险文书的 Agent'],['Micro1','2022','旧金山','41M','500M','为 AI 实验室提供数据的系统'],['Nectar Social','2023','帕洛阿尔托','10.6M','—','监测社交帖子如何带来销售'],['OpenRouter','2023','纽约','167.7M*','1.3B*','一个接口调用数百种模型；2026-08 据报道被 Stripe 以 > 70 亿美元收购 ⚠'],['Periodic Labs','2025','旧金山','300M','1.3B','能运行科学实验的 AI 系统'],['Resolve AI','2024','旧金山','190M','1.5B','帮工程师定位并修复线上代码问题'],['Ricursive Intelligence','2025','帕洛阿尔托','335M','—','自我改进的 AI 芯片设计'],['Rox','—','旧金山','199M*','1.2B*','（Forbes 未给出一句话介绍）'],['Simile','—','帕洛阿尔托','100M','—','（Forbes 未给出一句话介绍）'],['TollBit','2023','纽约','31M','93.9M*','追踪 AI 爬虫访问网站，让出版商向其收费'],['Wispr Flow','2021','旧金山','81M','700M*','（Forbes 未给出一句话介绍）'],['Worktrace AI','2025','旧金山','9.6M','—','帮公司找出可自动化的任务']];
+        const C=document.getElementById('brC'),D=document.getElementById('brD');let cur=11;
+        function draw(){C.innerHTML=K.map((k,i)=>`<button class="tab b${i===cur?' on':''}" data-i="${i}" style="font-size:21px;padding:13px 16px;font-family:var(--f-sans);font-weight:500">${k[0]}</button>`).join('');
+          C.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{cur=+b.dataset.i;draw();});
+          const k=K[cur];D.innerHTML=`<div class="flex between center"><h3 style="font-size:46px">${k[0]}</h3><div class="flex gap32"><div class="stat"><div class="l" style="margin:0">成立</div><div class="v" style="font-size:44px">${k[1]}</div></div><div class="stat"><div class="l" style="margin:0">融资</div><div class="v" style="font-size:44px">$${k[3]}</div></div><div class="stat"><div class="l" style="margin:0">估值</div><div class="v" style="font-size:44px;color:var(--ink-2)">${k[4]==='—'?'—':'$'+k[4]}</div></div></div></div><p style="font-size:30px;margin-top:20px;color:var(--ink)">${k[5]}</p><p class="hint" style="margin-top:14px;font-size:19px;letter-spacing:0">总部：${k[2]}　·　*PitchBook 估计</p>`;}
+        draw();})();</script>
+      <div class="src"><b>参考</b> R5 Forbes《The AI 50 Brink List》（2026-04-16）；OpenRouter 收购见 R18 Fortune ⚠（据知情人士，最终价格可能变化）；“一句话”为中文意译</div>
+    </section>
+
+    <!-- === SLIDE 33 · 资本：热与冷（交互） === -->
+    <section class="slide c" data-sec="3 · 商业与价值" data-title="资本：同一个季度的两面（交互）" id="s-cap">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.4 资本</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">热钱与<em>冷静</em></h2>
+          <div class="sw reveal d2" id="cpS"><button class="on" data-m="0">钱流向哪里</button><button data-m="1">估值有多贵</button></div></div>
+        <div id="cpC" style="margin-top:34px"></div>
+      </div>
+      <script>(function(){
+        const V=[['Anthropic（最后一轮）',14.8],['OpenAI（当轮）',35.5],['Mistral',61],['Cohere',85]];
+        function draw(m){const C=document.getElementById('cpC');
+          if(m===0)C.innerHTML=`<div class="flex gap48"><div class="stat grow"><div class="v" style="font-size:130px">$102<small>B</small></div><div class="l" style="font-size:28px">2026 Q3 流向 AI 公司的风险投资，占全球 <b>64%</b>（$159B）</div></div><div class="stat grow"><div class="v" style="font-size:130px">27</div><div class="l" style="font-size:28px">Q3 融资 ≥ 10 亿美元的公司数——<b>纪录</b></div></div><div class="stat grow"><div class="v" style="font-size:130px">$679<small>B</small></div><div class="l" style="font-size:28px">2026 年前三季度全球风险投资累计，历史同期最高</div></div></div>
+            <div class="card o" style="margin-top:46px;padding:28px 36px"><p style="font-size:28px;color:var(--ink)"><b>集中度</b>：Databricks、SSI 本季各融资 50 亿美元。</p></div>`;
+          else C.innerHTML=`<p style="font-size:27px">私募最后一轮估值 ÷ 年化收入（⚠ BlockWest 二手测算，仅示意量级）</p><div style="margin-top:16px">${V.map(v=>`<div class="hb" style="margin:18px 0"><div class="lb" style="width:330px;font-size:29px">${v[0]}</div><div class="tr" style="height:44px"><div class="fl ${v[1]>50?'n':v[1]>30?'o':''}" style="--w:${(v[1]/85*100).toFixed(1)}%;width:${(v[1]/85*100).toFixed(1)}%"></div></div><div class="vl" style="width:150px;font-size:30px">${v[1]}×</div></div>`).join('')}</div>
+            <div class="flex gap24" style="margin-top:34px"><div class="card g grow" style="padding:22px 30px"><p style="font-size:25px">SSI：估值 $32B，<b>无产品、无收入</b>——定价靠团队与叙事。</p></div><div class="card o grow" style="padding:22px 30px"><p style="font-size:25px"><b>冷却迹象</b>（⚠ 媒体报道）：OpenAI 新一轮计划融资 $30B，实际已入账约 $11B（估值 $1.25T）；Anthropic IPO 估值报道口径不一（约 $1.0–1.45T）。</p></div></div>`;}
+        document.getElementById('cpS').querySelectorAll('button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#cpS button').forEach(x=>x.classList.toggle('on',x===b));draw(+b.dataset.m);});
+        draw(0);})();</script>
+      <div class="src"><b>参考</b> R17 Crunchbase News（2026-10-05，数据截至 10-02）；R16 BlockWest Research ⚠ 二手；R9 The Verge/Bloomberg；R8 Reuters/NBC；估值倍数 = 估值 ÷ 年化收入，不同时点口径不一</div>
+    </section>
+
+    <!-- === SLIDE 34 · 三种结局 === -->
+    <section class="slide c" data-sec="3 · 商业与价值" data-title="三种结局：被买走、上市、继续独立">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.4 结局</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:58px">一年之内，名单里的公司有了<em>三种结局</em></h2>
+        <div class="tl st" style="margin-top:56px">
+          <div><div class="d">2025</div><h4>Windsurf 被拆分</h4><p>Google 以 24 亿美元聘走联创并授权技术；Cognition 收购余下部分</p></div>
+          <div><div class="d">2025</div><h4>Scale AI</h4><p>CEO Alexandr Wang 去 Meta 建超级智能实验室；公司称仍独立运营</p></div>
+          <div><div class="d">2026-02</div><h4>xAI 并入 SpaceX</h4><p>合并实体 Forbes 估值 1.25 万亿美元（二手称并购价 2,500 亿 ⚠）</p></div>
+          <div><div class="d">2026-06 → 08</div><h4>SpaceX 收购 Cursor</h4><p>600 亿美元；8 月完成（⚠ 二手）</p></div>
+          <div><div class="d">2026-08</div><h4>Stripe 收购 OpenRouter</h4><p>据报道 > 70 亿美元（⚠ 知情人士）；它是 Brink List 公司</p></div>
+          <div><div class="d">2026-11</div><h4>Anthropic IPO</h4><p>路演中；拟 11-19 在 Nasdaq 上市</p></div>
+        </div>
+        <div class="flex gap24 reveal d5" style="margin-top:60px">
+          <div class="card o grow" style="padding:26px 32px"><div class="n">被买走</div><p style="font-size:26px">买家是<b>平台与巨头</b>：人才 + 授权，或整家收购。</p></div>
+          <div class="card b grow" style="padding:26px 32px"><div class="n">上市</div><p style="font-size:26px">少数头部公司走向<b>公开市场</b>；OpenAI 预计 2027。</p></div>
+          <div class="card t grow" style="padding:26px 32px"><div class="n">继续独立</div><p style="font-size:26px">Midjourney、Gamma 等<b>少融资、早盈利</b>的路线仍然成立。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R3 Forbes（Scale AI、xAI、Windsurf）；R10 Forbes（Cursor）；R16 BlockWest ⚠（xAI 并购价）；R18 Fortune ⚠；R8 Reuters/CNBC（Anthropic IPO）</div>
+    </section>
+
+
+    <!-- === 八刀总览 === -->
+    <section class="slide c" data-sec="3 · 商业与价值" data-title="AI 这四年：八刀总览">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.5 八刀</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:58px">AI 这四年，砍向了<em>哪些行业</em>？</h2>
+        <p class="reveal d1" style="font-size:26px;color:var(--ink-2);margin-top:10px">每一刀 = 一次<b>模型或产品能力跃迁</b> → 一类<b>具体任务</b>被替代 → 一批公司与岗位受冲击</p>
+        <div class="flex gap16 reveal d2" style="flex-wrap:wrap;margin-top:28px"><div class="card reveal d2" style="width:410px;padding:0;overflow:hidden;background:#fff;border:1px solid var(--rule)"><img src="assets/cut1-chatgpt.jpg" style="width:100%;height:170px;object-fit:cover;object-position:top;display:block"><div style="padding:14px 20px 18px"><div class="mono blue" style="font-size:20px">第一刀 · 2022-11</div><div style="font:700 30px/1.25 var(--f-serif);margin-top:6px">ChatGPT</div><div style="font-size:23px;color:var(--ink-2);margin-top:4px">→ 作业辅导 · 技术问答</div></div></div><div class="card reveal d2" style="width:410px;padding:0;overflow:hidden;background:#fff;border:1px solid var(--rule)"><img src="assets/cut2-restofworld-illustrators.jpg" style="width:100%;height:170px;object-fit:cover;object-position:center 30%;display:block"><div style="padding:14px 20px 18px"><div class="mono blue" style="font-size:20px">第二刀 · 2023-03</div><div style="font:700 30px/1.25 var(--f-serif);margin-top:6px">GPT-4 · MJ v5</div><div style="font-size:23px;color:var(--ink-2);margin-top:4px">→ 游戏原画 · 图库</div></div></div><div class="card reveal d3" style="width:410px;padding:0;overflow:hidden;background:#fff;border:1px solid var(--rule)"><img src="assets/cut3-adobe-genfill.jpg" style="width:100%;height:170px;object-fit:cover;object-position:center;display:block"><div style="padding:14px 20px 18px"><div class="mono blue" style="font-size:20px">第三刀 · 2023-05</div><div style="font:700 30px/1.25 var(--f-serif);margin-top:6px">Photoshop AI</div><div style="font-size:23px;color:var(--ink-2);margin-top:4px">→ 抠图换背景岗位</div></div></div><div class="card reveal d3" style="width:410px;padding:0;overflow:hidden;background:#fff;border:1px solid var(--rule)"><img src="assets/cut4-signalfire.jpg" style="width:100%;height:170px;object-fit:cover;object-position:center;display:block"><div style="padding:14px 20px 18px"><div class="mono blue" style="font-size:20px">第四刀 · 2025–26</div><div style="font:700 30px/1.25 var(--f-serif);margin-top:6px">AI 编程</div><div style="font-size:23px;color:var(--ink-2);margin-top:4px">→ 大厂新人招聘</div></div></div><div class="card reveal d4" style="width:410px;padding:0;overflow:hidden;background:#fff;border:1px solid var(--rule)"><img src="assets/cut5-ant-skills.jpg" style="width:100%;height:170px;object-fit:cover;object-position:center;display:block"><div style="padding:14px 20px 18px"><div class="mono blue" style="font-size:20px">第五刀 · 2025-10 →</div><div style="font:700 30px/1.25 var(--f-serif);margin-top:6px">Agent Skills</div><div style="font-size:23px;color:var(--ink-2);margin-top:4px">→ 扣子企业版下线</div></div></div><div class="card reveal d4" style="width:410px;padding:0;overflow:hidden;background:#fff;border:1px solid var(--rule)"><img src="assets/cut6-cowork-ui.jpg" style="width:100%;height:170px;object-fit:cover;object-position:center;display:block"><div style="padding:14px 20px 18px"><div class="mono blue" style="font-size:20px">第六刀 · 2026-01</div><div style="font:700 30px/1.25 var(--f-serif);margin-top:6px">Anthropic 插件</div><div style="font-size:23px;color:var(--ink-2);margin-top:4px">→ 软件股 · 自由职业</div></div></div><div class="card reveal d5" style="width:410px;padding:0;overflow:hidden;background:#fff;border:1px solid var(--rule)"><img src="assets/cut7-sixthtone.jpg" style="width:100%;height:170px;object-fit:cover;object-position:center;display:block"><div style="padding:14px 20px 18px"><div class="mono blue" style="font-size:20px">第七刀 · 2026-02</div><div style="font:700 30px/1.25 var(--f-serif);margin-top:6px">Seedance 2.0</div><div style="font-size:23px;color:var(--ink-2);margin-top:4px">→ 真人短剧</div></div></div><div class="card reveal d5" style="width:410px;padding:0;overflow:hidden;background:#fff;border:1px solid var(--rule)"><img src="assets/cut8-opus55.jpg" style="width:100%;height:170px;object-fit:cover;object-position:center;display:block"><div style="padding:14px 20px 18px"><div class="mono blue" style="font-size:20px">第八刀 · 2026 秋</div><div style="font:700 30px/1.25 var(--f-serif);margin-top:6px">Opus 5.5</div><div style="font-size:23px;color:var(--ink-2);margin-top:4px">→ 视频制作 · 自媒体</div></div></div></div>
+      </div>
+      <div class="src"><b>参考</b> 各刀详见后续页；⚠ 因果关系为媒体报道与课堂判断，数字请以原文为准。R24–R48</div>
+    </section>
+
+    <!-- === 第1刀 === -->
+    <section class="slide c" data-sec="3 · 商业与价值" data-title="第1刀：1 · ChatGPT">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.5 八刀</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex gap48" style="align-items:flex-start;margin-top:6px">
+          <div class="col" style="width:790px;flex-shrink:0;gap:18px">
+            <div class="reveal d1"><span class="pill fill">第 1 刀 · 2022-11</span></div>
+            <h2 class="reveal d1" style="font-size:50px;line-height:1.2"><em>ChatGPT</em> 上线：<br>作业辅导与程序员问答</h2>
+            <div class="card b reveal d2" style="padding:18px 26px"><div class="n">触发</div><p style="font-size:25px">OpenAI 发布 ChatGPT：<b>免费、对话式</b>，一个问题直接给出答案。</p></div>
+            <div class="card o reveal d3" style="padding:18px 26px"><div class="n">冲击</div><ul style="font-size:24px;line-height:1.5;margin:6px 0 0 22px;padding:0"><li><b>Chegg</b>（作业辅导）2023-05 称 ChatGPT 冲击新增订阅，股价<b>当日暴跌</b>，Pearson 等教育股同日下挫</li><li><b>Stack Overflow</b>：提问 <b>−56%</b>、回答 <b>−63%</b>（2018 → 2023-07）；2023-10 <b>裁员约 28%</b></li></ul></div>
+            <p class="reveal d4" style="font-size:21px;line-height:1.45;color:var(--ink-3)">⚠ Stack Overflow 流量自 2020 年峰值后已在下滑，ChatGPT 是<b>加速器</b>而非唯一原因；Chegg 股价为当日报道口径，未核最新价。</p>
+          </div>
+          <div class="col" style="gap:16px"><figure class="reveal d3 contain" style="width:840px;height:470px;flex-shrink:0;margin-bottom:36px;"><img src="assets/cut1-so-traffic.jpg" alt="Stack Overflow 六项指标 2018–2023.07（Pragmatic Engineer，数据 A. F. Çelik）" style="object-fit:contain;object-position:center"><figcaption style="font-size:17px">Stack Overflow 六项指标 2018–2023.07（Pragmatic Engineer，数据 A. F. Çelik）</figcaption></figure><div class="flex gap16"><figure class="reveal d4" style="width:410px;height:200px;flex-shrink:0;margin-bottom:36px;"><img src="assets/cut1-chatgpt.jpg" alt="ChatGPT 初代界面" style="object-fit:cover;object-position:top"><figcaption style="font-size:17px">ChatGPT 初代界面</figcaption></figure><figure class="reveal d4" style="width:414px;height:200px;flex-shrink:0;margin-bottom:36px;"><img src="assets/cut1-so-ceo.jpg" alt="Stack Overflow CEO 宣布裁员（Business Insider）" style="object-fit:cover;object-position:center 20%"><figcaption style="font-size:17px">Stack Overflow CEO 宣布裁员（Business Insider）</figcaption></figure></div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R24 Guardian（Chegg）；R25 Business Insider（Stack Overflow 裁员）；R26 Pragmatic Engineer（图表）；ChatGPT 截图取自 L1</div>
+    </section>
+
+    <!-- === 第2刀 === -->
+    <section class="slide c" data-sec="3 · 商业与价值" data-title="第2刀：2 · 原画外包与图库">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.5 八刀</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex gap48" style="align-items:flex-start;margin-top:6px">
+          <div class="col" style="width:790px;flex-shrink:0;gap:18px">
+            <div class="reveal d1"><span class="pill fill">第 2 刀 · 2023-03</span></div>
+            <h2 class="reveal d1" style="font-size:50px;line-height:1.2"><em>GPT-4 与 Midjourney v5</em>：<br>游戏原画外包</h2>
+            <div class="card b reveal d2" style="padding:18px 26px"><div class="n">触发</div><p style="font-size:25px">GPT-4（03-14）与 <b>Midjourney v5</b>（03-15）接连上线：<b>出图质量</b>首次够用于商业。</p></div>
+            <div class="card o reveal d3" style="padding:18px 26px"><div class="n">冲击</div><ul style="font-size:24px;line-height:1.5;margin:6px 0 0 22px;padding:0"><li>第一财经 2023-04：游戏外包公司<b>三个月裁员约 30%</b>，多为初、中级原画师</li><li>50 人原画公司从“画图”降级为<b>给 AI 修图</b>：甲方一天出 100+ 张 AI 角色，下月还要再裁 20 多人</li><li><b>Shutterstock</b>：股价较 2021 峰值约 <b>−96%</b>（⚠ 二手图表）；2025-01 宣布与 Getty 合并</li></ul></div>
+            <p class="reveal d4" style="font-size:21px;line-height:1.45;color:var(--ink-3)">⚠ 游戏行业同期还受寒冬、版号等影响，裁员<b>不能全记在 AI 上</b>；Shutterstock 的下跌为二手统计图表，并含并购、行业因素，未独立核对。</p>
+          </div>
+          <div class="col" style="gap:16px"><figure class="reveal d3" style="width:840px;height:350px;flex-shrink:0;margin-bottom:36px;"><img src="assets/cut2-yicai-gameart.jpg" alt="第一财经 2023-04-05：《第一批因为 AI 失业的人出现？》" style="object-fit:cover;object-position:top"><figcaption style="font-size:17px">第一财经 2023-04-05：《第一批因为 AI 失业的人出现？》</figcaption></figure><div class="flex gap16"><figure class="reveal d4" style="width:410px;height:270px;flex-shrink:0;margin-bottom:36px;"><img src="assets/cut2-restofworld-illustrators.jpg" alt="中国游戏原画师（Rest of World）" style="object-fit:cover;object-position:center 30%"><figcaption style="font-size:17px">中国游戏原画师（Rest of World）</figcaption></figure><figure class="reveal d4 contain" style="width:414px;height:270px;flex-shrink:0;margin-bottom:36px;background:#161616"><img src="assets/cut2-shutterstock-chart.jpg" alt="Shutterstock 股价（The Dead Internet Report）⚠" style="object-fit:contain;object-position:center"><figcaption style="font-size:17px">Shutterstock 股价（The Dead Internet Report）⚠</figcaption></figure></div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R27 第一财经；R28 Rest of World；R29 harperflow ⚠ 二手；R30 Reuters（Shutterstock–Getty）</div>
+    </section>
+
+    <!-- === 第3刀 === -->
+    <section class="slide c" data-sec="3 · 商业与价值" data-title="第3刀：3 · AI 修图">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.5 八刀</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex gap48" style="align-items:flex-start;margin-top:6px">
+          <div class="col" style="width:790px;flex-shrink:0;gap:18px">
+            <div class="reveal d1"><span class="pill fill">第 3 刀 · 2023-05</span></div>
+            <h2 class="reveal d1" style="font-size:50px;line-height:1.2"><em>Photoshop 内置 AI</em>：<br>只会抠图换背景的岗位</h2>
+            <div class="card b reveal d2" style="padding:18px 26px"><div class="n">触发</div><p style="font-size:25px">Adobe 把 <b>Firefly 生成式填充</b>放进 Photoshop：选区 + 一句话，几秒完成<b>扩图、换背景、去物体</b>。</p></div>
+            <div class="card o reveal d3" style="padding:18px 26px"><div class="n">冲击</div><ul style="font-size:24px;line-height:1.5;margin:6px 0 0 22px;padding:0"><li>过去按小时计费的<b>抠图、换背景、去路人</b>变成一个按钮</li><li>消失的是<b>任务</b>：只会机械修图的入门岗被压缩，会审美、会指挥 AI 的人更值钱</li><li>Adobe 的说法：Firefly 是设计师的 <b>co-pilot</b>，不是替代</li></ul></div>
+            <p class="reveal d4" style="font-size:21px;line-height:1.45;color:var(--ink-3)">⚠ “岗位消失”目前<b>没有可核实的统计</b>，属于趋势判断与媒体报道；Adobe 为利益相关方。</p>
+          </div>
+          <div class="col" style="gap:16px"><figure class="reveal d3 contain" style="width:840px;height:367px;flex-shrink:0;margin-bottom:36px;"><img src="assets/cut3-adobe-genfill.jpg" alt="Photoshop 生成式填充：左原图，右为一句话生成的汽车与水坑（Adobe 官方）" style="object-fit:contain;object-position:center"><figcaption style="font-size:17px">Photoshop 生成式填充：左原图，右为一句话生成的汽车与水坑（Adobe 官方）</figcaption></figure><div class="card g reveal d4" style="padding:26px 34px"><div class="n">课堂提问</div><p style="font-size:27px">当一个岗位 80% 的时间是<b>可被一键完成的任务</b>，剩下 20% 的<em>判断力</em>能撑起这份工资吗？</p></div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R31 Adobe Blog（2023-05-23）；R32 Guardian（Adobe 与岗位担忧）</div>
+    </section>
+
+    <!-- === 第4刀 === -->
+    <section class="slide c" data-sec="3 · 商业与价值" data-title="第4刀：4 · AI 编程与新人招聘">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.5 八刀</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex gap48" style="align-items:flex-start;margin-top:6px">
+          <div class="col" style="width:790px;flex-shrink:0;gap:18px">
+            <div class="reveal d1"><span class="pill fill">第 4 刀 · 2025–2026</span></div>
+            <h2 class="reveal d1" style="font-size:50px;line-height:1.2"><em>AI 编程工具</em>成熟：<br>大厂不再招新人</h2>
+            <div class="card b reveal d2" style="padding:18px 26px"><div class="n">触发</div><p style="font-size:25px">Copilot → Cursor → Claude Code：<b>写得出、改得动、跑得通</b>的编码 Agent 进入日常开发。</p></div>
+            <div class="card o reveal d3" style="padding:18px 26px"><div class="n">冲击</div><ul style="font-size:24px;line-height:1.5;margin:6px 0 0 22px;padding:0"><li>Stanford “金丝雀”论文：22–25 岁<b>软件开发者就业较 2022-10 下降约 20%</b>，35 岁以上仍在增长</li><li>最易被 AI 取代的职业中，<b>早期员工相对下降 13%</b></li><li>SignalFire：大厂<b>新毕业生入职占比</b>持续下降（⚠ 具体数字以 2026 版报告为准）</li></ul></div>
+            <p class="reveal d4" style="font-size:21px;line-height:1.45;color:var(--ink-3)">⚠ 论文自己提醒：趋势<b>可能混有利率、宏观因素</b>；其用的是 ADP 薪资数据，只覆盖美国。</p>
+          </div>
+          <div class="col" style="gap:16px"><div class="flex gap24" style="align-items:flex-start"><figure class="reveal d3 contain" style="width:560px;height:707px;flex-shrink:0;margin-bottom:36px;"><img src="assets/cut4-canaries-fig1.jpg" alt="Brynjolfsson 等（2025）图 1：软件开发者分年龄段就业，2022-10 = 1" style="object-fit:contain;object-position:center"><figcaption style="font-size:17px">Brynjolfsson 等（2025）图 1：软件开发者分年龄段就业，2022-10 = 1</figcaption></figure><div class="col" style="gap:20px"><figure class="reveal d4" style="width:260px;height:146px;flex-shrink:0;margin-bottom:36px;"><img src="assets/cut4-signalfire.jpg" alt="SignalFire 人才报告 2026" style="object-fit:cover;object-position:center"><figcaption style="font-size:17px">SignalFire 人才报告 2026</figcaption></figure><div class="stat reveal d5" style="padding:0"><div class="n" style="font-size:96px;line-height:1;color:var(--blue)">−20%</div><p style="font-size:22px;margin-top:6px">22–25 岁软件开发者<br>就业 vs 2022-10</p></div></div></div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R33 Brynjolfsson, Chandar, Chen，Stanford Digital Economy Lab，2025-11；R34 SignalFire State of Talent 2026</div>
+    </section>
+
+    <!-- === 第5刀 === -->
+    <section class="slide c" data-sec="3 · 商业与价值" data-title="第5刀：5 · Skills 与扣子">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.5 八刀</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex gap48" style="align-items:flex-start;margin-top:6px">
+          <div class="col" style="width:790px;flex-shrink:0;gap:18px">
+            <div class="reveal d1"><span class="pill fill">第 5 刀 · 2025-10 → 2026-11</span></div>
+            <h2 class="reveal d1" style="font-size:50px;line-height:1.2"><em>Agent Skills</em> 推出：<br>扣子企业版下线</h2>
+            <div class="card b reveal d2" style="padding:18px 26px"><div class="n">触发</div><p style="font-size:25px">Anthropic 发布 <b>Agent Skills</b>（2025-10），12 月开放为标准：把业务流程写成<b>一份可复用的 SKILL</b>，任何通用 Agent 都能加载。</p></div>
+            <div class="card o reveal d3" style="padding:18px 26px"><div class="n">冲击</div><ul style="font-size:24px;line-height:1.5;margin:6px 0 0 22px;padding:0"><li><b>扣子（Coze）企业版</b>：2026-11-30 起<b>暂停新售</b>；旧版套餐 2026-12-31 下线；新版企业版 2027-12-31 下线</li><li>字节官方理由是<b>产品整合</b>：扣子、TRAE 团队并入豆包体系（IT之家）</li><li>课程判断：<b>拖拽式工作流平台</b>的价值被“通用 Agent + Skill”挤压</li></ul></div>
+            <p class="reveal d4" style="font-size:21px;line-height:1.45;color:var(--ink-3)">⚠ 官方原因是“整合升级”；与 Agent Skills 的因果关系是<b>课程判断</b>，不是公司表态。</p>
+          </div>
+          <div class="col" style="gap:16px"><figure class="reveal d3 contain" style="width:840px;height:450px;flex-shrink:0;margin-bottom:36px;"><img src="assets/cut5-coze-notice.jpg" alt="扣子官方《企业版下线公告》" style="object-fit:contain;object-position:center"><figcaption style="font-size:17px">扣子官方《企业版下线公告》</figcaption></figure><div class="flex gap16"><figure class="reveal d4" style="width:410px;height:200px;flex-shrink:0;margin-bottom:36px;"><img src="assets/cut5-ant-skills.jpg" alt="Claude 的 Skills 设置页（Anthropic）" style="object-fit:cover;object-position:center"><figcaption style="font-size:17px">Claude 的 Skills 设置页（Anthropic）</figcaption></figure><figure class="reveal d4" style="width:414px;height:200px;flex-shrink:0;margin-bottom:36px;"><img src="assets/cut5-ithome-coze.jpg" alt="IT之家 2026-11-04 报道" style="object-fit:cover;object-position:top"><figcaption style="font-size:17px">IT之家 2026-11-04 报道</figcaption></figure></div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R35 Anthropic（Agent Skills）；R36 VentureBeat（开放标准）；R37 扣子官方公告；R38 IT之家</div>
+    </section>
+
+    <!-- === 第6刀 === -->
+    <section class="slide c" data-sec="3 · 商业与价值" data-title="第6刀：6 · 插件与软件股">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.5 八刀</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex gap48" style="align-items:flex-start;margin-top:6px">
+          <div class="col" style="width:790px;flex-shrink:0;gap:18px">
+            <div class="reveal d1"><span class="pill fill">第 6 刀 · 2026-01 → 02</span></div>
+            <h2 class="reveal d1" style="font-size:50px;line-height:1.2"><em>Anthropic 插件</em>上线：<br>软件股与自由职业平台</h2>
+            <div class="card b reveal d2" style="padding:18px 26px"><div class="n">触发</div><p style="font-size:25px">Claude <b>Cowork 插件</b>（法律、销售、财务等岗位包）发布：模型公司<b>直接做应用层</b>。</p></div>
+            <div class="card o reveal d3" style="padding:18px 26px"><div class="n">冲击</div><ul style="font-size:24px;line-height:1.5;margin:6px 0 0 22px;padding:0"><li>2026-02-04：<b>全球软件股</b>应声下挫，媒体称 SaaSpocalypse（Reuters、Bloomberg）</li><li><b>Fiverr</b>：2026 年内股价跌超 <b>35%</b>（Calcalist，02-19）</li><li><b>Upwork</b>：02-10 当日大跌（Motley Fool）</li></ul></div>
+            <p class="reveal d4" style="font-size:21px;line-height:1.45;color:var(--ink-3)">⚠ 下跌是<b>多因叠加</b>（财报、指引、利率），不能全记在插件上；Upwork 为当日报道，本页未截图核对。Reuters 页无法截图。</p>
+          </div>
+          <div class="col" style="gap:16px"><figure class="reveal d3 contain" style="width:840px;height:450px;flex-shrink:0;margin-bottom:36px;"><img src="assets/cut6-fiverr-ctech.jpg" alt="Calcalist 2026-02-19：《AI 冲击重创 Fiverr，今年股价跌超 35%》" style="object-fit:contain;object-position:center"><figcaption style="font-size:17px">Calcalist 2026-02-19：《AI 冲击重创 Fiverr，今年股价跌超 35%》</figcaption></figure><div class="flex gap16"><figure class="reveal d4" style="width:410px;height:200px;flex-shrink:0;margin-bottom:36px;"><img src="assets/cut6-cowork-ui.jpg" alt="Claude Cowork（Anthropic）" style="object-fit:cover;object-position:center"><figcaption style="font-size:17px">Claude Cowork（Anthropic）</figcaption></figure><figure class="reveal d4" style="width:414px;height:200px;flex-shrink:0;margin-bottom:36px;"><img src="assets/cut6-nyse.jpg" alt="纽交所交易大厅（软件股抛售，报道配图）" style="object-fit:cover;object-position:center 40%"><figcaption style="font-size:17px">纽交所交易大厅（软件股抛售，报道配图）</figcaption></figure></div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R39 Reuters / Bloomberg（2026-02-04）；R40 Calcalist；R41 Motley Fool ⚠</div>
+    </section>
+
+    <!-- === 第7刀 === -->
+    <section class="slide c" data-sec="3 · 商业与价值" data-title="第7刀：7 · 真人短剧">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.5 八刀</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex gap48" style="align-items:flex-start;margin-top:6px">
+          <div class="col" style="width:790px;flex-shrink:0;gap:18px">
+            <div class="reveal d1"><span class="pill fill">第 7 刀 · 2026-02</span></div>
+            <h2 class="reveal d1" style="font-size:50px;line-height:1.2"><em>Seedance 2.0</em> 上线：<br>真人短剧</h2>
+            <div class="card b reveal d2" style="padding:18px 26px"><div class="n">触发</div><p style="font-size:25px">字节发布 <b>Seedance 2.0</b>：文字 / 图片 / 音频 / 视频<b>联合生成</b>，镜头与口型可直接成片。</p></div>
+            <div class="card o reveal d3" style="padding:18px 26px"><div class="n">冲击</div><ul style="font-size:24px;line-height:1.5;margin:6px 0 0 22px;padding:0"><li>财新 2026-06 封面报道：AI <b>90 天内接管</b>中国微短剧产业链</li><li>真人短剧公司<b>砍掉非头部演员项目</b>，只留“确定能赚钱”的真人剧</li><li>BBC 中文、Sixth Tone：AI 短剧的<b>成本、版权与演员处境</b></li></ul></div>
+            <p class="reveal d4" style="font-size:21px;line-height:1.45;color:var(--ink-3)">⚠ “砍项目”来自报道转述，<b>未核实单家公司数据</b>；发布日期 02-12（财新、NewsChina）与 BBC 的“3 月”口径不一。</p>
+          </div>
+          <div class="col" style="gap:16px"><figure class="reveal d3 contain" style="width:840px;height:450px;flex-shrink:0;margin-bottom:36px;"><img src="assets/cut7-seedance2.jpg" alt="ByteDance Seed：Seedance 2.0 官方页" style="object-fit:contain;object-position:center"><figcaption style="font-size:17px">ByteDance Seed：Seedance 2.0 官方页</figcaption></figure><div class="flex gap16"><figure class="reveal d4" style="width:410px;height:200px;flex-shrink:0;margin-bottom:36px;"><img src="assets/cut7-bbc-microdrama.jpg" alt="BBC 中文：AI 短剧画面" style="object-fit:cover;object-position:center"><figcaption style="font-size:17px">BBC 中文：AI 短剧画面</figcaption></figure><figure class="reveal d4" style="width:414px;height:200px;flex-shrink:0;margin-bottom:36px;"><img src="assets/cut7-sixthtone.jpg" alt="Sixth Tone：微短剧片场" style="object-fit:cover;object-position:center"><figcaption style="font-size:17px">Sixth Tone：微短剧片场</figcaption></figure></div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R42 Sixth Tone；R43 财新；R44 BBC 中文；R45 ByteDance Seed 官方页</div>
+    </section>
+
+    <!-- === 第8刀 === -->
+    <section class="slide c" data-sec="3 · 商业与价值" data-title="第8刀：8 · 视频制作">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.5 八刀</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex gap48" style="align-items:flex-start;margin-top:6px">
+          <div class="col" style="width:790px;flex-shrink:0;gap:18px">
+            <div class="reveal d1"><span class="pill fill">第 8 刀 · 2026 秋</span></div>
+            <h2 class="reveal d1" style="font-size:50px;line-height:1.2"><em>Claude Opus 5.5</em> 发布：<br>视频制作与自媒体</h2>
+            <div class="card b reveal d2" style="padding:18px 26px"><div class="n">触发</div><p style="font-size:25px">Opus 5.5 能<b>自主调用剪辑工具</b>：粗剪、字幕、配乐、导出，一个 Agent 全包。</p></div>
+            <div class="card o reveal d3" style="padding:18px 26px"><div class="n">冲击</div><ul style="font-size:24px;line-height:1.5;margin:6px 0 0 22px;padding:0"><li>21 经济网 2026-10：<b>剪辑变便宜了，钱流向了算力</b></li><li>视频制作公司<b>压缩剪辑岗</b>；自媒体创作者的<b>内容门槛与竞争同时上升</b></li><li>价值从<b>“会操作软件”</b>转向<b>选题、审美、流量判断</b></li></ul></div>
+            <p class="reveal d4" style="font-size:21px;line-height:1.45;color:var(--ink-3)">⚠ 本刀<b>证据最弱</b>：目前只有从业者访谈、效率案例，<b>没有可核实的裁员数字</b>；ifai.io 为二手评述。</p>
+          </div>
+          <div class="col" style="gap:16px"><figure class="reveal d3 contain" style="width:840px;height:450px;flex-shrink:0;margin-bottom:36px;"><img src="assets/cut8-21jingji.jpg" alt="21 经济网 2026-10-13：《AI 剪辑混战，钱从剪辑师流向了谁？》" style="object-fit:contain;object-position:center"><figcaption style="font-size:17px">21 经济网 2026-10-13：《AI 剪辑混战，钱从剪辑师流向了谁？》</figcaption></figure><div class="flex gap16"><figure class="reveal d4" style="width:410px;height:200px;flex-shrink:0;margin-bottom:36px;"><img src="assets/cut8-opus55.jpg" alt="Claude Opus 5.5（Anthropic 官方）" style="object-fit:cover;object-position:center"><figcaption style="font-size:17px">Claude Opus 5.5（Anthropic 官方）</figcaption></figure><div class="card g reveal d5" style="width:414px;height:200px;padding:22px 28px;box-sizing:border-box"><div class="n">判断</div><p style="font-size:25px">先看<b>钱流向哪里</b>，再看谁被裁。</p></div></div></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R46 Anthropic（Opus 5.5）；R47 21 经济网；R48 ifai.io ⚠ 二手</div>
+    </section>
+
+    <!-- === 八刀共性 === -->
+    <section class="slide c" data-sec="3 · 商业与价值" data-title="八刀的共性：被砍的是中间层">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.5 八刀</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex gap48" style="align-items:center">
+          <div class="col grow" style="gap:22px">
+            <h2 class="reveal d1" style="font-size:54px;line-height:1.2">八刀之后，看到的是<em>同一个规律</em></h2>
+            <div class="card b reveal d2" style="padding:22px 30px"><div class="n">① 先砍任务，不是职业</div><p style="font-size:26px">抠图、写作业答案、剪辑、搬运问答——<b>可标准化、可验证</b>的环节最先被替代。</p></div>
+            <div class="card o reveal d3" style="padding:22px 30px"><div class="n">② 受冲击的是“中间层”</div><p style="font-size:26px">辅导、外包、图库、低代码平台、入门岗、中介平台：<b>夹在需求与能力之间</b>的角色。</p></div>
+            <div class="card t reveal d4" style="padding:22px 30px"><div class="n">③ 价值向两端集中</div><p style="font-size:26px">一端是<b>算力与模型</b>，另一端是<b>判断、审美、客户关系</b>。</p></div>
+            <p class="reveal d5" style="font-size:22px;color:var(--ink-3)">⚠ 规律为课堂归纳；各刀证据强弱不同（第四刀有论文，第八刀仅有报道）。</p>
+          </div>
+          <div class="col" style="gap:16px;width:640px;flex-shrink:0">
+            <figure class="reveal d3 contain" style="width:640px;height:340px;margin-bottom:34px"><img src="assets/cut4-canaries-fig1.jpg" style="object-fit:cover;object-position:center 5%" alt="Stanford 图 1"><figcaption style="font-size:17px">证据最强的一刀：22–25 岁软件开发者就业（Stanford，2025）</figcaption></figure>
+            <figure class="reveal d4" style="width:640px;height:280px;margin-bottom:30px"><img src="assets/cut6-fiverr-ctech.jpg" style="object-fit:cover;object-position:top" alt="Fiverr"><figcaption style="font-size:17px">中间层平台：Fiverr 股价（Calcalist，2026-02）</figcaption></figure>
+          </div>
+        </div>
+        <div class="flex gap24 center reveal d5" style="margin-top:26px;padding:20px 30px;background:var(--paper-2)">
+          <span class="pill fill">五问回扣</span><p style="font-size:26px;flex:1">看一家 AI 公司时，先问：它是<b>被砍的中间层</b>，还是<b>在砍别人的那一刀</b>？</p>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> R33 Stanford；R40 Calcalist；规律为课堂归纳</div>
+    </section>
+
+    <!-- === SLIDE 35 · 评估框架（交互：翻牌） === -->
+    <section class="slide c" data-sec="3 · 商业与价值" data-title="怎么看一家 AI 公司：五问（交互）" id="s-five">
+      <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.4 框架</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">看一家 AI 公司，问这<em>五个问题</em></h2><div class="hint">点击卡片，看 AI 50 中的例子</div></div>
+        <div class="flex gap16 reveal d2" id="fvC" style="margin-top:36px"></div>
+        <div class="flex gap24 center reveal d4" style="margin-top:44px;padding:28px 34px;background:var(--paper-2)">
+          <span class="pill fill">课堂用</span>
+          <p style="font-size:27px;flex:1">用这五问分析<b>一家 AI 50 公司</b>：层级、岗位、护城河、被覆盖风险、单位经济。</p>
+        </div>
+      </div>
+      <script>(function(){
+        const Q=[['01','在哪一层？','数据 / 算力 / 模型 / 应用——越往上，越贴近客户，也越容易被模型公司“顺手做掉”。','Gamma（应用）与 Fireworks（算力）：面对的竞争完全不同'],
+          ['02','替代了谁的什么工作？','具体到岗位与流程，而不是“提升效率”。','Abridge → 医生写病历；Harvey → 律师审合同'],
+          ['03','护城河是什么？','数据、分发、流程嵌入、品牌，还是算力与资本？','Midjourney：品牌 + 社区；OpenAI：资本 + 算力 + 分发'],
+          ['04','模型公司会不会直接做？','当模型升级一代，你的产品是更强了，还是被覆盖了？','2026-02 Claude Cowork 一度拖累 SaaS 与法律服务类股票'],
+          ['05','单位经济怎么样？','收入 / 人、毛利、烧钱速度、对第三方模型的成本依赖。','Gamma：50 人、年化收入 > 1 亿；Cursor 的人效约 $5M/人（2025 快照）']];
+        const C=document.getElementById('fvC');
+        C.innerHTML=Q.map((q,i)=>`<div class="card ${['b','t','o','b','t'][i]} grow fc" style="padding:28px 26px;min-height:430px;cursor:pointer;flex:1;transition:background .25s"><div class="n">${q[0]}</div><h3 style="font-size:34px;line-height:1.35">${q[1]}</h3><p style="font-size:24px;margin-top:14px" class="fa">${q[2]}</p><p class="fb" style="display:none;font-size:25px;margin-top:14px;color:var(--ink)"><b>例</b>：${q[3]}</p></div>`).join('');
+        C.querySelectorAll('.fc').forEach(c=>c.onclick=()=>{const on=c.classList.toggle('flip');c.querySelector('.fa').style.display=on?'none':'';c.querySelector('.fb').style.display=on?'':'none';c.style.background=on?'#eef2fa':'#fff';});})();</script>
+      <div class="src"><b>参考</b> 本课框架（课堂归纳）；例子来自 R1、R3 Forbes、R3 Forbes；Cursor 人效见 P29；⚠ 五问为教学框架，不是投资建议</div>
+    </section>
+
+    <!-- === SLIDE 36 · 章节 Part 4 === -->
+    <section class="slide c chapter" data-sec="4 · 认知与收束" data-title="Part 4 · Cognition">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 8</b> · 人工智能产业实践</div><div class="pg"></div>
+      <div class="big">04</div>
+      <div class="ttl">
+        <div class="k reveal d1">PART 4</div>
+        <h2 class="reveal d2">Cognition <em>&amp; Wrap-up</em></h2>
+        <div class="s reveal d3">新一轮的人工智能产业，到底在改变什么？</div>
+      </div>
+      <div class="subs reveal d4">
+        <div><b>4.1</b>个人、组织、系统</div>
+        <div><b>4.2</b>认知飞轮</div>
+        <div><b>4.3</b>课程回顾与启示</div>
+      </div>
+    </section>
+
+    <!-- === 个人（原 PPT P63） === -->
+    <section class="slide c" data-sec="4 · 认知与收束" data-title="个人：能力的极大提升">
+      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.1 个人</div><div class="pg"></div>
+      <div class="body flex col center" style="justify-content:center;align-items:center;text-align:center">
+        <p class="reveal d1" style="font:500 28px/1.4 var(--f-sans);color:var(--ink-2);letter-spacing:.04em">对于个人——与 AI 交互的时代到来</p>
+        <h2 class="reveal d2" style="margin-top:36px;font-size:78px;line-height:1.25;max-width:1400px">个人的能力的<em>极大提升</em></h2>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P63</div>
+    </section>
+
+    <!-- === 组织（原 PPT P66） === -->
+    <section class="slide c" data-sec="4 · 认知与收束" data-title="组织：能力边界变得模糊">
+      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.1 组织</div><div class="pg"></div>
+      <div class="body flex col center" style="justify-content:center;align-items:center;text-align:center">
+        <p class="reveal d1" style="font:500 28px/1.4 var(--f-sans);color:var(--ink-2);letter-spacing:.04em">对于组织——真正用 AI 提升生产效率的时代到来</p>
+        <h2 class="reveal d2" style="margin-top:36px;font-size:78px;line-height:1.25;max-width:1400px">组织能力的边界<em>变得模糊</em></h2>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P66</div>
+    </section>
+
+    <!-- === 系统（原 PPT P67） === -->
+    <section class="slide c" data-sec="4 · 认知与收束" data-title="系统：用自然语言处理关系">
+      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.1 系统</div><div class="pg"></div>
+      <div class="body flex col center" style="justify-content:center;align-items:center;text-align:center">
+        <p class="reveal d1" style="font:500 28px/1.4 var(--f-sans);color:var(--ink-2);letter-spacing:.04em">对于系统——AI 最喜欢的世界</p>
+        <h2 class="reveal d2" style="margin-top:36px;font-size:78px;line-height:1.25;max-width:1400px">用自然语言去处理<em>人和系统的关系</em></h2>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P67</div>
+    </section>
+
+    <!-- === 认知飞轮（原 PPT P62 · 细箭头缓动） === -->
+    <section class="slide c" data-sec="4 · 认知与收束" data-title="认知飞轮：到底在改变什么" id="s-flywheel">
+      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.2 认知飞轮</div><div class="pg"></div>
+      <style>
+        #s-flywheel .fw-wrap{display:flex;gap:48px;align-items:center;justify-content:center;margin-top:18px}
+        #s-flywheel .fw-svg{width:980px;height:640px;flex-shrink:0}
+        #s-flywheel .fw-axis{stroke:var(--ink);stroke-width:2;stroke-linecap:round;opacity:.85}
+        #s-flywheel .fw-tick{stroke:var(--ink);stroke-width:2;fill:none}
+        #s-flywheel .fw-alab{font:600 26px var(--f-sans);fill:var(--blue)}
+        #s-flywheel .fw-track{fill:none;stroke:var(--rule);stroke-width:1.5}
+        #s-flywheel .fw-qlab{font:700 32px var(--f-serif-cn);fill:var(--ink);opacity:.3;transition:opacity .6s,fill .6s}
+        #s-flywheel .fw-qlab.on{opacity:1;fill:var(--blue)}
+        #s-flywheel .fw-hub{fill:var(--paper);stroke:var(--blue);stroke-width:1.75}
+        #s-flywheel .fw-hub-t{font:700 22px var(--f-serif-cn);fill:var(--blue);text-anchor:middle}
+        #s-flywheel .fw-shaft{stroke:var(--blue);stroke-width:1.75;stroke-linecap:round;fill:none}
+        #s-flywheel .fw-head{fill:var(--blue)}
+        #s-flywheel .fw-cards{width:520px;gap:14px;flex-shrink:0}
+        #s-flywheel .fw-card{padding:18px 26px;border:1.5px solid var(--rule);background:#fff;opacity:.4;transition:opacity .55s,border-color .55s,background .55s}
+        #s-flywheel .fw-card.on{opacity:1;border-color:var(--blue);background:#eef2fa}
+        #s-flywheel .fw-card .n{font:500 18px/1 var(--f-mono);letter-spacing:.06em;color:var(--ink-3)}
+        #s-flywheel .fw-card.on .n{color:var(--blue)}
+        #s-flywheel .fw-card p{font-size:28px;margin-top:6px;color:var(--ink)}
+        #s-flywheel .fw-hint{margin-top:14px;font:500 20px/1 var(--f-mono);letter-spacing:.08em;color:var(--ink-3);text-align:center}
+      </style>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:44px;line-height:1.25;text-align:center">新一代的人工智能产业革命，到底在改变什么？</h2>
+        <p class="reveal d1" style="margin-top:8px;font-size:25px;text-align:center;color:var(--ink-2)">答案是<em>认知改变</em>——人与 AI 在四个象限之间形成飞轮</p>
+        <div class="fw-wrap reveal d2">
+          <svg class="fw-svg" viewBox="0 0 980 640" aria-label="认知改变飞轮">
+            <line class="fw-axis" x1="490" y1="70" x2="490" y2="570"/>
+            <line class="fw-axis" x1="120" y1="320" x2="860" y2="320"/>
+            <polyline class="fw-tick" points="478,86 490,70 502,86"/>
+            <polyline class="fw-tick" points="844,308 860,320 844,332"/>
+            <text class="fw-alab" x="504" y="58">AI 知道</text>
+            <text class="fw-alab" x="504" y="598">AI 不知道</text>
+            <text class="fw-alab" text-anchor="end" x="108" y="312">人不知道</text>
+            <text class="fw-alab" x="872" y="312">人知道</text>
+            <circle class="fw-track" cx="490" cy="320" r="210"/>
+            <text id="fwL0" class="fw-qlab" text-anchor="middle" x="680" y="210">解决效率问题</text>
+            <text id="fwL1" class="fw-qlab" text-anchor="middle" x="300" y="210">解决人类学习问题</text>
+            <text id="fwL2" class="fw-qlab" text-anchor="middle" x="300" y="455">解决人类探索问题</text>
+            <text id="fwL3" class="fw-qlab" text-anchor="middle" x="680" y="455">解决 AI 学习问题</text>
+            <!-- thin arrow (~50° arc), tip leads counterclockwise -->
+            <g id="fwSpin">
+              <path class="fw-shaft" d="M 72 -197 A 210 210 0 0 0 -48 -205"/>
+              <path class="fw-head" d="M -48 -205 L -40 -218 L -62 -210 Z"/>
+            </g>
+            <circle class="fw-hub" cx="490" cy="320" r="56"/>
+            <text class="fw-hub-t" x="490" y="314">认知</text>
+            <text class="fw-hub-t" x="490" y="342">改变</text>
+          </svg>
+          <div class="col fw-cards">
+            <div class="fw-card" data-i="0"><div class="n">人知道 · AI 知道</div><p>解决<em>效率</em>问题</p></div>
+            <div class="fw-card" data-i="1"><div class="n">人不知道 · AI 知道</div><p>解决人类<em>学习</em>问题</p></div>
+            <div class="fw-card" data-i="2"><div class="n">人不知道 · AI 不知道</div><p>解决人类<em>探索</em>问题</p></div>
+            <div class="fw-card" data-i="3"><div class="n">人知道 · AI 不知道</div><p>解决 AI <em>学习</em>问题</p></div>
+            <div class="fw-hint">细箭头逆时针缓行 · 点击卡片跳转</div>
+          </div>
+        </div>
+      </div>
+      <script>(function(){
+        const slide=document.getElementById('s-flywheel'); if(!slide) return;
+        const spin=document.getElementById('fwSpin');
+        const CX=490, CY=320, PERIOD=18000; // 一圈 18 秒，慢速
+        // deg: 0=顶部，增大=逆时针。tip 角≈deg（箭头尖在弧前端）
+        // UR:270–360, UL:0–90, LL:90–180, LR:180–270
+        let deg=315, cur=-1, raf=0, t0=0, paused=false;
+        function quad(d){
+          const x=((d%360)+360)%360;
+          if(x<90) return 1;
+          if(x<180) return 2;
+          if(x<270) return 3;
+          return 0;
+        }
+        function setQ(i){
+          if(i===cur) return; cur=i;
+          for(let k=0;k<4;k++){
+            const on=k===i;
+            document.getElementById('fwL'+k).classList.toggle('on',on);
+            slide.querySelector('.fw-card[data-i="'+k+'"]').classList.toggle('on',on);
+          }
+        }
+        function place(d){
+          spin.setAttribute('transform','translate('+CX+' '+CY+') rotate('+(-d)+')');
+          setQ(quad(d));
+        }
+        function frame(now){
+          if(!slide.classList.contains('visible')){ raf=0; return; }
+          if(!t0) t0=now-(deg/360)*PERIOD;
+          if(!paused){
+            deg=(((now-t0)/PERIOD)*360)%360;
+            place(deg);
+          }
+          raf=requestAnimationFrame(frame);
+        }
+        function start(){ if(raf) return; paused=false; raf=requestAnimationFrame(frame); }
+        function stop(){ if(raf) cancelAnimationFrame(raf); raf=0; t0=0; }
+        slide.querySelectorAll('.fw-card').forEach(c=>c.onclick=()=>{
+          const i=+c.dataset.i;
+          deg=(315+i*90)%360;
+          place(deg);
+          paused=true;
+          t0=performance.now()-(deg/360)*PERIOD;
+          setTimeout(()=>{ paused=false; },1600);
+        });
+        new MutationObserver(()=>{ if(slide.classList.contains('visible')) start(); else stop(); })
+          .observe(slide,{attributes:true,attributeFilter:['class']});
+        if(slide.classList.contains('visible')) start();
+      })();</script>
+      <div class="src"><b>参考</b> 原 PPT P62（认知改变）；动态示意为课堂重绘</div>
+    </section>
+
+    <!-- === 课程回顾 === -->
+    <section class="slide c" data-sec="4 · 认知与收束" data-title="课程回顾：Data → AI → Business Value">
+      <div class="toprule"></div><div class="tag"><b>REVIEW</b> · 课程回顾</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:58px">八讲走完：<em>Data → AI → Business Value</em></h2>
+        <div class="flex gap12 st" style="margin-top:46px;gap:12px" id="rv"></div>
+        <div class="flex gap24 reveal d5" style="margin-top:52px">
+          <div class="card b grow" style="padding:26px 32px"><div class="n">方法论</div><p style="font-size:26px">问题 → 数据 → 模型 → 价值</p></div>
+          <div class="card t grow" style="padding:26px 32px"><div class="n">基本工具</div><p style="font-size:26px">R / Python、回归、机器学习、大模型与 Agent</p></div>
+          <div class="card o grow" style="padding:26px 32px"><div class="n">智能产业</div><p style="font-size:26px">一份榜单读懂一轮产业</p></div>
+          <div class="card g grow" style="padding:26px 32px"><div class="n">价值产品化</div><p style="font-size:26px">把数据能力变成可交付的产品与流程</p></div>
+        </div>
+      </div>
+      <script>(function(){
+        const L=[['L1','人工智能初探'],['L2','数据价值初探'],['L3','数据科学与 AI 1.0'],['L4','AI 2.0 回归分析'],['L5','AI 2.0 机器学习'],['L6','AI 3.0 深度学习 + 强化学习'],['L7','AI 4.0 预训练、提示词、智能体'],['L8','智能产业实践']];
+        document.getElementById('rv').innerHTML=L.map((x,i)=>`<div style="flex:1;padding:22px 16px 22px 20px;background:${i===7?'var(--blue)':'#fff'};border:1.5px solid ${i===7?'var(--blue)':'var(--rule)'};min-height:190px"><div style="font:500 22px/1 var(--f-mono);letter-spacing:.1em;color:${i===7?'#dfe7f6':'var(--blue)'}">${x[0]}</div><div style="margin-top:14px;font:700 25px/1.4 var(--f-serif-cn);color:${i===7?'#fff':'var(--ink)'}">${x[1]}</div></div>`).join('');})();</script>
+      <div class="src"><b>参考</b> 课程规划（Lecture 1 的路线页）</div>
+    </section>
+
+    <!-- === Jobs === -->
+    <section class="slide c" data-sec="4 · 认知与收束" data-title="Jobs：先让人看到">
+      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.2 启示</div><div class="pg"></div>
+      <div class="body flex col center" style="justify-content:center">
+        <figure class="reveal d1"><img class="shot" style="width:1240px;height:524px;object-fit:contain;border:none" src="assets/jobs.jpg" alt="Steve Jobs"></figure>
+        <p class="reveal d3" style="margin-top:36px;font-size:36px;text-align:center;color:var(--ink)">用户并不知道自己想要 AI——<br>直到<b class="blue">一个具体产品</b>出现在他们面前。</p>
+        <p class="reveal d4 hint" style="margin-top:18px;font-size:22px;letter-spacing:0">这也是 50 家公司的共同点：它们卖的不是“模型”，而是一个看得见的岗位与流程</p>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P67（Steve Jobs 引语）</div>
+    </section>
+
+    <!-- === 谢谢 === -->
+    <section class="slide c" data-sec="收束" data-title="谢谢">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 8</b> · 智能产业实践</div><div class="pg"></div>
+      <div class="body flex gap48" style="align-items:center">
+        <div class="grow col">
+          <div class="mono blue reveal d1" style="font-size:24px;letter-spacing:.2em">THANK YOU</div>
+          <h2 class="reveal d2" style="font-size:120px;margin-top:20px">谢谢 <em>大家</em></h2>
+          <p class="reveal d3" style="margin-top:30px;font-size:32px">问题与讨论</p>
+          <div class="flex center gap24 reveal d5" style="margin-top:60px"><img src="assets/logo-xjtu-red.png" style="width:100px;height:100px" alt="XJTU"><div><div style="font:700 30px var(--f-serif-cn)">常象宇</div><div style="font:400 23px/1.6 var(--f-sans);color:var(--ink-2)">西安交通大学 管理学院<br><span class="mono" style="font-size:20px;color:var(--ink-3)">xiangyuchang@xjtu.edu.cn</span></div></div></div>
+        </div>
+        <figure class="reveal d3" style="width:560px"><img style="width:540px;height:536px;object-fit:contain;border:none;background:none" src="assets/thanks.png" alt="谢谢"></figure>
+      </div>
+      <div class="src"><b>参考</b> 原 PPT P69</div>
+    </section>
+
+    <!-- === SLIDE 44 · 参考文献 === -->
+    <section class="slide c" data-sec="收束" data-title="参考文献">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 8</b> · 参考文献</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:50px">参考文献 <em>References</em></h2>
+        <div class="flex gap48" style="margin-top:20px;font:400 21px/1.45 var(--f-sans);color:var(--ink-2)">
+          <div class="col grow" style="gap:8px">
+            <div><b class="mono blue">R1</b> Forbes, <i>Forbes 2026 AI 50 List</i>, 2026-04-16. forbes.com/lists/ai50</div>
+            <div><b class="mono blue">R2</b> Forbes, <i>Forbes Unveils 2026 AI 50, Marking Shift From AI Dominance To AI Independence</i>, 2026-04-16</div>
+            <div><b class="mono blue">R3</b> E. Brier, <i>Forbes 2026 AI 50 List</i>（Forbes Middle East 转载），2026-04-17</div>
+            <div><b class="mono blue">R4</b> E. Brier, <i>How Forbes Compiled The 2026 AI 50 List</i>, 2026-04-16</div>
+            <div><b class="mono blue">R5</b> S. Chierchio, R. Shrivastava, <i>The AI 50 Brink List</i>, Forbes, 2026-04-16</div>
+            <div><b class="mono blue">R6</b> foundevo, <i>Forbes AI 50 List 2026</i>, 2026-04-29 ⚠ 二手</div>
+            <div><b class="mono blue">R7</b> S. Sawada, <i>I researched all 50 companies on the Forbes AI 50</i>, note.com, 2026-08-01 ⚠ 二手</div>
+            <div><b class="mono blue">R8</b> Anthropic roadshow launch；CNBC、NBC/Reuters，2026-11-10；Yahoo Finance，2026-11-13</div>
+            <div><b class="mono blue">R9</b> The Verge / Bloomberg, <i>OpenAI valued at $1.25 trillion</i>, 2026-11；Reuters, 2026-10-19</div>
+            <div><b class="mono blue">R10</b> Forbes, <i>SpaceX Will Buy AI Coding Firm Cursor For $60 Billion</i>, 2026-06-16</div>
+            <div><b class="mono blue">R11</b> TechCrunch（Cursor），2026-03-02、2026-04-17</div>
+            <div><b class="mono blue">R12</b> Reuters, <i>Databricks valued at $190 billion</i>, 2026-08-13</div>
+          </div>
+          <div class="col grow" style="gap:8px">
+            <div><b class="mono blue">R13</b> Bloomberg, <i>Cognition raises $2 billion at a $48 billion value</i>, 2026-09-08</div>
+            <div><b class="mono blue">R14</b> Harvey, <i>Harvey raises $550M at $15.5B</i>, 2026-09-09</div>
+            <div><b class="mono blue">R15</b> TapToMarket, <i>AI funding week Sep 8–14, 2026</i></div>
+            <div><b class="mono blue">R16</b> BlockWest Research, <i>AI lab funding tracker, October 2026</i> ⚠ 二手</div>
+            <div><b class="mono blue">R17</b> Crunchbase News, <i>Q3 2026 global startup funding</i>, 2026-10-05</div>
+            <div><b class="mono blue">R18</b> Fortune, <i>Stripe clinches over $7 billion deal to buy OpenRouter</i>, 2026-08-16 ⚠</div>
+            <div><b class="mono blue">R19</b> QuestMobile（经 199IT、快科技、虎嗅转载），2026-10-20</div>
+            <div><b class="mono blue">R20</b> OpenAI, <i>The next phase of enterprise AI</i>, 2026</div>
+            <div><b class="mono blue">R21</b> shuaiguan.io, <i>OpenAI Statistics</i> ⚠ 二手</div>
+            <div><b class="mono blue">R22</b> leanaileaderboard.com（H. Shi），原 PPT 截图（2025 快照）</div>
+            <div><b class="mono blue">R23</b> Forbes, <i>AI 50 2025</i>（Forbes Middle East 转载）</div>
+            <div><b class="mono blue">原 PPT</b> Materials/Lecture_8.pptx（P1–P69）</div>
+            <div class="muted" style="margin-top:6px">⚠ 标注页面含二手信息、口径不一的数据或课堂归纳（如四层归类，并非 Forbes 官方分类），引用前请核对原文。调研截至 2026-11-14。</div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>说明</b> 页面底部的 R# 对应此处编号</div>
+    </section>
+
+
+    <!-- === 参考文献（续）八刀 === -->
+    <section class="slide c" data-sec="收束" data-title="参考文献（续）：八刀">
+      <div class="toprule"></div><div class="tag"><b>LECTURE 8</b> · 参考文献（续）</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:50px">参考文献（续）<em>八刀</em></h2>
+        <div class="flex gap48" style="margin-top:20px;font:400 21px/1.45 var(--f-sans);color:var(--ink-2)">
+          <div class="col grow" style="gap:8px">
+            <div><b class="mono blue">R24</b> M. Milmo, <i>AI race is disrupting education firms – and that is just the start</i>, Guardian, 2023-05-03</div>
+            <div><b class="mono blue">R25</b> Business Insider, <i>Stack Overflow layoffs</i>, 2023-10；Stack Overflow Blog, 公司公告，2023-10-16</div>
+            <div><b class="mono blue">R26</b> G. Orosz, <i>Are reports of Stack Overflow’s fall exaggerated?</i>, Pragmatic Engineer（图表数据：A. F. Çelik）</div>
+            <div><b class="mono blue">R27</b> 第一财经，《第一批因为 AI 失业的人出现？游戏原画师迎来变革》，2023-04-05</div>
+            <div><b class="mono blue">R28</b> Rest of World, <i>AI is killing China’s video game illustrators</i>, 2023</div>
+            <div><b class="mono blue">R29</b> harperflow.io, <i>The Dead Internet Report: The Shutterstock Collapse</i> ⚠ 二手统计</div>
+            <div><b class="mono blue">R30</b> Reuters, <i>Shutterstock to merge with Getty Images</i>, 2025-01-07</div>
+            <div><b class="mono blue">R31</b> Adobe Blog, <i>Photoshop: new features, AI contextual presets</i>, 2023-05-23</div>
+            <div><b class="mono blue">R32</b> J. Taylor, <i>Adobe to integrate AI into Photoshop amid fears of job losses</i>, Guardian, 2023-05-23</div>
+            <div><b class="mono blue">R33</b> E. Brynjolfsson, B. Chandar, R. Chen, <i>Canaries in the Coal Mine</i>, Stanford Digital Economy Lab, 2025-11</div>
+            <div><b class="mono blue">R34</b> SignalFire, <i>State of Tech Talent Report 2026</i>, 2026-06-22 ⚠ 数字未逐项核对</div>
+            <div><b class="mono blue">R35</b> Anthropic, <i>Equipping agents for the real world with Agent Skills</i>, 2025-10</div>
+          </div>
+          <div class="col grow" style="gap:8px">
+            <div><b class="mono blue">R36</b> VentureBeat, <i>Anthropic launches enterprise Agent Skills and opens the standard</i>, 2025-12</div>
+            <div><b class="mono blue">R37</b> 扣子，《扣子企业版下线公告》，docs.coze.cn（2026-11）</div>
+            <div><b class="mono blue">R38</b> IT之家，《字节旗下 AI 开发平台“扣子”：推进企业级服务产品整合升级》，2026-11-04</div>
+            <div><b class="mono blue">R39</b> Reuters, <i>Global software stocks hit by Anthropic wake-up call</i>, 2026-02-04；Bloomberg, <i>What’s behind the SaaSpocalypse</i>, 2026-02-04（未截图）</div>
+            <div><b class="mono blue">R40</b> S. Shulman, <i>AI upheaval hits Fiverr hard</i>, Calcalist, 2026-02-19</div>
+            <div><b class="mono blue">R41</b> Motley Fool, <i>Why Upwork stock plunged today</i>, 2026-02-10 ⚠ 未截图核对</div>
+            <div><b class="mono blue">R42</b> Sixth Tone, 微短剧报道（sixthtone.com/news/1018902）</div>
+            <div><b class="mono blue">R43</b> 财新，<i>How AI took over China’s micro-drama industry in 90 days</i>, 2026-06-01</div>
+            <div><b class="mono blue">R44</b> BBC 中文，AI 短剧报道，2026</div>
+            <div><b class="mono blue">R45</b> ByteDance Seed，<i>Seedance 2.0</i> 官方页，seed.bytedance.com</div>
+            <div><b class="mono blue">R46</b> Anthropic，<i>Claude Opus 5.5</i>，anthropic.com</div>
+            <div><b class="mono blue">R47</b> 21 经济网，《AI 剪辑混战，钱从剪辑师流向了谁？》，2026-10-13</div>
+            <div><b class="mono blue">R48</b> ifai.io, <i>Opus 5.5 AI agent video editing</i> ⚠ 二手</div>
+            <div class="muted" style="margin-top:6px">⚠ 因果关系为媒体报道与课堂判断；未截图的来源（Reuters、Bloomberg、Motley Fool）为检索所见，引用前请核对原文。调研截至 2026-11-17。</div>
+          </div>
+        </div>
+      </div>
+      <div class="src"><b>说明</b> 与上一页 R1–R23 连续编号</div>
+    </section>
+
+  </div>
+</div>
+
+<!-- 底部控制条（舞台之外） -->
+<div class="deck-controls">
+  <button id="bPrev" title="上一页 ←">◀</button>
+  <button id="bOutline" title="目录 O">OUTLINE</button>
+  <span id="counter"></span>
+  <button id="bNext" title="下一页 →">▶</button>
+</div>
+
+<!-- 目录浮层：由各页 data-title / data-sec 自动生成 -->
+<div id="outline"><div class="close">ESC ✕</div></div>
+
+<!-- 侧边导航栏 -->
+<div id="sbTab" title="导航栏 S">导航</div>
+<aside id="sidebar"><div class="sbh"><b>Lecture 8 · 智能产业<span>实践</span></b><button id="sbClose">关闭 ✕</button></div><div class="sbl" id="sbList"></div></aside>
+
+<script>
+/* === 舞台缩放：整体等比缩放到窗口，保持 16:9 === */
+const stage = document.getElementById('stage');
+function fit() {
+  const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+  stage.style.transform = `translate(${(innerWidth - 1920 * s) / 2}px, ${(innerHeight - 1080 * s) / 2}px) scale(${s})`;
+}
+addEventListener('resize', fit); fit();
+
+/* === 翻页状态 === */
+const slides = [...document.querySelectorAll('.slide')];
+const counter = document.getElementById('counter');
+let cur = 0;
+slides.forEach((s, k) => { const p = s.querySelector('.pg'); if (p) p.textContent = `${String(k + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`; });
+function show(i) {
+  cur = Math.max(0, Math.min(slides.length - 1, i));
+  slides.forEach((s, k) => { s.classList.toggle('active', k === cur); s.classList.toggle('visible', k === cur); });
+  counter.textContent = `${cur + 1} / ${slides.length}`;
+  history.replaceState(null, '', '#' + (cur + 1));
+  document.querySelectorAll('#outline a').forEach((a, k) => a.classList.toggle('cur', +a.dataset.i === cur));
+  if (window.syncSidebar) syncSidebar();
+}
+
+/* === 目录（Outline）=== */
+const ol = document.getElementById('outline');
+(function buildOutline() {
+  const secs = []; let last = null;
+  slides.forEach((s, k) => {
+    const sec = s.dataset.sec; if (!sec) return;
+    if (!last || last.name !== sec) { last = { name: sec, items: [] }; secs.push(last); }
+    last.items.push({ i: k, t: s.dataset.title || '' });
+  });
+  let h = '<h1>Lecture 8 · 智能产业<span>实践</span></h1>';
+  secs.forEach(sc => {
+    h += `<div class="sec"><h4>${sc.name}</h4><div class="items">` +
+      sc.items.map(it => `<a data-i="${it.i}"><i>${String(it.i + 1).padStart(2, '0')}</i><span>${it.t}</span></a>`).join('') + '</div></div>';
+  });
+  ol.insertAdjacentHTML('beforeend', h);
+  ol.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { show(+a.dataset.i); toggleOutline(false); }));
+})();
+function toggleOutline(f) { ol.classList.toggle('open', f === undefined ? !ol.classList.contains('open') : f); }
+document.getElementById('bOutline').onclick = () => toggleOutline();
+document.getElementById('bPrev').onclick = () => show(cur - 1);
+document.getElementById('bNext').onclick = () => show(cur + 1);
+ol.querySelector('.close').onclick = () => toggleOutline(false);
+
+/* === 侧边导航栏：折叠分组，当前页高亮，可跳到任意页 === */
+const sb = document.getElementById('sidebar'), sbList = document.getElementById('sbList');
+(function buildSidebar() {
+  const secs = []; let last = null;
+  slides.forEach((s, k) => {
+    const sec = s.dataset.sec; if (!sec) return;
+    if (!last || last.name !== sec) { last = { name: sec, items: [] }; secs.push(last); }
+    last.items.push({ i: k, t: s.dataset.title || '' });
+  });
+  sbList.innerHTML = secs.map(sc => `<div class="sbs"><div class="sbt">${sc.name}<em>${sc.items.length}</em></div><div class="sbi">` +
+    sc.items.map(it => `<a data-i="${it.i}"><i>${String(it.i + 1).padStart(2, '0')}</i><span>${it.t}</span></a>`).join('') + '</div></div>').join('');
+  sbList.querySelectorAll('.sbt').forEach(t => t.addEventListener('click', () => t.parentNode.classList.toggle('open')));
+  sbList.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { show(+a.dataset.i); a.blur(); }));
+})();
+window.syncSidebar = function () {
+  sbList.querySelectorAll('a').forEach(a => a.classList.toggle('cur', +a.dataset.i === cur));
+  const c = sbList.querySelector('a.cur'); if (!c) return;
+  const g = c.closest('.sbs');
+  if (!g.classList.contains('open')) { sbList.querySelectorAll('.sbs.open').forEach(x => x.classList.remove('open')); g.classList.add('open'); }
+  if (sb.classList.contains('open')) c.scrollIntoView({ block: 'nearest' });
+};
+function toggleSidebar(f) { sb.classList.toggle('open', f === undefined ? !sb.classList.contains('open') : f); if (sb.classList.contains('open')) syncSidebar(); }
+document.getElementById('sbTab').onclick = () => toggleSidebar();
+document.getElementById('sbClose').onclick = () => toggleSidebar(false);
+document.addEventListener('mousedown', e => { if (sb.classList.contains('open') && !sb.contains(e.target) && e.target.id !== 'sbTab') toggleSidebar(false); });
+
+/* === 键盘 === */
+addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea')) return;
+  if (e.key === 'Escape') { toggleOutline(false); toggleSidebar(false); }
+  if (e.key === 's' || e.key === 'S') toggleSidebar();
+  if (e.key === 'o' || e.key === 'O') toggleOutline();
+  if (ol.classList.contains('open')) return;
+  if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); show(cur + 1); }
+  if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); show(cur - 1); }
+  if (e.key === 'Home') show(0);
+  if (e.key === 'End') show(slides.length - 1);
+});
+requestAnimationFrame(() => requestAnimationFrame(() => show((parseInt(location.hash.slice(1)) || 1) - 1)));
+</script>
+</body>
+</html>

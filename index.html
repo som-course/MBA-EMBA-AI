@@ -77,7 +77,9 @@ h1 em{font-style:normal;display:inline-block;background:var(--blue);color:var(--
 
 /* ===== Stats (整幅学术蓝) ===== */
 .stats{background:var(--blue);color:var(--paper);border-bottom:2px solid var(--ink)}
-.stats .wrap{display:grid;grid-template-columns:repeat(4,1fr)}
+.stats .wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.stat .v .bz{font:inherit}
+.stat .v .bzUV{font:700 clamp(20px,2.2vw,28px)/1.2 var(--f-mono);margin-top:10px;color:rgba(250,248,244,.88)}
 .stat{padding:44px 30px 40px;border-left:2px solid rgba(250,248,244,.35)} .stat:first-child{border-left:0;padding-left:0}
 .stat .v{font:900 clamp(44px,5.6vw,84px)/1 var(--f-disp);letter-spacing:-.03em}
 .stat .v small{font:600 .26em var(--f-sans);color:rgba(250,248,244,.8);margin-left:8px;letter-spacing:0}
@@ -215,6 +217,7 @@ footer a{color:var(--blue);border-bottom:2px solid var(--blue)} footer a:hover{b
     <div class="stat rv" style="--d:.06s"><div class="v" id="statPages" data-n="0">0<small>页</small></div><div class="l">全部为交互式 HTML，浏览器即开即讲</div></div>
     <div class="stat rv" style="--d:.12s"><div class="v">AI 1.0<small>→ 4.0</small></div><div class="l">专家系统 · 机器学习 · 深度学习 · 大模型</div></div>
     <div class="stat rv" style="--d:.18s"><div class="v">3<small>个主轴</small></div><div class="l">数据 · 智能 · 商业价值</div></div>
+    <div class="stat rv" style="--d:.24s"><div class="v"><span class="bz" id="busuanzi_value_site_pv">—</span><small>次打开</small><div class="bzUV"><span id="busuanzi_value_site_uv">—</span> 位访客</div></div><div class="l">主页 + 各讲 HTML 累计 · <a href="https://ibruce.info/busuanzi/" target="_blank" rel="noopener" style="color:inherit;border-bottom:1px solid rgba(250,248,244,.5)">不蒜子</a> ⚠</div></div>
   </div>
 </div>
 
@@ -399,5 +402,6 @@ for(let i=0;i<10;i++)spawn();
 requestAnimationFrame(frame);
 })();
 </script>
+<script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 </body>
 </html>

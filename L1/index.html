@@ -1553,6 +1553,45 @@ img, video, canvas, svg { max-width: 100%; max-height: 100%; }
       <div class="src"><b>参考</b> SEC S-1/A [R60]；招股区间 [R62]；Anthropic 官方定价 / 交割 [R63][R64]；Reuters 2026-11-19 [R65]；CNBC [R61]。⚠ 市值口径：完全稀释含期权等；私募与 IPO 合计约 $119.5B 毛额（Anthropic 公告）</div>
     </section>
 
+    <!-- === SLIDE · 市场叙事（交互）=== -->
+    <section class="slide c" data-sec="2.5 过去一年更加有用" data-title="Anthropic 上市：市场两套叙事">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.5 过去一年更加有用 · Anthropic · 市场观点</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center reveal d1">
+          <h2 style="font-size:52px;margin:0">同一场 IPO，<em>两套新闻叙事</em></h2>
+          <div class="tabs" id="antNarrTabs"><button class="tab b on" data-k="bull">看多 · AI 产业上行</button><button class="tab" data-k="bear">看空 · 泡沫与回调</button></div>
+        </div>
+        <div class="flex gap36 st" style="margin-top:22px;align-items:stretch">
+          <div style="width:900px">
+            <figure class="shot reveal d2" style="height:380px"><img id="antNarrImg" src="assets/ant-reu-ipo-charts.jpg" alt="Reuters mega-IPO 图表"></figure>
+            <figcaption id="antNarrCap" class="mono muted" style="font-size:18px;margin-top:8px">Reuters Graphics · 2026-11-19 · 募资规模超 SpaceX</figcaption>
+          </div>
+          <div class="col grow gap14" id="antNarrList" style="justify-content:center"></div>
+        </div>
+        <p class="reveal d3" style="margin-top:14px;font-size:22px;color:var(--ink-3)">课堂提示：媒体标题往往<b>择一放大</b>；合并读 Reuters + CNBC 才能看见「公司赢」与「板块抖」同时发生。</p>
+      </div>
+      <div class="src"><b>参考</b> Reuters Graphics [R65][R123]；Reuters 首发报道（⚠ Investing.com 镜像）[R123]；CNBC 看多语境 [R125]；CNBC 看空 / AI 再定价 [R126][R127]。ANT 次日约 −8.5%、纳指 11-20 −5.28% 见 [R126][R127]</div>
+      <script>(function(){
+        const V={
+          bull:{img:'assets/ant-reu-ipo-charts.jpg',cap:'Reuters Graphics · 2026-11-19 · IPO 毛额可达 $93.5B（含绿鞋假设）',
+            items:[['card b','<b>规模</b>','募资约 <b>$81.3B</b>，若绿鞋全额可至 <b>$93.5B</b>；报道称超 SpaceX 首发纪录'],
+              ['card t','<b>首日</b>','IPO 价 <b>$83</b> → 收 <b>$97.17</b>（<b>+17%</b>）；开盘一度 <b>$111.50</b>（+34%）'],
+              ['card b','<b>意义</b>','首家「前沿 AI」上市公司；Reuters：或成板块<b>估值锚 / 标杆</b>'],
+              ['card o','<b>创投</b>','CNBC：Menlo / Bessemer 等称创 venture 史上<b>最大账面回报</b>之一 ⚠']]},
+          bear:{img:'assets/ant-cnbc-ai-trade-selloff.jpg',cap:'CNBC · 2026-11-19 · Anthropic IPO fails to lift AI stocks',
+            items:[['card o','<b>板块</b>','首日纳指 <b>−2.25%</b>；11-20 纳指 <b>−5.28%</b>，报道称 AI 交易未因 IPO「打气」'],
+              ['card t','<b>个股</b>','ANT 首日涨后，次日约 <b>−8.5%</b>，周五收 <b>$88.91</b>'],
+              ['card o','<b>叙事</b>','「AI <b>再定价</b>」：估值 / 泡沫、capex 回报、利率；不宜再盲目抄底'],
+              ['card b','<b>分屏</b>','CNBC 11-21：纪录 IPO 与科技<b>最差一周</b>（纳指周跌约 10%）同屏出现']]}
+        };
+        const I=document.getElementById('antNarrImg'),C=document.getElementById('antNarrCap'),L=document.getElementById('antNarrList');
+        function go(k){const v=V[k];I.src=v.img;C.textContent=v.cap;
+          L.innerHTML=v.items.map(x=>`<div class="${x[0]} reveal d3" style="padding:14px 20px"><div class="n">${x[1]}</div><p style="font-size:24px;margin:0;line-height:1.45">${x[2]}</p></div>`).join('');}
+        document.querySelectorAll('#antNarrTabs .tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('#antNarrTabs .tab').forEach(x=>x.classList.toggle('on',x===b));go(b.dataset.k);});
+        go('bull');
+      })();</script>
+    </section>
+
     <!-- === OpenAI · 总览 === -->
     <section class="slide c" data-sec="2.5 过去一年更加有用" data-title="OpenAI：两年，模型与产品一起长大">
       <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.5 过去一年更加有用 · OpenAI 总览</div><div class="pg"></div>
@@ -3663,6 +3702,10 @@ img, video, canvas, svg { max-width: 100%; max-height: 100%; }
           <p style="font:inherit;margin:0 0 10px"><b>R63</b> Anthropic：Anthropic prices initial public offering — anthropic.com/news/anthropic-prices-initial-public-offering（2026-11-18，$83，980M 股，ANT）</p>
           <p style="font:inherit;margin:0 0 10px"><b>R64</b> Anthropic：IPO closing, greenshoe, concurrent private placement — anthropic.com/news/ipo-close（2026-11-20）</p>
           <p style="font:inherit;margin:0 0 10px"><b>R65</b> CNBC：Anthropic IPO $83 — cnbc.com/2026/11/18/anthropic-ipo-ai-offering-price.html ；Reuters Graphics：Anthropic mega-IPO charts — reuters.com/graphics/ANTHROPIC-IPO/CHARTS/jnpwdeanxvw/</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R123</b> Reuters：blockbuster debut / VC playbook（⚠ 镜像）— investing.com/news/stock-market-news/anthropics-blockbuster-debut-tests-wall-street-faith-in-ai-boom-5041688 ；anthropics-15-trillion-debut-rewrites-venture-capitals-playbook-5040303</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R125</b> CNBC：record IPO vs tech rout — cnbc.com/2026/11/21/anthropic-ipo-tech-selloff.html</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R126</b> CNBC：IPO fails to lift AI trade — cnbc.com/2026/11/19/anthropic-ipo-ai-stocks-selloff.html ；11-20 市场综述 cnbc.com/2026/11/19/stock-market-today-live-updates.html</p>
+          <p style="font:inherit;margin:0 0 10px"><b>R127</b> CNBC：valuation anxiety / correction — cnbc.com/2026/11/20/anthropic-ipo-ai-stock-market-selloff.html ；Anthropic stock falls… cnbc.com/2026/11/20/anthropic-stock-ai-amd-nvidia.html</p>
           <p style="font:inherit;margin:16px 0 0;color:var(--ink-3)">页面截图 / 示意图均来自上述 Anthropic 官方页面，仅作课堂教学引用。</p>
         </div></div>
     </section>

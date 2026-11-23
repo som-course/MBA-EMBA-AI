@@ -1550,56 +1550,72 @@ window.coCard = (id, o = {}) => {
         const eq=document.getElementById('hlEq'), sub=document.getElementById('hlSub');
         const cards=[...slide.querySelectorAll('.hl-card')].slice(0,4);
         let sd=7; function rnd(){sd=(sd*16807)%2147483647;return (sd-1)/2147483646;}
-        // S0: C 形弧 + 洞里一小簇（非凸）
-        const S0=[]; for(let i=0;i<12;i++){const a=0.28*Math.PI+i*(1.44*Math.PI/11), r=0.82+0.12*(rnd()-.5); S0.push([r*Math.cos(a),r*Math.sin(a)]);}
-        for(let i=0;i<4;i++) S0.push([-0.1+0.18*(rnd()-.5)+0.05,0.12*(rnd()-.5)]);
-        function ext(A,a){let b=A[0],m=-1e9;for(const p of A){const d=p[0]*Math.cos(a)+p[1]*Math.sin(a);if(d>m){m=d;b=p;}}return b;}
-        function sums(A,n){const out=[];if(A.length*A.length<=n){for(const p of A)for(const q of A)out.push([p[0]+q[0],p[1]+q[1]]);return out;}
-          for(let i=0;i<n;i++){const a=rnd()*6.2832,r1=rnd(),r2=rnd();
-            const p=r1<.45?ext(A,a):A[(rnd()*A.length)|0], q=r2<.45?ext(A,a):A[(rnd()*A.length)|0];
-            out.push([p[0]+q[0],p[1]+q[1]]);}
+        // 三维点 [x,y,z]：S0 为 C 形弧 + 洞里一小簇（非凸）；前 5 阶段只看 xy 投影
+        const S0=[]; for(let i=0;i<12;i++){const a=0.28*Math.PI+i*(1.44*Math.PI/11), r=0.82+0.12*(rnd()-.5); S0.push([r*Math.cos(a),r*Math.sin(a),1.1*(rnd()-.5)]);}
+        for(let i=0;i<4;i++) S0.push([-0.1+0.18*(rnd()-.5)+0.05,0.12*(rnd()-.5),0.9*(rnd()-.5)]);
+        function ext(A,u){let b=A[0],m=-1e9;for(const p of A){const d=p[0]*u[0]+p[1]*u[1]+p[2]*u[2];if(d>m){m=d;b=p;}}return b;}
+        function dir(){const z=rnd()*2-1,t=rnd()*6.2832,r=Math.sqrt(1-z*z);return [r*Math.cos(t),r*Math.sin(t),z];}
+        function sums(A,n){const out=[];if(A.length*A.length<=n){for(const p of A)for(const q of A)out.push([p[0]+q[0],p[1]+q[1],p[2]+q[2]]);return out;}
+          for(let i=0;i<n;i++){const u=dir(),r1=rnd(),r2=rnd();
+            const p=r1<.45?ext(A,u):A[(rnd()*A.length)|0], q=r2<.45?ext(A,u):A[(rnd()*A.length)|0];
+            out.push([p[0]+q[0],p[1]+q[1],p[2]+q[2]]);}
           return out;}
         const S1=sums(S0,400), S2=sums(S1,1100), S3=sums(S2,1800);
-        const NL=S3.map(p=>{const r=Math.hypot(p[0],p[1]),a=Math.atan2(p[1],p[0]);const k=1.1+0.38*(0.5+0.5*Math.sin(3*a+r*0.35))*Math.min(1,r/3)+0.12*Math.sin(5*a-1);return [p[0]*k,p[1]*k];});
-        const mx=A=>Math.max(...A.map(p=>Math.max(Math.abs(p[0]),Math.abs(p[1]))));
-        function hull(P){const pts=P.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const cr=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);const lo=[];for(const p of pts){while(lo.length>=2&&cr(lo[lo.length-2],lo[lo.length-1],p)<=0)lo.pop();lo.push(p);}const up=[];for(let i=pts.length-1;i>=0;i--){const p=pts[i];while(up.length>=2&&cr(up[up.length-2],up[up.length-1],p)<=0)up.pop();up.push(p);}up.pop();lo.pop();return lo.concat(up);}
-        const H0=hull(S0), H3=hull(S3);
-        const EXT=[mx(S0),mx(S1),mx(S2),mx(S3),mx(NL)].map(v=>v*1.1);   // 各阶段视野半径
-        const LAB=[['S⁰','人类已有的知识（非凸）'],['S¹ = S⁰ + S⁰','两两组合：已远大于 S⁰'],['S² = S¹ + S¹','继续迭代：边界迅速外扩'],['S³ = S² + S²','再迭代：凸包比想象的大得多'],['+ 非线性','不再受线性组合限制：跳出凸包']];
-        const CARD=[0,1,2,2,3], DUR=3200, TOT=DUR*5+2200;
+        const NL=S3.map(p=>{const r=Math.hypot(p[0],p[1]),a=Math.atan2(p[1],p[0]);const k=1.1+0.38*(0.5+0.5*Math.sin(3*a+r*0.35))*Math.min(1,r/3)+0.12*Math.sin(5*a-1);return [p[0]*k,p[1]*k,p[2]*(1.1+0.3*(0.5+0.5*Math.sin(2*a+1)))];});
+        const mx=(A,d)=>Math.max(...A.map(p=>Math.max(Math.abs(p[0]),Math.abs(p[1]),d?Math.abs(p[2]):0)));
+        const hull2=P=>{const pts=P.map(p=>[p[0],p[1]]).sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const cr=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);const lo=[];for(const p of pts){while(lo.length>=2&&cr(lo[lo.length-2],lo[lo.length-1],p)<=0)lo.pop();lo.push(p);}const up=[];for(let i=pts.length-1;i>=0;i--){const p=pts[i];while(up.length>=2&&cr(up[up.length-2],up[up.length-1],p)<=0)up.pop();up.push(p);}up.pop();lo.pop();return lo.concat(up);};
+        const H0=hull2(S0), H3=hull2(S3);
+        const box=A=>{const lo=[1e9,1e9,1e9],hi=[-1e9,-1e9,-1e9];for(const p of A)for(let i=0;i<3;i++){lo[i]=Math.min(lo[i],p[i]);hi[i]=Math.max(hi[i],p[i]);}return [lo,hi];};
+        const B0=box(S0), B3=box(S3), CEN=[0,1,2].map(i=>(B3[0][i]+B3[1][i])/2);
+        const EXT=[mx(S0),mx(S1),mx(S2),mx(S3),mx(NL),mx(NL,true)*1.05].map(v=>v*1.1);
+        const LAB=[['S⁰','人类已有的知识（非凸）'],['S¹ = S⁰ + S⁰','两两组合：已远大于 S⁰'],['S² = S¹ + S¹','继续迭代：边界迅速外扩'],['S³ = S² + S²','再迭代：凸包比想象的大得多'],['+ 非线性','不再受线性组合限制：跳出凸包'],['→ 高维','三维：凸包线性尺度 ×8、体积 ×512；d 维则 ×8ᵈ']];
+        const CARD=[0,1,2,2,3,1], N=6, DUR=3200, TOT=DUR*N+2200;
         const sm=x=>x<=0?0:x>=1?1:x*x*(3-2*x);
         let raf=0,t0=0,lastStage=-1;
         function draw(now){
           if(!slide.classList.contains('visible')){raf=0;return;}
           if(!t0)t0=now; const t=(now-t0)%TOT;
-          const st=Math.min(4,Math.floor(t/DUR));
+          const st=Math.min(N-1,Math.floor(t/DUR));
           const ph=t-st*DUR;
-          // 视野半径：从上一阶段平滑过渡
           const prev=EXT[Math.max(0,st-1)], ext=prev+(EXT[st]-prev)*sm(ph/1400);
           const sc=(H/2*0.88)/ext;
-          const X=p=>CX+p[0]*sc, Y=p=>CY-p[1]*sc;
+          // 三维相机：st=5 时从正视（等价 xy 投影）转到倾斜并持续旋转
+          const k3=st===5?sm(ph/1500):0;
+          const yaw=st===5?ph*0.00055:0, pitch=-0.5*k3;
+          const cy_=Math.cos(yaw),sy_=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
+          const proj=p=>{let x=p[0]-k3*CEN[0],y=p[1]-k3*CEN[1],z=p[2]-k3*CEN[2];
+            const x1=x*cy_+z*sy_, z1=-x*sy_+z*cy_;       // 绕竖轴
+            const y2=y*cp-z1*sp, z2=y*sp+z1*cp;           // 俯仰
+            return [CX+x1*sc,CY-y2*sc,z2];};
           ctx.clearRect(0,0,W,H);
-          // 网格
           ctx.strokeStyle='#efece5';ctx.lineWidth=1;
-          for(let g=-20;g<=20;g++){const gx=CX+g*sc*Math.max(1,Math.round(ext/6)),gy=CY+g*sc*Math.max(1,Math.round(ext/6));ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,H);ctx.stroke();ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(W,gy);ctx.stroke();}
+          const gstep=sc*Math.max(1,Math.round(ext/6));
+          for(let g=-20;g<=20;g++){ctx.globalAlpha=1-k3;ctx.beginPath();ctx.moveTo(CX+g*gstep,0);ctx.lineTo(CX+g*gstep,H);ctx.stroke();ctx.beginPath();ctx.moveTo(0,CY+g*gstep);ctx.lineTo(W,CY+g*gstep);ctx.stroke();}
+          ctx.globalAlpha=1;
           const al=k=>st<k?0:st>k?1:sm(ph/900);
-          // 阶段 4：S3 淡出为灰，非线性点进入
-          const pts=(arr,col,r,a)=>{if(a<=0)return;ctx.globalAlpha=a;ctx.fillStyle=col;for(const p of arr){ctx.beginPath();ctx.arc(X(p),Y(p),r,0,6.283);ctx.fill();}ctx.globalAlpha=1;};
-          const dim=st===4?0.45:1;
+          const zs=Math.max(1,ext);
+          const pts=(arr,col,r,a)=>{if(a<=0)return;ctx.fillStyle=col;for(const p of arr){const q=proj(p);const dz=k3*(q[2]/zs);ctx.globalAlpha=a*(1+0.35*dz);ctx.beginPath();ctx.arc(q[0],q[1],r*(1+0.3*dz),0,6.283);ctx.fill();}ctx.globalAlpha=1;};
+          const dim=st>=4?(st===4?0.45:0.6):1;
           pts(S3,'#24509e',1.9,al(3)*0.55*dim);
           pts(S2,'#24509e',2.6,al(2)*0.7*dim);
           pts(S1,'#24509e',3.6,al(1)*0.85*dim);
-          if(st===4){ // 非线性点：从 S3 位置插值到 NL 位置
-            const u=sm(ph/1600); ctx.globalAlpha=Math.min(1,ph/500)*0.9; ctx.fillStyle='#c27a1a';
-            for(let i=0;i<S3.length;i++){const x=S3[i][0]+(NL[i][0]-S3[i][0])*u,y=S3[i][1]+(NL[i][1]-S3[i][1])*u;ctx.beginPath();ctx.arc(CX+x*sc,CY-y*sc,2.1,0,6.283);ctx.fill();}
-            ctx.globalAlpha=1;
-          }
-          if(st>=3){ctx.setLineDash([9,7]);ctx.strokeStyle='rgba(36,80,158,.55)';ctx.lineWidth=2;ctx.beginPath();H3.forEach((p,i)=>i?ctx.lineTo(X(p),Y(p)):ctx.moveTo(X(p),Y(p)));ctx.closePath();ctx.stroke();ctx.setLineDash([]);const tp=H3.reduce((a,b)=>Y(b)<Y(a)?b:a);ctx.font='500 20px sans-serif';ctx.fillStyle='#24509e';ctx.fillText('S³ 的凸包',X(tp)+14,Y(tp)+26);}
-          // S0 的凸包（虚线）
-          ctx.setLineDash([9,7]);ctx.strokeStyle='#8a90a0';ctx.lineWidth=2;ctx.beginPath();H0.forEach((p,i)=>i?ctx.lineTo(X(p),Y(p)):ctx.moveTo(X(p),Y(p)));ctx.closePath();ctx.stroke();ctx.setLineDash([]);
-          if(st>=1){ctx.font='500 20px sans-serif';ctx.fillStyle='#4a5263';const top=H0.reduce((a,b)=>Y(b)<Y(a)?b:a);ctx.fillText('S⁰ 的凸包',X(top)+14,Y(top)-10);}
+          if(st>=4){const u=st===4?sm(ph/1600):1;const a4=st===4?Math.min(1,ph/500)*0.9:0.9;ctx.fillStyle='#c27a1a';
+            for(let i=0;i<S3.length;i++){const p=[S3[i][0]+(NL[i][0]-S3[i][0])*u,S3[i][1]+(NL[i][1]-S3[i][1])*u,S3[i][2]+(NL[i][2]-S3[i][2])*u];const q=proj(p);const dz=k3*(q[2]/zs);ctx.globalAlpha=a4*(1+0.3*dz);ctx.beginPath();ctx.arc(q[0],q[1],2.1*(1+0.3*dz),0,6.283);ctx.fill();}
+            ctx.globalAlpha=1;}
+          // 二维凸包（虚线），st=5 时淡出
+          const h2=1-k3;
+          const poly=(P,col,lab,dx,dy)=>{ctx.globalAlpha=h2;ctx.setLineDash([9,7]);ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();P.forEach((p,i)=>{const q=proj([p[0],p[1],0]);i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]);});ctx.closePath();ctx.stroke();ctx.setLineDash([]);
+            if(lab){const tp=P.reduce((a,b)=>b[1]>a[1]?b:a);const q=proj([tp[0],tp[1],0]);ctx.font='500 20px sans-serif';ctx.fillStyle=col==='#8a90a0'?'#4a5263':'#24509e';ctx.fillText(lab,q[0]+14,q[1]+dy);}ctx.globalAlpha=1;};
+          if(st>=3&&h2>0) poly(H3,'rgba(36,80,158,.55)','S³ 的凸包',0,26);
+          if(h2>0) poly(H0,'#8a90a0',st>=1?'S⁰ 的凸包':'',0,-10);
+          // 三维包围盒：S⁰ 小盒 vs S³ 大盒
+          if(k3>0){const drawBox=(B,col,lab)=>{const [lo,hi]=B;const C=[];for(let i=0;i<8;i++)C.push(proj([i&1?hi[0]:lo[0],i&2?hi[1]:lo[1],i&4?hi[2]:lo[2]]));
+              ctx.globalAlpha=k3;ctx.setLineDash([8,6]);ctx.strokeStyle=col;ctx.lineWidth=2;
+              for(let i=0;i<8;i++)for(const b of [1,2,4]){if(!(i&b)){const j=i|b;ctx.beginPath();ctx.moveTo(C[i][0],C[i][1]);ctx.lineTo(C[j][0],C[j][1]);ctx.stroke();}}
+              ctx.setLineDash([]);ctx.font='500 20px sans-serif';ctx.fillStyle=col;const top=C.reduce((a,b)=>b[1]<a[1]?b:a);ctx.fillText(lab,top[0]+10,top[1]-8);ctx.globalAlpha=1;};
+            drawBox(B3,'#24509e','S³ 的凸包（×8）');drawBox(B0,'#1f7a72','S⁰ 的凸包');}
           // S0 点
-          ctx.fillStyle='#1f7a72';for(const p of S0){ctx.beginPath();ctx.arc(X(p),Y(p),Math.max(4,Math.min(8,7*(1.4/ext)+3)),0,6.283);ctx.fill();}
+          ctx.fillStyle='#1f7a72';for(const p of S0){const q=proj(p);const dz=k3*(q[2]/zs);ctx.beginPath();ctx.arc(q[0],q[1],Math.max(4,Math.min(8,7*(1.4/ext)+3))*(1+0.3*dz),0,6.283);ctx.fill();}
           if(st!==lastStage){lastStage=st;eq.textContent=LAB[st][0];sub.textContent=LAB[st][1];cards.forEach((c,i)=>c.classList.toggle('on',i===CARD[st]));}
           raf=requestAnimationFrame(draw);
         }
@@ -1608,7 +1624,7 @@ window.coCard = (id, o = {}) => {
         new MutationObserver(()=>{slide.classList.contains('visible')?start():stop();}).observe(slide,{attributes:true,attributeFilter:['class']});
         if(slide.classList.contains('visible'))start();
       })();</script>
-      <div class="src"><b>说明</b> 二维示意：点为知识“向量”，S¹–S³ 为 Minkowski 和（大集合取随机子样），非线性为示意变换；真实知识空间是高维的。观点为课堂论述，非实证结论 ⚠</div>
+      <div class="src"><b>说明</b> 二维示意：点为知识“向量”，S¹–S³ 为 Minkowski 和（大集合取随机子样），非线性为示意变换；最后一幕为三维示意（真实知识空间维度远高于 3）。观点为课堂论述，非实证结论 ⚠</div>
     </section>
 
     <!-- === 课程回顾 === -->

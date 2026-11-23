@@ -3037,6 +3037,7 @@ img, video, canvas, svg { max-width: 100%; max-height: 100%; }
               <div class="r hot"><span class="d">2026.09</span><span class="t"><b>Navier–Stokes</b> 千禧年问题：有限时间奇点（C/D）</span></div>
               <div class="r hot"><span class="d">2026.10.06</span><span class="t"><b>大批量投放</b>：约 722 篇预印本 / 372 个结果</span></div>
               <div class="r"><span class="d">2026.10.15</span><span class="t">向 Simons 基金会捐 <b>$5M</b>，资助理解 AI 数学结果</span></div>
+              <div class="r hot"><span class="d">2026.11.20</span><span class="t"><b>黎曼猜想</b>：AI+人类（Anthropic）与<b>纯人类</b>同日竞逐</span></div>
             </div>
           </div>
           <div class="col grow gap16">
@@ -3138,6 +3139,71 @@ img, video, canvas, svg { max-width: 100%; max-height: 100%; }
         </div>
       </div>
       <div class="src"><b>参考</b> Simons Foundation 倡议 [R117]；OpenAI 更新说明 [R116]。课堂判断为本课归纳</div>
+    </section>
+
+  <!-- === 黎曼猜想 · 2026.11 === -->
+    <section class="slide c" data-sec="2.5 过去一年更加有用" data-title="2026.11：黎曼猜想 · 双轨宣布">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.5 过去一年更加有用 · 数学前沿 · 黎曼猜想</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center reveal d1">
+          <h2 style="font-size:50px;margin:0">Clay <em>$1M</em> 难题：同一天，<em>两套证明</em></h2>
+          <div class="tabs" id="rhTabs"><button class="tab b on" data-k="ai">AI + 人类</button><button class="tab" data-k="human">纯人类</button></div>
+        </div>
+        <div class="flex gap32 st" style="margin-top:18px;align-items:stretch">
+          <div style="width:820px;flex-shrink:0">
+            <figure class="shot reveal d2" style="height:360px"><img id="rhImg" src="assets/cmn-riemann-sciam-ai.jpg" alt="Scientific American · AI 黎曼证明"></figure>
+            <figcaption id="rhCap" class="mono muted" style="font-size:17px;margin-top:6px">SciAm · 2026-11-20 · Levent Alpöge × Claude</figcaption>
+          </div>
+          <div class="col grow gap12" id="rhCards" style="justify-content:center"></div>
+        </div>
+        <p class="reveal d3" style="margin-top:12px;font-size:22px;color:var(--ink-3)"><b>ζ 函数零点</b>在临界线上 ↔ 素数分布的「随机性边界」；1859 黎曼提出，千禧年七大难题之一。</p>
+      </div>
+      <div class="src"><b>参考</b> Nature 双轨报道 [R128]；SciAm 宣布 / 竞逐 [R129][R130]；Guardian 独立复核 [R131]；Vakil 仓促发布稿 [R132]。⚠ 截至课件时点，两稿均在学界消化中</div>
+      <script>(function(){
+        const V={
+          ai:{img:'assets/cmn-riemann-sciam-ai.jpg',cap:'SciAm · 2026-11-20 · Alpöge（Anthropic）× Claude，约六周协作',
+            cards:[['card b','谁','Anthropic 数学家 <b>Levent Alpöge</b> + <b>Claude</b>'],
+              ['card t','交付','网站声明 + <b>Lean</b> 形式化代码；4 页证明梗概'],
+              ['card b','范围','宣称含 <b>广义黎曼猜想（GRH）</b> 级别结果'],
+              ['card o','核对','Lean/Mathlib 社区联合声明：陈述与证明<strong>可编译复核</strong>；MIT Sutherland 等独立 recheck [R130]']],
+          human:{img:'assets/cmn-riemann-nature.jpg',cap:'Nature · 2026-11-20–21 · Masullo 手稿 vs AI 路线',
+            cards:[['card t','谁','<b>Alessandro Maria Masullo</b>（Stanford PhD 2020，导师 Brian Conrad）'],
+              ['card b','交付','<b>《The Music of the Primes》</b> 长篇草稿（约 <b>940 页</b>）；Vakil「hurried announcement」'],
+              ['card b','范围','迹公式路线；作者称数学主体完成，写作尚待打磨（含 <b>GRH</b> 表述）'],
+              ['card o','核对','Vakil：<b>all human, no AI</b>；Conrad 审阅数月；⚠ 同行全面验证<strong>进行中</strong> [R132]']]}
+        };
+        const I=document.getElementById('rhImg'),C=document.getElementById('rhCap'),L=document.getElementById('rhCards');
+        function go(k){const v=V[k];I.src=v.img;C.textContent=v.cap;L.innerHTML=v.cards.map(x=>`<div class="${x[0]}" style="padding:13px 18px"><div class="n">${x[1]}</div><p style="font-size:23px;margin:0;line-height:1.42">${x[2]}</p></div>`).join('');}
+        document.querySelectorAll('#rhTabs .tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('#rhTabs .tab').forEach(x=>x.classList.toggle('on',x===b));go(b.dataset.k);});
+        go('ai');
+      })();</script>
+    </section>
+
+    <section class="slide c" data-sec="2.5 过去一年更加有用" data-title="黎曼猜想：新闻在比什么？">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.5 过去一年更加有用 · 黎曼猜想 · 对照</div><div class="pg"></div>
+      <div class="body">
+        <h2 class="reveal d1" style="font-size:48px;margin-bottom:14px">不是「谁赢了」，而是<em>两种验收路径</em></h2>
+        <div class="flex gap28 st" style="align-items:stretch">
+          <div style="width:520px;flex-shrink:0">
+            <figure class="shot contain reveal d2" style="height:280px"><img src="assets/cmn-riemann-sciam-duel.jpg" alt="SciAm · Dueling claims"></figure>
+            <figcaption class="mono muted" style="font-size:16px">SciAm：AI 证明数小时后出现第二声明 [R130]</figcaption>
+            <figure class="shot reveal d3" style="height:200px;margin-top:10px"><img src="assets/cmn-riemann-nature.jpg" alt="Nature 报道" style="object-position:top"></figure>
+          </div>
+          <table class="reveal d2" style="flex:1;font-size:22px;align-self:center">
+            <tr class="mono" style="font-size:17px;color:var(--ink-3)"><td></td><td><b>AI + 人类</b></td><td><b>纯人类</b></td></tr>
+            <tr><td><b>体量</b></td><td>Lean 代码 + 短梗概</td><td>~940 页 PDF 草稿</td></tr>
+            <tr><td><b>速度</b></td><td>~6 周（报道）</td><td>~12 年积累</td></tr>
+            <tr><td><b>机器可检</b></td><td>Lean 编译 / comparator run</td><td>依赖人类逐章审读</td></tr>
+            <tr><td><b>学界情绪</b></td><td>惊叹 + 对 IPO 时机质疑 ⚠</td><td>「我们还在这里」的人文回应</td></tr>
+            <tr><td><b>与 OpenAI 数学</b></td><td colspan="2" style="font-size:21px">10 月大批量投放后的<strong>理解瓶颈</strong>——黎曼把「证明」与「消化」推到极端</td></tr>
+          </table>
+        </div>
+        <div class="flex gap16 st" style="margin-top:14px">
+          <div class="card b" style="flex:1;padding:14px 18px"><p style="font-size:23px;margin:0"><b>Maynard</b>：若成立，是数学史里程碑；<b>Tao</b>：消化仍需时间，但有作者可对话。</p></div>
+          <div class="card o" style="flex:1;padding:14px 18px"><p style="font-size:23px;margin:0">MBA 读法：<b>验收机制</b>（Lean vs 专著）与 <b>叙事竞争</b>（IPO 周 vs 仓促放出）同样影响「信不信」。</p></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> [R128–R132]；Tao / Maynard / Granville 引语见 Nature、SciAm。⚠ Granville 对发布时机有批评；课堂为压缩转述</div>
     </section>
 
     <section class="slide c" data-sec="2.5 过去一年更加有用" data-title="三条前沿，同一套逻辑">
@@ -3792,7 +3858,7 @@ img, video, canvas, svg { max-width: 100%; max-height: 100%; }
 
     <section class="slide c" data-sec="附录" data-title="参考文献（前沿 · 数学）">
       <div class="toprule"></div><div class="tag"><b>附录</b> · 参考文献 · RSI / Physical AI / AI4S / OpenAI 数学</div><div class="pg"></div>
-      <div class="body"><h2 class="reveal d1" style="font-size:48px;margin-bottom:16px">参考文献 <em>R105–R122</em></h2>
+      <div class="body"><h2 class="reveal d1" style="font-size:48px;margin-bottom:16px">参考文献 <em>R105–R133</em></h2>
         <div style="font:400 17px/1.4 var(--f-mono);color:var(--ink-2)">
           <p style="font:inherit;margin:0 0 9px"><b>R105</b> NVIDIA：Physical AI / Cosmos / Isaac（GTC 2026-03-16）— investor.nvidia.com/…/NVIDIA-and-Global-Robotics-Leaders…</p>
           <p style="font:inherit;margin:0 0 9px"><b>R106</b> Figure × Nscale：最高约 10 万 GPU（Vera Rubin）— figure.ai/news/figure-and-nscale-sign-strategic-partnership</p>
@@ -3812,6 +3878,13 @@ img, video, canvas, svg { max-width: 100%; max-height: 100%; }
           <p style="font:inherit;margin:0 0 9px"><b>R120</b> Science：OpenAI just changed math forever…</p>
           <p style="font:inherit;margin:0 0 9px"><b>R121</b> The Verge / The Decoder：数学界反应与 Tao 等引语</p>
           <p style="font:inherit;margin:0 0 9px"><b>R122</b> AGMAI（IAS）公开建议 — agmai.org/general-sep29/</p>
+          <p style="font:inherit;margin:12px 0 9px;color:var(--ink)"><b>黎曼猜想（2026-11）</b></p>
+          <p style="font:inherit;margin:0 0 9px"><b>R128</b> Nature：AI and human-written proofs — nature.com/articles/d41586-026-03812-7</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R129</b> SciAm：Alpöge × Claude 宣布 — scientificamerican.com/article/anthropic-mathematician-claims-to-prove-riemann-hypothesis-most-famous-problem-in-all-of-math/</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R130</b> SciAm：独立复核；Dueling claims — scientificamerican.com/article/the-ai-riemann-hypothesis-proof-is-almost-certainly-true-independent-mathematicians-attest/ ；scientificamerican.com/article/dueling-claims-of-riemann-hypothesis-proofs-emerge/</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R131</b> The Guardian：Claude helped prove… verified — theguardian.com/technology/2026/nov/21/anthropic-riemann-hypothesis-solved-claude-ai</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R132</b> 纯人类稿：Vakil 发布 — math216.wordpress.com/2026/11/20/hurried-announcement-alessandro-masullo-grh/ ；PDF the-music-of-the-primes.pdf ；clopen.solutions/submissions/the-music-of-the-primes/v1/ ⚠</p>
+          <p style="font:inherit;margin:0 0 9px"><b>R133</b> BBC / Tao 消化需要时间 — bbc.com/news/articles/c6pqr2g7w059o</p>
         </div></div>
     </section>
 

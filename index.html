@@ -180,7 +180,7 @@ footer a{color:var(--blue);border-bottom:2px solid var(--blue)} footer a:hover{b
       <a href="#path">课程主线</a>
       <a href="#lectures">全部讲次</a>
       <a href="#about">关于课程</a>
-      <a class="go" href="L1/index.html">从 L1 开始</a>
+      <a class="go" href="L1/index.html" target="_blank" rel="noopener noreferrer">从 L1 开始</a>
     </nav>
   </div>
 </header>
@@ -196,7 +196,7 @@ footer a{color:var(--blue);border-bottom:2px solid var(--blue)} footer a:hover{b
       <div class="pipe rv" style="--d:.16s"><b>Data</b><span>→</span><b>AI</b><span>→</span><b>Business Value</b></div>
       <p class="lead rv" style="--d:.24s">从<b>数据</b>出发，沿着 AI 1.0 到 4.0 的四次浪潮，看清人工智能如何一步步变成<b>商业价值</b>。方法论、基本工具、智能产业、数据价值产品化。</p>
       <div class="cta rv" style="--d:.32s">
-        <a class="btn pri" href="L1/index.html">开始学习 · L1 人工智能初探
+        <a class="btn pri" href="L1/index.html" target="_blank" rel="noopener noreferrer">开始学习 · L1 人工智能初探
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h12M11 5l5 5-5 5"/></svg></a>
         <a class="btn sec" href="#lectures">浏览全部讲次</a>
       </div>
@@ -329,7 +329,7 @@ grid.innerHTML=L.map((l,i)=>{
   const tag=STAGES.find(s=>s.k===l.k).tag;
   const href=l.dir?`${l.dir}/index.html`:'';
   return `<article class="card rv ${l.soon?'soon':''}" data-k="${l.k==='dl'?'ml':l.k}" data-s="${l.k}" style="--d:${(i%3)*.07}s">
-    ${href?`<a class="full" href="${href}" aria-label="进入 ${l.id} ${l.t}"></a>`:''}
+    ${href?`<a class="full" href="${href}" target="_blank" rel="noopener noreferrer" aria-label="进入 ${l.id} ${l.t}（新窗口）"></a>`:''}
     <div class="top"><div class="no"><small>L</small>${l.n}${l.sub?`<small>${l.sub}</small>`:''}</div>
       <svg class="glyph" viewBox="0 0 100 74" aria-hidden="true">${G[l.g]}</svg></div>
     <div class="st">${tag}</div>

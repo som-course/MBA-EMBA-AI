@@ -755,45 +755,33 @@ window.COEF = function (id, rows, scale, cb, dp) { const t = $(id); dp = dp === 
         <div class="card b reveal d3" style="margin-top:10px;min-height:200px"><div class="n" id="mlK"></div><h3 id="mlH" style="font-size:42px"></h3><p id="mlD" style="font-size:28px;margin-top:10px"></p></div>
         <div class="bar" style="margin-top:22px"><i id="mlB"></i></div>
       </div>
-      <div class="src"><b>参考</b> 原 PPT P24（依次出现 Yᵢ → β₀+β₁Xᵢ → 残差 → 平方 → 求和 → 最小二乘估计）；平方为上角标，min 的参数写在正下方</div>
+      <div class="src"><b>参考</b> 原 PPT P24（依次出现 Yᵢ → β₀+β₁Xᵢ → 残差 → 平方 → 求和 → 最小二乘估计）</div>
+      <style>
+        #mlF .eq{font:italic 600 58px/1.15 "Source Serif 4","Noto Serif SC",serif;color:var(--ink);letter-spacing:.02em;white-space:nowrap}
+        #mlF .eq sub{font-size:.48em;font-style:italic;font-weight:500;vertical-align:-0.28em}
+        #mlF .eq sup{font-size:.48em;font-style:normal;font-weight:600;vertical-align:0.62em}
+        #mlF .eq .op{font-style:normal;font-weight:600;margin:0 .08em}
+        #mlF .eq .sumbox,#mlF .eq .minbox{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;vertical-align:middle;margin:0 .18em;line-height:1}
+        #mlF .eq .sumbox .sym,#mlF .eq .minbox .sym{font-size:1.05em;line-height:1}
+        #mlF .eq .sumbox .lim,#mlF .eq .minbox .lim{font-size:.32em;font-weight:500;line-height:1.15;margin-top:.06em}
+        #mlF .eq .sumbox .up{font-size:.32em;font-weight:500;line-height:1;margin-bottom:.04em}
+      </style>
       <script>(function(){
-        /* SVG 公式：角标位置用坐标写死，避免 HTML sub/sup 被行高挤扁 */
-        function svg(inner, w){
-          return '<svg viewBox="0 0 '+w+' 140" width="'+Math.min(1680,w*1.05)+'" height="250" style="max-width:100%;overflow:visible" aria-hidden="true">'
-            +'<style>.m{font:italic 600 54px Source Serif 4, Noto Serif SC, serif;fill:#1d2433}'
-            +'.s{font:italic 500 24px Source Serif 4, Noto Serif SC, serif;fill:#1d2433}'
-            +'.t{font:italic 500 22px Source Serif 4, Noto Serif SC, serif;fill:#1d2433}</style>'
-            +inner+'</svg>';
-        }
-        function Yi(x,y){return '<text class="m" x="'+x+'" y="'+y+'">Y</text><text class="s" x="'+(x+34)+'" y="'+(y+18)+'">i</text>';}
-        function b0(x,y){return '<text class="m" x="'+x+'" y="'+y+'">β</text><text class="s" x="'+(x+28)+'" y="'+(y+18)+'">0</text>';}
-        function b1(x,y){return '<text class="m" x="'+x+'" y="'+y+'">β</text><text class="s" x="'+(x+28)+'" y="'+(y+18)+'">1</text>';}
-        function Xi(x,y){return '<text class="m" x="'+x+'" y="'+y+'">X</text><text class="s" x="'+(x+34)+'" y="'+(y+18)+'">i</text>';}
-        function pred(x,y){return b0(x,y)+'<text class="m" x="'+(x+52)+'" y="'+y+'">+</text>'+b1(x+90,y)+Xi(x+142,y);}
-        function resid(x,y){return Yi(x,y)+'<text class="m" x="'+(x+52)+'" y="'+y+'">− (</text>'+pred(x+120,y)+'<text class="m" x="'+(x+330)+'" y="'+y+'">)</text>';}
-        function sq(x,y){ /* [ resid ]²   ² 明确上移 */ 
-          return '<text class="m" x="'+x+'" y="'+y+'">[</text>'+resid(x+30,y)
-            +'<text class="m" x="'+(x+390)+'" y="'+y+']</text>'
-            +'<text class="s" x="'+(x+418)+'" y="'+(y-28)+'">2</text>';}
-        function sumOp(x,y){
-          return '<text class="t" x="'+(x+10)+'" y="'+(y-38)+'">n</text>'
-            +'<text class="m" x="'+x+'" y="'+y+'">Σ</text>'
-            +'<text class="t" x="'+(x-6)+'" y="'+(y+36)+'">i = 1</text>';}
-        function minOp(x,y){
-          return '<text class="m" x="'+x+'" y="'+y+'">min</text>'
-            +'<text class="t" x="'+(x-8)+'" y="'+(y+34)+'">β</text><text class="t" x="'+(x+10)+'" y="'+(y+42)+'" font-size="16">0</text>'
-            +'<text class="t" x="'+(x+24)+'" y="'+(y+34)+'">,</text>'
-            +'<text class="t" x="'+(x+36)+'" y="'+(y+34)+'">β</text><text class="t" x="'+(x+54)+'" y="'+(y+42)+'" font-size="16">1</text>';}
-        function bh(x,y,k){return '<text class="m" x="'+x+'" y="'+y+'">β̂</text><text class="s" x="'+(x+36)+'" y="'+(y+18)+'">'+k+'</text>';}
-        const y0=78;
+        const Yi='Y<sub>i</sub>', b0='β<sub>0</sub>', b1='β<sub>1</sub>', Xi='X<sub>i</sub>';
+        const pred=b0+' <span class="op">+</span> '+b1+Xi;
+        const resid=Yi+' <span class="op">−</span> ('+pred+')';
+        const sq='['+resid+']<sup>2</sup>';
+        const sum='<span class="sumbox"><span class="up">n</span><span class="sym">Σ</span><span class="lim">i = 1</span></span>';
+        const minv='<span class="minbox"><span class="sym">min</span><span class="lim">β<sub>0</sub>, β<sub>1</sub></span></span>';
+        const hat='β̂<sub>0</sub><span class="op">,</span> β̂<sub>1</sub>';
+        function eq(html){return '<div class="eq">'+html+'</div>';}
         const S=[
-          ['1 / 6','真实值', svg(Yi(40,y0), 120), '第 i 个客户（或第 i 天）的真实结果。'],
-          ['2 / 6','模型的预测', svg(pred(40,y0), 360), '给定 β，用 X 算出的预测值（直线上的点）。'],
-          ['3 / 6','残差', svg(resid(20,y0), 420), '真实值与预测值的差，即图中的垂直线段，有正有负。'],
-          ['4 / 6','平方', svg(sq(20,y0), 500), '平方作用在<strong>整个残差</strong>上：正负不再抵消，并更重地惩罚大误差。'],
-          ['5 / 6','对所有观测求和', svg(sumOp(30,y0)+sq(110,y0), 620), '把 n 个观测的平方残差加总，得到残差平方和。'],
-          ['6 / 6','最小二乘估计', svg(minOp(20,y0)+sumOp(130,y0)+sq(210,y0)
-            +'<text class="m" x="700" y="'+y0+'">⟹</text>'+bh(780,y0,'0')+'<text class="m" x="840" y="'+y0+'">,</text>'+bh(870,y0,'1'), 980),
+          ['1 / 6','真实值', eq(Yi), '第 i 个客户（或第 i 天）的真实结果。'],
+          ['2 / 6','模型的预测', eq(pred), '给定 β，用 X 算出的预测值（直线上的点）。'],
+          ['3 / 6','残差', eq(resid), '真实值与预测值的差，即图中的垂直线段，有正有负。'],
+          ['4 / 6','平方', eq(sq), '平方作用在<strong>整个残差</strong>上：正负不再抵消，并更重地惩罚大误差。'],
+          ['5 / 6','对所有观测求和', eq(sum+sq), '把 n 个观测的平方残差加总，得到残差平方和。'],
+          ['6 / 6','最小二乘估计', eq(minv+sum+sq+' <span class="op">⟹</span> '+hat),
             '最小化残差平方和，得到的 β̂₀、β̂₁ 即最小二乘估计。']
         ];
         let k=0;
@@ -862,27 +850,6 @@ window.COEF = function (id, rows, scale, cb, dp) { const t = $(id); dp = dp === 
           $('nsB').textContent=b.toFixed(2);$('nsE').textContent=se.toFixed(2);$('nsT').textContent=t.toFixed(1);$('nsR2').textContent=(r2*100).toFixed(0)+'%';$('nsV').textContent=s.toFixed(1);
           $('nsC').querySelector('p').innerHTML=Math.abs(t)>2.05?'<b>显著</b>：|t|&gt;2.05，斜率明显异于 0。':'<b style="color:#b4402d">不显著</b>：噪声太大，数据不足以确认存在关系。';}
         $('nsR').oninput=run;$('nsN').onclick=()=>{seed+=7;run();};run();})();</script>
-    </section>
-
-    <!-- === SLIDE 27(插) · 显著 ≠ 重要（交互）=== -->
-    <section class="slide c" data-sec="2 · 线性回归精要" data-title="统计显著 ≠ 业务重要：样本量的魔力（交互）">
-      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 典型回归报表与显著性</div><div class="pg"></div>
-      <div class="body flex gap32">
-        <div style="width:1000px">
-          <h2 class="reveal d1" style="font-size:52px">效应<em>不变</em>，样本量变大……</h2>
-          <div class="card g reveal d2" style="margin-top:26px;padding:22px 30px"><p style="font-size:26px">设定：每多投 1 元广告，销售只多 <b>0.02 元</b>（β = 0.02，业务上几乎可以忽略）；噪声 σ = 1，X 标准差 = 1。</p></div>
-          <div class="flex gap24 center reveal d3" style="margin-top:40px"><span class="mono muted" style="font-size:22px">样本量 n</span><input type="range" id="snR" min="2" max="6" step="0.02" value="2.5" style="width:620px"><span class="mono blue" id="snV" style="font-size:30px"></span></div>
-          <div class="reveal d4" style="margin-top:34px"><div class="kv" style="border:none"><span>t = β ÷ SE ≈ 0.02·√n</span><b id="snT">—</b></div><div class="bar" style="height:34px"><i id="snB"></i></div><div class="flex between hint" style="margin-top:6px"><span>0</span><span>|t| = 1.96（5% 显著线）</span><span>t = 8</span></div></div>
-        </div>
-        <div class="col grow gap16" style="justify-content:center">
-          <div class="card b reveal d3" id="snC" style="min-height:300px"><div class="n">判断</div><h3 id="snH" style="font-size:44px"></h3><p id="snP" style="font-size:25px;margin-top:10px"></p></div>
-          <div class="card g reveal d5"><p style="font-size:23px"><b>显著性只回答“有没有”，不回答“有多重要”。</b>商业决策还需看<b>效应大小</b>与成本收益。</p></div>
-        </div>
-      </div>
-      <div class="src"><b>参考</b> R5 Wasserstein &amp; Lazar（美国统计学会 P 值声明，2016）；原 PPT P17 的“有多重要？”；简化公式 SE ≈ σ/(√n·sd(X)) 为教学近似</div>
-      <script>(function(){function up(){const n=Math.round(Math.pow(10,+$('snR').value)),t=0.02*Math.sqrt(n);$('snV').textContent=n.toLocaleString();$('snT').textContent=t.toFixed(2);$('snB').style.width=Math.min(100,t/8*100)+'%';$('snB').style.background=t>1.96?'var(--blue)':'#aab4cf';
-          $('snH').textContent=t>1.96?'“显著”':'“不显著”';$('snP').innerHTML=t>1.96?'n = '+n.toLocaleString()+' 时，0.02 的微小效应也能显著（|t|&gt;1.96）。<br><b>但它仍然微不足道。</b>':'样本量太小，连 0.02 都无法与 0 区分——这不代表“没有效应”，只是证据不足。';}
-        $('snR').oninput=up;up();})();</script>
     </section>
 
     <!-- === SLIDE 27 · 章节 Part 3 === -->
@@ -1050,18 +1017,39 @@ window.COEF = function (id, rows, scale, cb, dp) { const t = $(id); dp = dp === 
     </section>
 
     <!-- === SLIDE 37 · 内部因素 1 === -->
-    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="内部因素 ①：卧室数、厅数、楼层">
+    <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="内部因素 ①：卧室数、厅数、楼层" id="s-inner1">
       <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.1 问题、数据与描述性分析</div><div class="pg"></div>
       <div class="body">
-        <h2 class="reveal d1" style="font-size:48px">房屋内部：<em>差别没有位置大</em></h2>
-        <figure class="contain reveal d3" style="height:300px;margin-top:20px"><img src="assets/p36_1.png" style="border:none"></figure>
-        <div class="flex gap24 st" style="margin-top:22px">
-          <div class="card g grow" style="padding:18px 26px"><div class="n">卧室数</div><p style="font-size:25px">不同卧室数，单价差异<b>不明显</b></p></div>
-          <div class="card b grow" style="padding:18px 26px"><div class="n">厅数</div><p style="font-size:25px">厅数越少，单价越高；0 厅仅占 5%，不少是“房价逆天”的胡同四合院</p></div>
-          <div class="card g grow" style="padding:18px 26px"><div class="n">楼层</div><p style="font-size:25px">不同楼层，单价差异<b>不明显</b></p></div>
+        <h2 class="reveal d1" style="font-size:44px;margin:0">房屋内部：<em>差别没有位置大</em></h2>
+        <div class="reveal d2" style="position:relative;margin-top:8px">
+          <figure class="contain" style="height:420px;margin:0"><img src="assets/p36_1.png" alt="卧室数 / 厅数 / 楼层箱线图" style="border:none"></figure>
+          <div id="hallMark" style="position:absolute;left:36.5%;top:4%;display:none;pointer-events:none;z-index:2">
+            <div style="font:900 56px/1 var(--f-serif-cn);color:#c0392b;text-shadow:0 2px 0 #fff,0 0 16px rgba(250,248,244,.95)">突变</div>
+            <div style="font:700 26px var(--f-mono);color:#c0392b;margin-top:6px;letter-spacing:.06em">0 厅 ↑</div>
+          </div>
+        </div>
+        <div class="flex gap20 st" style="margin-top:36px;align-items:stretch">
+          <div class="card g grow" style="padding:24px 28px"><div class="n" style="font-size:22px;margin-bottom:10px">卧室数</div><p style="font-size:32px;margin:0;line-height:1.4">不同卧室数，单价差异<b>不明显</b></p></div>
+          <button type="button" id="hallCard" class="card b grow" style="padding:24px 28px;text-align:left;cursor:pointer;font:inherit;width:auto">
+            <div class="n" style="font-size:22px;margin-bottom:10px">厅数 · 点击揭晓</div>
+            <p id="hallQ" style="font-size:32px;margin:0;line-height:1.4;color:var(--ink)">0 厅的单价为什么<em>反而更高</em>？</p>
+            <p id="hallA" style="display:none;font-size:32px;margin:0;line-height:1.45">厅数越少，单价越高；<b>0 厅仅占约 5%</b>——不少是“房价逆天”的胡同四合院。</p>
+          </button>
+          <div class="card g grow" style="padding:24px 28px"><div class="n" style="font-size:22px;margin-bottom:10px">楼层</div><p style="font-size:32px;margin:0;line-height:1.4">不同楼层，单价差异<b>不明显</b></p></div>
         </div>
       </div>
-      <div class="src"><b>参考</b> 原 PPT P36（箱线图：卧室数 / 厅数 / 楼层）</div>
+      <div class="src"><b>参考</b> 原 PPT P36（箱线图：卧室数 / 厅数 / 楼层）；0 厅解读为课堂交互揭晓</div>
+      <script>(function(){
+        const card=$('hallCard'), q=$('hallQ'), a=$('hallA'), mk=$('hallMark');
+        let on=false;
+        card.onclick=()=>{
+          on=!on;
+          q.style.display=on?'none':'block';
+          a.style.display=on?'block':'none';
+          mk.style.display=on?'block':'none';
+          card.querySelector('.n').textContent=on?'厅数 · 再点收回':'厅数 · 点击揭晓';
+        };
+      })();</script>
     </section>
 
     <!-- === SLIDE 38 · 内部因素 2 === -->
@@ -1351,16 +1339,28 @@ window.COEF = function (id, rows, scale, cb, dp) { const t = $(id); dp = dp === 
     <section class="slide c" data-sec="3 · 案例：北京二手房" data-title="未来研究方向：还缺什么变量？">
       <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.4 结论与 2026 回访</div><div class="pg"></div>
       <div class="body">
-        <h2 class="reveal d1" style="font-size:58px">房价的影响因素诸多：<em>加入更多 X</em></h2>
-        <div class="flex gap24 st" style="margin-top:40px">
-          <div class="card b grow"><div class="n">小区位置</div><h3>地处几环？</h3></div>
-          <div class="card t grow"><div class="n">小区环境</div><h3>绿化情况</h3></div>
-          <div class="card o grow"><div class="n">周边配套</div><h3>商圈 · 医院 …</h3></div>
-          <div class="card g grow"><div class="n">城市特有</div><h3>如：海景房</h3></div>
+        <h2 class="reveal d1" style="font-size:52px">房价的影响因素诸多：<em>加入更多 X</em></h2>
+        <div class="flex gap20 st" style="margin-top:28px">
+          <div class="card b grow reveal d2" style="padding:16px 16px 20px">
+            <figure style="height:280px;margin:0 0 14px"><img src="assets/l4-x-ring.jpg" alt="北京二环路" style="border:none;object-fit:cover"></figure>
+            <div class="n">小区位置</div><h3 style="font-size:30px;margin:0">地处几环？</h3>
+          </div>
+          <div class="card t grow reveal d3" style="padding:16px 16px 20px">
+            <figure style="height:280px;margin:0 0 14px"><img src="assets/l4-x-green.jpg" alt="小区绿化" style="border:none;object-fit:cover"></figure>
+            <div class="n">小区环境</div><h3 style="font-size:30px;margin:0">绿化情况</h3>
+          </div>
+          <div class="card o grow reveal d4" style="padding:16px 16px 20px">
+            <figure style="height:280px;margin:0 0 14px"><img src="assets/l4-x-amenity.jpg" alt="三里屯商圈" style="border:none;object-fit:cover"></figure>
+            <div class="n">周边配套</div><h3 style="font-size:30px;margin:0">商圈 · 医院 …</h3>
+          </div>
+          <div class="card g grow reveal d5" style="padding:16px 16px 20px">
+            <figure style="height:280px;margin:0 0 14px"><img src="assets/l4-x-sea.jpg" alt="三亚湾海景" style="border:none;object-fit:cover"></figure>
+            <div class="n">城市特有</div><h3 style="font-size:30px;margin:0">如：海景房</h3>
+          </div>
         </div>
-        <p class="reveal d5" style="margin-top:40px;font-size:30px">遗漏变量会让系数“替别人背锅”——这也是为什么要<b>不断补充业务知识（X）</b>。</p>
+        <p class="reveal d6" style="margin-top:28px;font-size:28px">遗漏变量会让系数“替别人背锅”——这也是为什么要<b>不断补充业务知识（X）</b>。</p>
       </div>
-      <div class="src"><b>参考</b> 原 PPT P50；“遗漏变量”说明为课堂补充</div>
+      <div class="src"><b>参考</b> 原 PPT P50；图：Wikimedia Commons（二环 / 金融街公园 / 三里屯 / 三亚湾）</div>
     </section>
 
     <!-- === SLIDE 53 · 2026 回访：房价 === -->

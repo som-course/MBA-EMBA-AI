@@ -577,20 +577,26 @@ window.spamWidget = function (id, opt) {
 
     <!-- === SLIDE 8 · 招聘启事里的数据科学家 === -->
     <section class="slide c" data-sec="1 · 数据科学" data-title="招聘启事里的数据科学家">
-      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 岗位</div><div class="pg"></div>
+      <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 岗位 · 2026 更新</div><div class="pg"></div>
       <div class="body">
-        <h2 class="reveal d1">招聘启事里的<em>数据科学家</em></h2>
-        <div class="flex gap48" style="margin-top:28px;align-items:flex-start">
-          <figure class="reveal d2" style="width:900px"><img class="shot" style="width:900px;height:580px;object-fit:cover;object-position:left top" src="assets/p06_1.png" alt="数据科学家招聘列表"><figcaption>当年的招聘列表：13k–50k 元/月，硕士、5–10 年经验的更贵</figcaption></figure>
-          <figure class="reveal d3" style="width:700px"><img class="shot" style="width:700px;height:580px;object-fit:cover;object-position:left top" src="assets/p07_1.jpg" alt="60-90 万职位描述"><figcaption>60–90 万/年：NLP · 机器学习 · R · Java/C++ · 带团队</figcaption></figure>
+        <h2 class="reveal d1" style="font-size:52px">招聘市场里的<em>数据科学家</em></h2>
+        <div class="flex gap28" style="margin-top:18px;align-items:flex-start">
+          <figure class="reveal d2" style="width:860px;flex-shrink:0">
+            <img class="shot" style="width:860px;height:520px;object-fit:cover;object-position:left top" src="assets/l3-ds-tanzhi-hz-2026.jpg" alt="谈职 · 杭州数据科学家薪资">
+            <figcaption>谈职 · 杭州样本（更新 2026-11-10）：均月薪约 <b>¥5.2 万</b>，区间约 3.8–6.5 万；热招技能 Python/SQL · ML · A/B · 特征工程 · 业务洞察 ⚠ 二手聚合</figcaption>
+          </figure>
+          <figure class="reveal d3" style="width:760px;flex-shrink:0">
+            <img class="shot contain" style="width:760px;height:520px;object-fit:contain;background:#faf8f4" src="assets/l3-ds-salary-2026.jpg" alt="猎聘 · 按年限月均薪资">
+            <figcaption>猎聘公开样本：全国均约 <b>2.8 万/月</b>；3–5 年约 4.5 万，5 年以上约 5.8 万 ⚠ 平台均值</figcaption>
+          </figure>
         </div>
-        <div class="flex gap24 center reveal d5" style="margin-top:22px">
-          <span class="mono muted" style="font-size:20px;letter-spacing:.14em">要求的共同点</span>
-          <span class="chip b">数学 · 统计</span><span class="chip t">编程 · 工程</span><span class="chip">机器学习</span><span class="chip o">业务理解</span>
-          <span style="font:400 27px var(--f-sans);color:var(--ink-2);margin-left:20px">岗位 ≠ 一项技能，而是<b style="color:var(--ink)">一组能力的组合</b></span>
+        <div class="flex gap20 center reveal d5" style="margin-top:16px;flex-wrap:wrap">
+          <span class="mono muted" style="font-size:18px;letter-spacing:.12em">一线 JD 常见区间</span>
+          <span class="chip b">20–40k · 业务 DS</span><span class="chip t">30–50k · 3–5 年</span><span class="chip">40–70k+ · 资深 / 量化</span>
+          <span style="font:400 24px var(--f-sans);color:var(--ink-2);margin-left:12px">共同点：<b style="color:var(--ink)">统计 · 编程 · 机器学习 · 业务</b></span>
         </div>
       </div>
-      <div class="src"><b>参考</b> 原 PPT P6–P7、P12–P13（招聘网站截图，早期课件材料）</div>
+      <div class="src"><b>参考</b> R13 谈职杭州 Data Scientist（2026-11-10）；R14 猎聘《数据科学家薪资待遇》；一线区间见猎聘北京 JD 摘要 ⚠ 非官方统计</div>
     </section>
 
     <!-- === SLIDE 9 · 十年之后：BLS === -->
@@ -964,20 +970,21 @@ window.spamWidget = function (id, opt) {
       <div class="body flex gap48">
         <div style="width:1100px">
           <h2 class="reveal d1" style="font-size:58px">更多特征、更强模型，<br>在<em>没见过</em>的邮件上也更准</h2>
-          <div class="mono muted reveal d2" style="font-size:20px;margin:22px 0 6px;letter-spacing:.06em">测试集准确率（随机留出 30%，共 1381 封）　误杀 / 漏网 = 正常邮件被拦 / 垃圾邮件漏过</div>
+          <div class="mono muted reveal d2" style="font-size:20px;margin:18px 0 6px;letter-spacing:.06em">测试集准确率（随机留出 30%，共 1381 封）　误杀 / 漏网 = 正常邮件被拦 / 垃圾邮件漏过</div>
           <div class="reveal d3">
-            <div class="hb"><div class="lb" style="width:330px">全部判为正常</div><div class="tr"><div class="fl g" style="--w:60.6%"></div></div><div class="vl" style="width:100px">60.6%</div></div>
-            <div class="hb"><div class="lb" style="width:330px">一条规则 your&gt;0.5<br><span class="mono muted" style="font-size:19px">误杀 198 · 漏网 144</span></div><div class="tr"><div class="fl o" style="--w:75.2%"></div></div><div class="vl" style="width:100px">75.2%</div></div>
-            <div class="hb"><div class="lb" style="width:330px">浅层决策树（3 层）<br><span class="mono muted" style="font-size:19px">误杀 60 · 漏网 98</span></div><div class="tr"><div class="fl t" style="--w:88.6%"></div></div><div class="vl" style="width:100px">88.6%</div></div>
-            <div class="hb"><div class="lb" style="width:330px">深一点的树（8 层）<br><span class="mono muted" style="font-size:19px">误杀 53 · 漏网 68</span></div><div class="tr"><div class="fl t" style="--w:91.2%"></div></div><div class="vl" style="width:100px">91.2%</div></div>
-            <div class="hb"><div class="lb" style="width:330px">逻辑回归<br><span class="mono muted" style="font-size:19px">误杀 41 · 漏网 58</span></div><div class="tr"><div class="fl" style="--w:92.8%"></div></div><div class="vl" style="width:100px">92.8%</div></div>
-            <div class="hb"><div class="lb" style="width:330px">随机森林<br><span class="mono muted" style="font-size:19px">误杀 22 · 漏网 37</span></div><div class="tr"><div class="fl" style="--w:95.7%"></div></div><div class="vl blue" style="width:100px">95.7%</div></div>
+            <div class="hb"><div class="lb" style="width:360px"><span class="mono muted" style="font-size:16px;letter-spacing:.08em">基线</span><br>全部判为正常</div><div class="tr"><div class="fl g" style="--w:60.6%"></div></div><div class="vl" style="width:100px">60.6%</div></div>
+            <div class="hb"><div class="lb" style="width:360px"><span class="mono" style="font-size:16px;letter-spacing:.08em;color:var(--ochre)">AI 1.0 · 专家系统</span><br>一条规则 your&gt;0.5<br><span class="mono muted" style="font-size:18px">误杀 198 · 漏网 144</span></div><div class="tr"><div class="fl o" style="--w:75.2%"></div></div><div class="vl" style="width:100px">75.2%</div></div>
+            <div class="hb"><div class="lb" style="width:360px"><span class="mono teal" style="font-size:16px;letter-spacing:.08em">AI 2.0 · 机器学习</span><br>浅层决策树（3 层）<br><span class="mono muted" style="font-size:18px">误杀 60 · 漏网 98</span></div><div class="tr"><div class="fl t" style="--w:88.6%"></div></div><div class="vl" style="width:100px">88.6%</div></div>
+            <div class="hb"><div class="lb" style="width:360px"><span class="mono teal" style="font-size:16px;letter-spacing:.08em">AI 2.0 · 机器学习</span><br>深一点的树（8 层）<br><span class="mono muted" style="font-size:18px">误杀 53 · 漏网 68</span></div><div class="tr"><div class="fl t" style="--w:91.2%"></div></div><div class="vl" style="width:100px">91.2%</div></div>
+            <div class="hb"><div class="lb" style="width:360px"><span class="mono teal" style="font-size:16px;letter-spacing:.08em">AI 2.0 · 机器学习</span><br>逻辑回归<br><span class="mono muted" style="font-size:18px">误杀 41 · 漏网 58</span></div><div class="tr"><div class="fl" style="--w:92.8%"></div></div><div class="vl" style="width:100px">92.8%</div></div>
+            <div class="hb"><div class="lb" style="width:360px"><span class="mono teal" style="font-size:16px;letter-spacing:.08em">AI 2.0 · 机器学习</span><br>随机森林<br><span class="mono muted" style="font-size:18px">误杀 22 · 漏网 37</span></div><div class="tr"><div class="fl" style="--w:95.7%"></div></div><div class="vl blue" style="width:100px">95.7%</div></div>
           </div>
         </div>
-        <div class="grow col gap24 st" style="justify-content:center">
-          <div class="card b"><div class="n">为什么要“留出”</div><p style="font-size:26px">用训练过的邮件打分，等于<b>开卷考试</b>。只有没见过的数据，才能检验<b>泛化</b>。</p></div>
-          <div class="card o"><div class="n">别忘了上一页</div><p style="font-size:26px">模型再强，也只对<b>这个邮箱</b>负责。换一个环境，要重新挑战。</p></div>
-          <p style="font-size:23px;color:var(--ink-3)">这些模型是 L4–L5 的内容，今天只需知道：<b>规则可以由数据学出来</b>。</p>
+        <div class="grow col gap18 st" style="justify-content:center">
+          <div class="card o" style="padding:14px 18px"><div class="n">别混代际</div><p style="font-size:24px;margin:0;line-height:1.45"><b>AI 1.0</b>：人写规则（your&gt;0.5）<br><b>AI 2.0</b>：人提特征，算法学规则（树 / 回归 / 森林）<br><span style="color:var(--ink-3)">本页还没有 AI 3.0（深度学习自动提特征）</span></p></div>
+          <div class="card b" style="padding:14px 18px"><div class="n">为什么要“留出”</div><p style="font-size:25px;margin:0">用训练过的邮件打分，等于<b>开卷考试</b>。只有没见过的数据，才能检验<b>泛化</b>。</p></div>
+          <div class="card t" style="padding:14px 18px"><div class="n">别忘了上一页</div><p style="font-size:25px;margin:0">模型再强，也只对<b>这个邮箱</b>负责。换环境要重新挑战。</p></div>
+          <p style="font-size:22px;color:var(--ink-3)">树 / 回归 / 森林是 <b>L4–L5</b>；今天只需对照：规则手写 vs 数据学出来。</p>
         </div>
       </div>
       <div class="src"><b>参考</b> 本讲计算：scikit-learn，70 / 30 分层留出，random_state=42；逻辑回归含标准化，随机森林 300 棵树　⚠ 单次划分，数值会随随机种子浮动</div>
@@ -1144,7 +1151,7 @@ window.spamWidget = function (id, opt) {
         <h2 class="reveal d1" style="font-size:60px">数据科学是一门<em>社区</em>驱动的手艺</h2>
         <div class="flex gap32" style="margin-top:30px;align-items:flex-start">
           <figure class="reveal d2" style="width:760px"><img class="shot" style="width:760px;height:393px;object-fit:cover;object-position:left top" src="assets/p53_1.jpg" alt="统计之都"><figcaption>统计之都（Capital of Statistics, COS）· 中国数据科学的民间社区</figcaption></figure>
-          <figure class="reveal d3" style="width:760px"><img class="shot" style="width:760px;height:416px;object-fit:cover" src="assets/p55_1.png" alt="第18届中国R会议"><figcaption>2025 X 智能大会 · 第 18 届中国 R 会议（2025.10.17–19，北京）</figcaption></figure>
+          <figure class="reveal d3" style="width:760px"><img class="shot" style="width:760px;height:416px;object-fit:cover;object-position:top" src="assets/l3-xagi-2026.jpg" alt="XAGI 2026 交叉智能大会"><figcaption>XAGI 2026 交叉智能大会 · 第 19 届（2026.10.16–18，北京友谊宾馆）</figcaption></figure>
         </div>
         <div class="flex gap48 st" style="margin-top:32px;align-items:center">
           <div class="kv grow" style="border-top:1px solid var(--rule)"><b>论坛 · 文章</b><span>统计图形、数据质量、统计应用——开放讨论</span></div>
@@ -1152,7 +1159,7 @@ window.spamWidget = function (id, opt) {
           <figure style="width:130px"><img class="shot" style="width:130px;height:130px;object-fit:cover" src="assets/p46_1.jpg" alt="COS 二维码"></figure>
         </div>
       </div>
-      <div class="src"><b>参考</b> 原 PPT P45–P46、P53–P55；主讲人曾任 COS 编辑部编辑（原 PPT P54）</div>
+      <div class="src"><b>参考</b> 原 PPT P45–P46、P53；XAGI 2026 官网 x-agi.cc（第 19 届，2026.10.16–18，北京友谊宾馆）；主讲人曾任 COS 编辑部编辑（原 PPT P54）</div>
     </section>
 
     <!-- === SLIDE 35 · 延伸阅读 === -->
@@ -1212,6 +1219,8 @@ window.spamWidget = function (id, opt) {
             <div><b class="mono blue">R3</b> Stack Overflow, 2025 Developer Survey（Python 57.9%，+7pp）. survey.stackoverflow.co/2025/</div>
             <div><b class="mono blue">R4</b> OpenAI, MLE-bench（75 个 Kaggle 竞赛；榜单 2026-04 起暂停收新提交）. github.com/openai/MLE-bench</div>
             <div><b class="mono blue">R12</b> Google Cloud Blog, “Welcome Kaggle to Google Cloud”, 2017-03-08. cloud.google.com/blog/products/gcp/welcome-kaggle-to-google-cloud</div>
+            <div><b class="mono blue">R13</b> 谈职：杭州数据科学家薪酬洞察（更新 2026-11-10；样本 41 份招聘）. tanzhi.cn/hangzhou/…</div>
+            <div><b class="mono blue">R14</b> 猎聘：《数据科学家薪资待遇》（公开样本约 15 万；按年限/学历均值）. liepin.com/zpsjkxj/xinzi/</div>
             <div><b class="mono blue">R5</b> DrivenData, “AI Agents in Data Science Competitions: Lessons from the Leaderboard”, 2026. blog.drivendata.org</div>
             <div><b class="mono blue">R6</b> DSAgentBench: Can Agents Automate End-to-End Data-Science Workflows in Real Computer Environments? EMNLP 2026. aclanthology.org/2026.emnlp-main.107/</div>
           </div>

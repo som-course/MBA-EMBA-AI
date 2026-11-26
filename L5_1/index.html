@@ -356,7 +356,7 @@ window.ML = (function () {
         <div class="row" style="padding:6px 0"><span class="no">PART 1</span><span class="en">What Is Machine Learning</span><span class="cn">预测问题与三类学习</span></div>
         <div class="row" style="padding:6px 0"><span class="no">PART 2</span><span class="en">Generalization</span><span class="cn">过拟合与交叉验证</span></div>
         <div class="row" style="padding:6px 0"><span class="no">PART 3</span><span class="en">Evaluation</span><span class="cn">分类与回归的度量</span></div>
-        <div class="row" style="padding:6px 0"><span class="no">PART 4</span><span class="en">ML in 2026</span><span class="cn">表格数据与落地</span></div>
+        <div class="row" style="padding:6px 0"><span class="no">PART 4</span><span class="en">ML in 2026</span><span class="cn">落地五问（树与 TabPFN→L5.2）</span></div>
       </div>
       <div class="who reveal d5">
         <img src="assets/logo-xjtu-red.png" alt="西安交通大学校徽">
@@ -399,25 +399,33 @@ window.ML = (function () {
       <div class="src"><b>参考</b> 原 PPT P2、P4–P5；课程主线 Data → AI → Business Value</div>
     </section>
 
-    <!-- === SLIDE 3 · AI 2.0 框架 === -->
+    <!-- === SLIDE 3 · AI 2.0 框架（对齐 L4 第 57 页流程图） === -->
     <section class="slide c" data-sec="开场" data-title="AI 2.0：人工设计特征，机器学习规则">
       <div class="toprule"></div><div class="tag"><b>LECTURE 5.1</b> · 开场</div><div class="pg"></div>
       <div class="body">
-        <h2 class="reveal d1" style="font-size:64px">AI 2.0：<em>人给特征，机器学规则</em></h2>
-        <div class="flex gap32 center reveal d2" style="margin-top:56px">
-          <div class="card g" style="width:430px;min-height:300px"><div class="n">① 业务知识</div><h3 style="font-size:38px">构建特征 X</h3><p>词频、大写字母长度、客户的年龄与行为……</p></div>
-          <div class="arrow">→</div>
-          <div class="card b" style="width:470px;min-height:300px;border-top-width:8px"><div class="n">② 学习算法</div><h3 style="font-size:38px">Y = f ( X )</h3><p>逻辑回归 · 分类决策树 · 朴素贝叶斯</p></div>
-          <div class="arrow">→</div>
-          <div class="card o" style="width:430px;min-height:300px"><div class="n">③ 业务价值</div><h3 style="font-size:38px">预测目标 Y</h3><p>是不是垃圾邮件？会不会违约？下月销量？</p></div>
+        <div class="mono blue reveal d1" style="font-size:24px;letter-spacing:.14em">AI 2.0 · MACHINE LEARNING</div>
+        <h2 class="reveal d2" style="font-size:52px;margin-top:8px">AI 2.0：<em>人给特征，机器学规则</em></h2>
+        <div class="reveal d3" style="margin-top:16px">
+          <svg viewBox="-4 0 1736 400" style="width:1728px;height:400px">
+            <g font-family="Noto Sans SC">
+              <rect x="0" y="80" width="300" height="240" fill="#fff" stroke="#cfcac0" stroke-width="2"/><image href="assets/l51-ai20-data.png" x="60" y="90" width="180" height="176"/><text x="150" y="304" text-anchor="middle" font-size="24" fill="#1d2433" font-weight="700">数据</text>
+              <path d="M300 200 H400" stroke="#24509e" stroke-width="5"/><path d="M400 200 l-18 -12 v24z" fill="#24509e" transform="translate(18 0)"/>
+              <rect x="420" y="80" width="380" height="240" fill="#fff" stroke="#24509e" stroke-width="3"/><text x="610" y="140" text-anchor="middle" font-size="30" font-weight="700" fill="#1d2433">特征提取</text><text x="610" y="178" text-anchor="middle" font-size="19" font-family="IBM Plex Mono" fill="#8a90a0">Feature Extraction</text><text x="610" y="225" text-anchor="middle" font-size="24" fill="#4a5263">基于业务知识构建 X</text><text x="610" y="265" text-anchor="middle" font-size="24" fill="#4a5263">核心价值表现 Y</text>
+              <path d="M800 200 H900" stroke="#24509e" stroke-width="5"/><path d="M900 200 l-18 -12 v24z" fill="#24509e" transform="translate(18 0)"/>
+              <rect x="920" y="80" width="380" height="240" fill="#24509e"/><text x="1110" y="140" text-anchor="middle" font-size="30" font-weight="700" fill="#fff">学习算法</text><text x="1110" y="178" text-anchor="middle" font-size="19" font-family="IBM Plex Mono" fill="#cfd8ee">Learning algorithm</text><text x="1110" y="225" text-anchor="middle" font-size="24" fill="#fff">逻辑回归 · 分类决策树</text><text x="1110" y="265" text-anchor="middle" font-size="24" fill="#fff">朴素贝叶斯 · …</text>
+              <path d="M1300 140 L1410 90" stroke="#24509e" stroke-width="4"/><path d="M1300 260 L1410 310" stroke="#24509e" stroke-width="4"/>
+              <rect x="1420" y="20" width="308" height="130" fill="#fff" stroke="#1f7a72" stroke-width="3"/><text x="1574" y="76" text-anchor="middle" font-size="30" font-weight="700" fill="#1f7a72">预测任务</text><text x="1574" y="116" text-anchor="middle" font-size="22" fill="#4a5263">新样本的 Y 是多少？</text>
+              <rect x="1420" y="250" width="308" height="130" fill="#fff" stroke="#c27a1a" stroke-width="3"/><text x="1574" y="306" text-anchor="middle" font-size="30" font-weight="700" fill="#c27a1a">解释性任务</text><text x="1574" y="346" text-anchor="middle" font-size="22" fill="#4a5263">哪些 X 起作用？</text>
+            </g>
+          </svg>
         </div>
-        <div class="flex gap32 st" style="margin-top:60px">
-          <div class="card b grow" style="min-height:230px"><div class="n">预测任务</div><p>目标：<b>f 在新样本上准</b>。本讲重点，评价看“样本外”。</p></div>
-          <div class="card t grow" style="min-height:230px"><div class="n">解释性任务</div><p>目标：<b>理解 X 如何影响 Y</b>（系数、显著性）。属于回归分析（L4）的主场。</p></div>
-          <div class="card g grow" style="min-height:230px"><div class="n">与 AI 1.0 的区别</div><p>1.0：人写规则（<span class="mono">capitalAve &gt; 2.4</span>）；2.0：<b>由数据决定阈值与权重</b>。</p></div>
+        <div class="flex gap24 st reveal d4" style="margin-top:8px">
+          <div class="card b grow" style="padding:18px 24px"><div class="n">预测 · 本讲重点</div><p style="font-size:24px;margin:0">目标：<b>f 在新样本上准</b>。评价看“样本外”，不是训练集全对。</p></div>
+          <div class="card t grow" style="padding:18px 24px"><div class="n">解释 · L4 主场</div><p style="font-size:24px;margin:0">目标：<b>理解 X 如何影响 Y</b>（系数、显著性）。回归讲解释，本讲讲预测。</p></div>
+          <div class="card g grow" style="padding:18px 24px;border-top-width:6px"><div class="n">与 AI 1.0 的区别</div><p style="font-size:24px;margin:0">1.0：人写规则（<span class="mono">capitalAve &gt; 2.4</span>）；2.0：人设计特征，<b>由数据决定阈值与权重</b>。</p></div>
         </div>
       </div>
-      <div class="src"><b>参考</b> 原 PPT P2；AI 1.0 → 2.0 对比承接 L1 / L3</div>
+      <div class="src"><b>参考</b> 流程图对齐 L4 第 57 页（原 PPT P58）；AI 1.0→2.0 对比承接 L1 / L3；垃圾邮件案例贯穿本讲</div>
     </section>
 
     <!-- === 章节 Part 1 === -->
@@ -726,34 +734,101 @@ window.ML = (function () {
     </section>
 
     <!-- === 规则越复杂，训练越好看 === -->
-    <section class="slide c" data-sec="2 · 泛化" data-title="垃圾邮件：规则变复杂，训练集 100%，全体几乎不变">
+    <section class="slide c" data-sec="2 · 泛化" data-title="垃圾邮件：规则变复杂，训练集 100%，全体几乎不变" id="s-spam-rules">
       <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.1 插值游戏</div><div class="pg"></div>
       <div class="body">
-        <h2 class="reveal d1" style="font-size:58px">垃圾邮件：规则变复杂，<em>只换来训练集的好看</em></h2>
-        <p class="lede reveal d2" style="margin-top:14px;font-size:30px">只抽 10 封训练邮件，用“大写字母平均长度 capitalAve”写规则：</p>
-        <svg viewBox="0 0 1728 330" style="width:1728px;height:330px" class="reveal d3">
-          <g font-size="26">
-            <text x="0" y="62" fill="#1d2433" font-weight="700">规则 1</text>
-            <rect x="170" y="30" width="520" height="50" fill="#24509e" fill-opacity=".18" stroke="#24509e"/><rect x="690" y="30" width="520" height="50" fill="#c27a1a" fill-opacity=".25" stroke="#c27a1a"/>
-            <text x="430" y="64" text-anchor="middle" fill="#24509e">≤ 2.40 → 正常</text><text x="950" y="64" text-anchor="middle" fill="#8a5a10">&gt; 2.40 → 垃圾</text>
-            <text x="0" y="192" fill="#1d2433" font-weight="700">规则 2</text>
-            <rect x="170" y="160" width="520" height="50" fill="#24509e" fill-opacity=".18" stroke="#24509e"/>
-            <rect x="690" y="160" width="60" height="50" fill="#c27a1a" fill-opacity=".25" stroke="#c27a1a"/>
-            <rect x="750" y="160" width="140" height="50" fill="#24509e" fill-opacity=".18" stroke="#24509e"/>
-            <rect x="890" y="160" width="320" height="50" fill="#c27a1a" fill-opacity=".25" stroke="#c27a1a"/>
-            <text x="430" y="194" text-anchor="middle" fill="#24509e">&lt; 2.40 → 正常</text>
-            <text x="820" y="244" text-anchor="middle" fill="#24509e" font-size="22">2.45–2.7 → 正常</text>
-            <text x="720" y="146" text-anchor="middle" fill="#8a5a10" font-size="22">2.40–2.45 → 垃圾</text>
-            <text x="1050" y="194" text-anchor="middle" fill="#8a5a10">&gt; 2.7 → 垃圾</text>
-          </g>
-          <text x="170" y="296" font-size="22" fill="#8a90a0" font-family="var(--f-mono)">capitalAve →</text>
-        </svg>
-        <div class="flex gap32 st" style="margin-top:6px">
-          <div class="card b grow stat"><div class="n">训练集 10 封 · 规则 1 → 规则 2</div><div class="v">90%<small>→ 100%</small></div><div class="l">“完美”：内样本误差为 0</div></div>
-          <div class="card o grow stat"><div class="n">全体 4601 封 · 规则 1 → 规则 2</div><div class="v">71.7%<small>→ 73.2%</small></div><div class="l">外样本几乎没有本质提高</div></div>
+        <div class="flex between center reveal d1">
+          <h2 style="font-size:48px">垃圾邮件：规则变复杂，<em>只换来训练集的好看</em></h2>
+          <div class="legend"><span><i style="background:#24509e"></i>真实·正常</span><span><i style="background:#c27a1a"></i>真实·垃圾</span><span style="font-size:20px;color:var(--ink-3)">底色 = 规则判定区</span></div>
+        </div>
+        <p class="lede reveal d2" style="margin-top:8px;font-size:26px">10 封训练邮件画在平面上（横轴 capitalAve，纵轴样本序号）。规则只切横轴——看分区怎么为“背题”变碎。</p>
+        <div class="flex gap24 reveal d3" style="margin-top:10px">
+          <div class="grow">
+            <div class="mono" style="font-size:20px;letter-spacing:.12em;margin-bottom:6px;color:var(--blue)">规则 1 · 一刀切　≤2.40 正常 · &gt;2.40 垃圾</div>
+            <svg id="sr1" viewBox="0 0 840 420" style="width:840px;height:420px;background:#fff;border:1px solid var(--rule)"></svg>
+          </div>
+          <div class="grow">
+            <div class="mono" style="font-size:20px;letter-spacing:.12em;margin-bottom:6px;color:var(--ochre)">规则 2 · 多段切　专为训练集“抠”出正确区</div>
+            <svg id="sr2" viewBox="0 0 840 420" style="width:840px;height:420px;background:#fff;border:1px solid var(--rule)"></svg>
+          </div>
+        </div>
+        <div class="flex gap24 st" style="margin-top:12px">
+          <div class="card b grow" style="padding:16px 22px"><div class="n">训练集 10 封 · 规则 1 → 规则 2</div><p style="font-size:36px;margin:4px 0 0;font-family:var(--f-serif-en);font-weight:700;color:var(--blue)">90% <span style="font-size:28px;color:var(--ink-3)">→</span> 100%</p><p style="font-size:22px;margin:4px 0 0;color:var(--ink-2)">多切几刀，内样本误差变成 0</p></div>
+          <div class="card o grow" style="padding:16px 22px"><div class="n">全体 4601 封 · 规则 1 → 规则 2</div><p style="font-size:36px;margin:4px 0 0;font-family:var(--f-serif-en);font-weight:700;color:var(--ochre)">71.7% <span style="font-size:28px;color:var(--ink-3)">→</span> 73.2%</p><p style="font-size:22px;margin:4px 0 0;color:var(--ink-2)">外样本几乎没有本质提高</p></div>
+          <div class="card g grow" style="padding:16px 22px"><div class="n">看图要点</div><p style="font-size:24px;margin:6px 0 0;line-height:1.45">规则 1 错在那枚 <b>capitalAve≈2.7 的正常邮件</b>；规则 2 把它单独“挖”进正常区——分区更碎，只对这 10 封更准。</p></div>
         </div>
       </div>
-      <div class="src"><b>参考</b> 原 PPT P15–P18（UCI Spambase / kernlab::spam，4601 封；10 封训练样本与 R 代码输出）</div>
+      <div class="src"><b>参考</b> 原 PPT P15–P18；UCI Spambase 4601 封；示意 10 点使训练准确率 90%→100%（全库 71.7% / 73.2% 与原 R 输出一致）</div>
+      <script>(function(){
+        /* 10 封示意样本：capitalAve + 真标签；规则只依赖 capitalAve */
+        const $=id=>document.getElementById(id);
+        const pts=[
+          {i:1,x:1.00,y:'nonspam'},{i:2,x:11.00,y:'spam'},{i:3,x:1.00,y:'nonspam'},{i:4,x:1.80,y:'nonspam'},
+          {i:5,x:7.20,y:'spam'},{i:6,x:1.60,y:'nonspam'},{i:7,x:2.70,y:'nonspam'},{i:8,x:3.50,y:'spam'},
+          {i:9,x:5.10,y:'spam'},{i:10,x:2.42,y:'spam'}
+        ];
+        const BLUE='#24509e', OCHRE='#c27a1a', INK='#1d2433', MUTED='#8a90a0';
+        function draw(svgId, bands, titleCuts){
+          const s=$(svgId); if(!s) return;
+          const W=840,H=420, pad={l:58,r:36,t:36,b:52};
+          /* 横轴放大到 0–8，突出 2.4–2.7 的碎分区；>8 的点贴右边 */
+          const xMax=8, yMin=0.5, yMax=10.5;
+          const X=v=> pad.l + (Math.min(v,xMax)/xMax)*(W-pad.l-pad.r);
+          const Y=i=> pad.t + ((yMax-i)/(yMax-yMin))*(H-pad.t-pad.b);
+          let html='';
+          bands.forEach(b=>{
+            const x0=X(b.a), x1=X(Math.min(b.b,xMax+0.01));
+            const w=Math.max(b.b-b.a<0.3?10:1, x1-x0); /* 窄带至少 10px，看得见 */
+            html+=`<rect x="${x0}" y="${pad.t}" width="${w}" height="${H-pad.t-pad.b}" fill="${b.spam?OCHRE:BLUE}" fill-opacity="${b.spam?.22:.14}" stroke="none"/>`;
+          });
+          titleCuts.forEach(c=>{
+            const x=X(c);
+            html+=`<line x1="${x}" y1="${pad.t}" x2="${x}" y2="${H-pad.b}" stroke="${INK}" stroke-width="1.6" stroke-dasharray="6 5" opacity=".6"/>`;
+            html+=`<text x="${x}" y="${pad.t-10}" text-anchor="middle" font-size="17" fill="${MUTED}" font-family="IBM Plex Mono,monospace">${c}</text>`;
+          });
+          html+=`<line x1="${pad.l}" y1="${H-pad.b}" x2="${W-pad.r}" y2="${H-pad.b}" stroke="#cfcac0" stroke-width="1.5"/>`;
+          html+=`<line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${H-pad.b}" stroke="#cfcac0" stroke-width="1.5"/>`;
+          html+=`<text x="${(pad.l+W-pad.r)/2}" y="${H-12}" text-anchor="middle" font-size="20" fill="${MUTED}" font-family="IBM Plex Mono,monospace">capitalAve →</text>`;
+          html+=`<text x="18" y="${(pad.t+H-pad.b)/2}" text-anchor="middle" font-size="18" fill="${MUTED}" transform="rotate(-90 18 ${(pad.t+H-pad.b)/2})">样本序号</text>`;
+          [0,2,2.4,4,6,8].forEach(v=>{
+            html+=`<text x="${X(v)}" y="${H-pad.b+22}" text-anchor="middle" font-size="16" fill="${MUTED}" font-family="IBM Plex Mono,monospace">${v===8?'8+':v}</text>`;
+          });
+          pts.forEach(p=>{
+            const pred = bands.find(b=> p.x>=b.a && p.x<=b.b) || bands.find(b=> p.x>=b.a && p.x<b.b) || bands[bands.length-1];
+            /* 边界：2.4 归左带；用 <= 右端点 */
+            let predSpam=false;
+            for(const b of bands){ if(p.x>=b.a && p.x<=b.b){ predSpam=!!b.spam; break; } }
+            /* 右开区间修正：落在带缝时按规则函数 */
+            if(svgId==='sr1') predSpam = p.x>2.4;
+            if(svgId==='sr2'){
+              if(p.x>2.7) predSpam=true;
+              else if(p.x<2.4) predSpam=false;
+              else if(p.x<=2.45) predSpam=true;
+              else predSpam=false;
+            }
+            const trueSpam=p.y==='spam';
+            const cx=X(p.x), cy=Y(p.i);
+            const fill=trueSpam?OCHRE:BLUE;
+            if(predSpam!==trueSpam){
+              html+=`<circle cx="${cx}" cy="${cy}" r="15" fill="none" stroke="#a8272d" stroke-width="3"/>`;
+              html+=`<text x="${cx}" y="${cy-20}" text-anchor="middle" font-size="16" fill="#a8272d" font-weight="700">错分</text>`;
+            }
+            html+=`<circle cx="${cx}" cy="${cy}" r="10" fill="${fill}" stroke="#fff" stroke-width="2"/>`;
+            const lab=p.x>xMax? p.x.toFixed(0)+'→' : String(p.x);
+            html+=`<text x="${cx+13}" y="${cy+5}" font-size="16" fill="${INK}" font-family="IBM Plex Mono,monospace">${lab}</text>`;
+          });
+          s.innerHTML=html;
+        }
+        const r1=[
+          {a:0,b:2.4,spam:false},{a:2.4,b:99,spam:true}
+        ];
+        const r2=[
+          {a:0,b:2.4,spam:false},{a:2.4,b:2.45,spam:true},
+          {a:2.45,b:2.7,spam:false},{a:2.7,b:99,spam:true}
+        ];
+        draw('sr1', r1, [2.4]);
+        draw('sr2', r2, [2.4,2.45,2.7]);
+      })();</script>
     </section>
 
     <!-- === 过拟合交互 === -->
@@ -801,88 +876,65 @@ window.ML = (function () {
       </script>
     </section>
 
-    <!-- === 决策边界：树深度 === -->
-    <section class="slide c" data-sec="2 · 泛化" data-title="决策边界：树越深，边界越“碎”" id="s-tree">
-      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.2 内样本与外样本误差</div><div class="pg"></div>
-      <div class="body flex gap32">
-        <div style="width:660px">
-          <h2 style="font-size:52px">同一道理，<em>换成分类树</em></h2>
-          <canvas id="tr-c" width="640" height="640" style="width:640px;height:640px;margin-top:16px"></canvas>
-          <div class="legend" style="margin-top:12px"><span><i style="background:#c27a1a"></i>正类</span><span><i style="background:#24509e"></i>负类</span><span class="muted">圆点 = 训练样本</span></div>
-        </div>
-        <div class="grow col" style="justify-content:space-between">
-          <div>
-            <p style="font-size:28px">分类决策树不断按特征切分空间，<b>深度</b>就是复杂度。</p>
-            <div class="ctl"><label>树深度</label><input id="tr-d" type="range" min="1" max="12" value="3" style="width:380px"><b id="tr-dv">3</b><button class="btn ghost" id="tr-rs" style="margin-left:20px">换一批样本</button></div>
-            <div class="mrow" style="margin-top:20px"><span>叶子数</span><b id="tr-lv">–</b></div>
-            <div class="mrow"><span>训练正确率</span><b id="tr-tr" class="blue">–</b></div>
-            <div class="mrow"><span>测试正确率</span><b id="tr-te" class="ochre">–</b></div>
-          </div>
-          <div>
-            <div class="hint" style="margin-bottom:6px"><span style="color:#24509e">■ 训练</span> &nbsp; <span style="color:#c27a1a">■ 测试</span> 正确率 vs 深度</div>
-            <svg id="tr-e" viewBox="0 0 900 250" style="width:900px;height:250px;background:#fff;border:1px solid var(--rule)"></svg>
-            <p style="font-size:24px;margin-top:10px;color:var(--ink-3)">训练正确率一路升到 100%，测试正确率先升后平甚至下降：深树在“记噪声”。</p>
-          </div>
-        </div>
-      </div>
-      <div class="src"><b>参考</b> 原 PPT P19（过拟合）；CART 基尼切分为课堂实现，数据为模拟的“双月牙 + 噪声”</div>
-      <script>
-(function () {
-  const $ = ML.$, cv = $('tr-c'), ctx = cv.getContext('2d'); let seed = 12, TR, TE, d = 3, accs = [];
-  function moons(seed, n) { const R = ML.rng(seed), P = []; for (let i = 0; i < n; i++) { const t = Math.PI * R(); if (i % 2) P.push({ x: 1 - Math.cos(t) + .38 * ML.gauss(R), y: .5 - Math.sin(t) + .38 * ML.gauss(R), c: 0 }); else P.push({ x: Math.cos(t) + .38 * ML.gauss(R), y: Math.sin(t) + .38 * ML.gauss(R), c: 1 }); } return P; }
-  function gini(a) { const n = a.length; if (!n) return 0; const p = a.filter(q => q.c).length / n; return 2 * p * (1 - p); }
-  function build(a, dep) {
-    const p1 = a.filter(q => q.c).length, nd = { n: a.length, p: p1 / a.length };
-    if (dep === 0 || p1 === 0 || p1 === a.length) return nd;
-    let best = null, g0 = gini(a);
-    ['x', 'y'].forEach(f => { const s = [...a].sort((u, v) => u[f] - v[f]); let lp = 0; for (let i = 0; i < s.length - 1; i++) { lp += s[i].c; if (s[i].x === s[i + 1].x && f === 'x') continue; const nl = i + 1, nr = s.length - nl, rp = p1 - lp, g = (nl * 2 * (lp / nl) * (1 - lp / nl) + nr * 2 * (rp / nr) * (1 - rp / nr)) / s.length; if (!best || g < best.g) best = { g, f, t: (s[i][f] + s[i + 1][f]) / 2 }; } });
-    if (!best || best.g >= g0 - 1e-9) return nd;
-    nd.f = best.f; nd.t = best.t; nd.l = build(a.filter(q => q[best.f] <= best.t), dep - 1); nd.r = build(a.filter(q => q[best.f] > best.t), dep - 1); return nd;
-  }
-  const pred = (nd, q) => nd.f ? pred(q[nd.f] <= nd.t ? nd.l : nd.r, q) : nd.p;
-  const leaves = nd => nd.f ? leaves(nd.l) + leaves(nd.r) : 1;
-  const acc = (T, A) => A.filter(q => (pred(T, q) > .5 ? 1 : 0) === q.c).length / A.length;
-  const X0 = -1.8, X1 = 2.8, Y0 = -1.5, Y1 = 2.0, sx = ML.scale(X0, X1, 0, 640), sy = ML.scale(Y1, Y0, 0, 640);
-  function gen() { TR = moons(seed, 70); TE = moons(seed + 77, 500); accs = []; for (let k = 1; k <= 12; k++) { const T = build(TR, k); accs.push([acc(T, TR), acc(T, TE)]); } }
-  function draw() {
-    const T = build(TR, d), G = 4; ctx.clearRect(0, 0, 640, 640);
-    for (let i = 0; i < 640; i += G) for (let j = 0; j < 640; j += G) { const x = X0 + (i + G / 2) / 640 * (X1 - X0), y = Y1 - (j + G / 2) / 640 * (Y1 - Y0), p = pred(T, { x, y }); ctx.fillStyle = p > .5 ? 'rgba(194,122,26,.22)' : 'rgba(36,80,158,.18)'; ctx.fillRect(i, j, G, G); }
-    TR.forEach(q => { ctx.beginPath(); ctx.arc(sx(q.x), sy(q.y), 8, 0, 7); ctx.fillStyle = q.c ? '#c27a1a' : '#24509e'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke(); });
-    $('tr-dv').textContent = d; $('tr-lv').textContent = leaves(T);
-    const a = accs[d - 1]; $('tr-tr').textContent = (a[0] * 100).toFixed(1) + '%'; $('tr-te').textContent = (a[1] * 100).toFixed(1) + '%';
-    const e = $('tr-e'), x = ML.scale(1, 12, 60, 870), mn = Math.min(...accs.map(v => v[1])) - .04, y = ML.scale(mn, 1.0, 215, 20); let h = '';
-    [0, 1].forEach(m => { h += `<path d="${accs.map((v, i) => (i ? 'L' : 'M') + x(i + 1) + ' ' + y(v[m])).join('')}" fill="none" stroke="${m ? '#c27a1a' : '#24509e'}" stroke-width="3.5"/>`; h += `<circle cx="${x(d)}" cy="${y(a[m])}" r="8" fill="${m ? '#c27a1a' : '#24509e'}"/>`; });
-    for (let i = 1; i <= 12; i++) h += `<text x="${x(i)}" y="240" text-anchor="middle" font-size="16" fill="#8a90a0">${i}</text>`;
-    h += `<line x1="${x(d)}" x2="${x(d)}" y1="20" y2="215" stroke="#1d2433" stroke-dasharray="5 5"/>`; e.innerHTML = h;
-  }
-  $('tr-d').oninput = e => { d = +e.target.value; draw(); };
-  $('tr-rs').onclick = () => { seed = seed * 5 + 1; gen(); draw(); };
-  gen(); draw();
-})();
-      </script>
-    </section>
-
     <!-- === 基本框架 === -->
     <section class="slide c" data-sec="2 · 泛化" data-title="有监督统计机器学习的基本框架" id="s-frame">
       <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 训练 / 测试框架</div><div class="pg"></div>
       <div class="body">
-        <h2 class="reveal d1" style="font-size:60px">基本框架：<em>先划分，再学习，最后只考一次</em></h2>
-        <div class="reveal d2" style="margin-top:36px">
-          <div style="display:flex;height:130px;border:2px solid var(--ink)"><div id="fr-a" style="background:#24509e;color:#fff;display:flex;align-items:center;justify-content:center;font:500 30px var(--f-mono);width:60%">训练集 TRAIN 60%</div><div id="fr-b" style="background:#c27a1a;color:#fff;display:flex;align-items:center;justify-content:center;font:500 30px var(--f-mono);width:40%">测试集 TEST 40%</div></div>
-          <div class="ctl"><label>训练集比例</label><input id="fr-r" type="range" min="50" max="90" value="60" step="5" style="width:600px"><b id="fr-rv">60%</b><span class="hint" style="margin-left:24px">原稿示例 60% vs 40%；常见 70–80%</span></div>
+        <h2 class="reveal d1" style="font-size:52px">基本框架：<em>先划分，再学习，最后只考一次</em></h2>
+        <div class="flex gap32 reveal d2" style="margin-top:22px">
+          <div class="grow">
+            <div class="mono" style="font-size:20px;letter-spacing:.12em;color:var(--blue);margin-bottom:10px">方案 ① · 训练 / 测试</div>
+            <div style="display:flex;height:88px;border:2px solid var(--ink)">
+              <div id="fr-a" style="background:#24509e;color:#fff;display:flex;align-items:center;justify-content:center;font:500 26px var(--f-mono);width:60%">TRAIN 60%</div>
+              <div id="fr-b" style="background:#c27a1a;color:#fff;display:flex;align-items:center;justify-content:center;font:500 26px var(--f-mono);width:40%">TEST 40%</div>
+            </div>
+            <p style="font-size:24px;margin-top:12px;color:var(--ink-2);line-height:1.45">最简划分：用训练集学模型，用测试集做一次最终报告。</p>
+          </div>
+          <div class="grow">
+            <div class="mono" style="font-size:20px;letter-spacing:.12em;color:var(--teal);margin-bottom:10px">方案 ② · 训练 / 验证 / 测试</div>
+            <div style="display:flex;height:88px;border:2px solid var(--ink)">
+              <div id="fr-t" style="background:#24509e;color:#fff;display:flex;align-items:center;justify-content:center;font:500 24px var(--f-mono);width:60%">TRAIN 60%</div>
+              <div id="fr-v" style="background:#1f7a72;color:#fff;display:flex;align-items:center;justify-content:center;font:500 24px var(--f-mono);width:20%">VAL 20%</div>
+              <div id="fr-e" style="background:#c27a1a;color:#fff;display:flex;align-items:center;justify-content:center;font:500 24px var(--f-mono);width:20%">TEST 20%</div>
+            </div>
+            <p style="font-size:24px;margin-top:12px;color:var(--ink-2);line-height:1.45">验证集专用于<b>选模型 / 调参</b>；测试集仍只碰一次。</p>
+          </div>
         </div>
-        <div class="flex gap16 st" style="margin-top:44px">
-          <div class="card g grow" style="min-height:250px"><div class="n">STEP 1</div><h3 style="font-size:38px">清洗数据</h3><p style="font-size:27px">缺失、异常、重复</p></div>
-          <div class="card b grow" style="min-height:250px"><div class="n">STEP 2</div><h3 style="font-size:38px">划分数据</h3><p style="font-size:27px">训练集 / 测试集</p></div>
-          <div class="card b grow" style="min-height:250px"><div class="n">STEP 3</div><h3 style="font-size:38px">构建特征</h3><p style="font-size:27px">只用训练集的信息</p></div>
-          <div class="card b grow" style="min-height:250px"><div class="n">STEP 4</div><h3 style="font-size:38px">训练模型</h3><p style="font-size:27px">交叉验证选超参数</p></div>
-          <div class="card o grow" style="min-height:250px"><div class="n">STEP 5</div><h3 style="font-size:38px">测试评估</h3><p style="font-size:27px">只用一次，报告样本外效果</p></div>
+        <div class="ctl reveal d3" style="margin-top:18px">
+          <label>训练集比例</label>
+          <input id="fr-r" type="range" min="50" max="70" value="60" step="5" style="width:520px">
+          <b id="fr-rv">60%</b>
+          <span class="hint" style="margin-left:18px">方案①：其余全给测试；方案②：测试固定 20%，剩余给验证（≥10%）</span>
         </div>
-        <p class="reveal d6" style="margin-top:40px;font-size:30px"><b class="ochre">⚠ 数据泄漏：</b>测试集的信息一旦进入特征构建或调参，测试误差就不再“无辜”，会系统性乐观。</p>
+        <div class="flex gap16 st reveal d4" style="margin-top:28px">
+          <div class="card g grow" style="padding:18px 20px"><div class="n">STEP 1</div><h3 style="font-size:30px;margin:0 0 8px">清洗数据</h3><p style="font-size:22px;margin:0">缺失 · 异常 · 重复</p></div>
+          <div class="card b grow" style="padding:18px 20px"><div class="n">STEP 2</div><h3 style="font-size:30px;margin:0 0 8px">划分数据</h3><p style="font-size:22px;margin:0">① 训练/测试<br>② 训练/验证/测试</p></div>
+          <div class="card b grow" style="padding:18px 20px"><div class="n">STEP 3</div><h3 style="font-size:30px;margin:0 0 8px">构建特征</h3><p style="font-size:22px;margin:0">只用训练（+验证）信息</p></div>
+          <div class="card t grow" style="padding:18px 20px"><div class="n">STEP 4</div><h3 style="font-size:30px;margin:0 0 8px">训练 · 调参</h3><p style="font-size:22px;margin:0">在验证集上选超参数</p></div>
+          <div class="card o grow" style="padding:18px 20px"><div class="n">STEP 5</div><h3 style="font-size:30px;margin:0 0 8px">测试评估</h3><p style="font-size:22px;margin:0">只用一次，报样本外</p></div>
+        </div>
+        <p class="reveal d5" style="margin-top:24px;font-size:26px"><b class="ochre">⚠ 数据泄漏：</b>测试集一旦进入特征构建或调参，测试误差会系统性乐观。没有独立验证集时，下一页用<b>交叉验证</b>在训练集内轮流当“临时考场”。</p>
       </div>
-      <div class="src"><b>参考</b> 原 PPT P20（基本框架）；数据泄漏提示为通用方法论</div>
+      <div class="src"><b>参考</b> 原 PPT P20（训练/测试）；训练/验证/测试为课堂补充；数据泄漏提示为通用方法论</div>
       <script>
-(function () { const r = ML.$('fr-r'); r.oninput = () => { const v = +r.value; ML.$('fr-a').style.width = v + '%'; ML.$('fr-b').style.width = (100 - v) + '%'; ML.$('fr-a').textContent = `训练集 TRAIN ${v}%`; ML.$('fr-b').textContent = `测试集 TEST ${100 - v}%`; ML.$('fr-rv').textContent = v + '%'; }; })();
+(function () {
+  const $ = ML.$, r = $('fr-r');
+  function sync() {
+    const tr = +r.value, te1 = 100 - tr, te2 = 20, va = 100 - tr - te2;
+    $('fr-a').style.width = tr + '%';
+    $('fr-b').style.width = te1 + '%';
+    $('fr-a').textContent = 'TRAIN ' + tr + '%';
+    $('fr-b').textContent = 'TEST ' + te1 + '%';
+    $('fr-t').style.width = tr + '%';
+    $('fr-v').style.width = Math.max(va, 0) + '%';
+    $('fr-e').style.width = te2 + '%';
+    $('fr-t').textContent = 'TRAIN ' + tr + '%';
+    $('fr-v').textContent = 'VAL ' + Math.max(va, 0) + '%';
+    $('fr-e').textContent = 'TEST ' + te2 + '%';
+    $('fr-rv').textContent = tr + '%';
+  }
+  r.oninput = sync; sync();
+})();
       </script>
     </section>
 
@@ -1042,46 +1094,146 @@ window.ML = (function () {
       </script>
     </section>
 
-    <!-- === ROC 与 AUC === -->
+    <!-- === ROC 与 AUC：用 spam 阈值扫出曲线 === -->
     <section class="slide c" data-sec="3 · 度量" data-title="ROC 曲线与 AUC：扫过所有阈值" id="s-roc">
       <div class="toprule"></div><div class="tag"><b>PART 3</b> · 3.2 混淆矩阵与 ROC</div><div class="pg"></div>
-      <div class="body flex gap32">
-        <div style="width:700px">
-          <h2 style="font-size:52px">ROC：<em>把所有阈值画在一张图</em></h2>
-          <svg id="rc-s" viewBox="0 0 640 640" style="width:640px;height:640px;background:#fff;border:1px solid var(--rule);margin-top:14px"></svg>
+      <div class="body">
+        <div class="flex between center reveal d1">
+          <h2 style="font-size:46px">ROC 怎么画出来？<em>扫一遍阈值</em></h2>
+          <div class="legend"><span><i style="background:#c27a1a"></i>当前阈值对应点</span><span><i style="background:#24509e"></i>已扫过的点</span><span class="muted">对角线 = 随机猜</span></div>
         </div>
-        <div class="grow col" style="justify-content:space-between">
-          <div>
-            <p style="font-size:28px">横轴 <b>FPR</b>（误杀率），纵轴 <b>TPR</b>（召回率）。阈值从高到低，点沿曲线从左下走到右上。</p>
-            <div class="ctl"><label>判定阈值 t</label><input id="rc-t" type="range" min="-100" max="450" value="90" style="width:480px"><b id="rc-tv">0.9</b></div>
-            <div class="ctl"><label>区分能力 d</label><input id="rc-d" type="range" min="0" max="40" value="15" style="width:480px"><b id="rc-dv">1.5</b></div>
-            <div class="flex gap16" style="margin-top:20px"><button class="btn ghost" id="rc-0">d = 0 随机猜</button><button class="btn ghost" id="rc-3">d = 3 强模型</button></div>
+        <p class="lede reveal d2" style="margin-top:6px;font-size:26px">垃圾邮件规则：<b class="mono">capitalAve &gt; t → 判为垃圾</b>。每个 t 算出一对 <b>FPR</b>（误杀率）、<b>TPR</b>（召回率），标在平面上；t 从高扫到低，点连成 ROC。</p>
+        <div class="flex gap24 reveal d3" style="margin-top:12px">
+          <div style="width:980px">
+            <div class="mono" style="font-size:18px;letter-spacing:.12em;color:var(--ink-3);margin-bottom:6px">① 在特征轴上移动阈值（UCI Spambase · 大写均长）</div>
+            <svg id="rc-axis" viewBox="0 0 980 168" style="width:980px;height:168px;background:#fff;border:1px solid var(--rule)"></svg>
+            <div class="ctl" style="margin-top:10px">
+              <label>阈值 t</label>
+              <input id="rc-t" type="range" min="0" max="20" value="8" style="width:420px">
+              <b id="rc-tv" style="min-width:120px">–</b>
+              <button class="btn ghost" id="rc-play" style="margin-left:12px">自动扫一遍 ▶</button>
+            </div>
+            <div class="flex gap12" style="margin-top:8px;flex-wrap:wrap" id="rc-presets"></div>
+            <div class="flex gap16 st" style="margin-top:14px">
+              <div class="card g grow" style="padding:14px 18px"><div class="n">混淆（当前 t）</div>
+                <table style="font-size:22px;text-align:center;margin-top:6px;width:100%"><tr><th></th><th>真·垃圾</th><th>真·正常</th></tr>
+                  <tr><td>判·垃圾</td><td><b id="rc-tp" class="teal">–</b></td><td><b id="rc-fp" style="color:#b4402d">–</b></td></tr>
+                  <tr><td>判·正常</td><td><b id="rc-fn" style="color:#b4402d">–</b></td><td><b id="rc-tn" class="teal">–</b></td></tr>
+                </table>
+              </div>
+              <div class="card b grow" style="padding:14px 18px"><div class="n">这一步落到 ROC 上</div>
+                <div class="mrow" style="margin-top:8px"><span>TPR = TP / 垃圾</span><b id="rc-tpr" class="teal">–</b></div>
+                <div class="mrow"><span>FPR = FP / 正常</span><b id="rc-fpr" class="ochre">–</b></div>
+                <p style="font-size:22px;margin:10px 0 0;color:var(--ink-2)">→ 坐标 <b id="rc-xy" class="mono">–</b></p>
+              </div>
+            </div>
           </div>
-          <div>
-            <div class="mrow"><span>当前点：FPR / TPR</span><b id="rc-pt">–</b></div>
-            <div class="mrow"><span>AUC（曲线下面积）</span><b id="rc-auc" class="blue" style="font-size:52px">–</b></div>
-            <div class="card b" style="margin-top:14px"><p style="font-size:26px"><b>AUC 的含义：</b>随机抽一封垃圾、一封正常，模型给垃圾打分更高的概率。0.5 = 抛硬币，1 = 完美。</p></div>
+          <div class="grow">
+            <div class="mono" style="font-size:18px;letter-spacing:.12em;color:var(--ink-3);margin-bottom:6px">② 每个 t → 一个点；连起来 = ROC</div>
+            <svg id="rc-s" viewBox="0 0 700 520" style="width:700px;height:520px;background:#fff;border:1px solid var(--rule)"></svg>
+            <div class="flex between center" style="margin-top:10px">
+              <div class="mrow" style="margin:0;flex:1"><span>AUC（曲线下面积）</span><b id="rc-auc" class="blue" style="font-size:44px">–</b></div>
+              <p style="font-size:22px;color:var(--ink-2);max-width:340px;line-height:1.4;margin:0">AUC≈随机抽一封垃圾、一封正常，垃圾得分更高的概率。0.5=抛硬币，1=完美。</p>
+            </div>
           </div>
         </div>
       </div>
-      <div class="src"><b>参考</b> 原 PPT P26（ROC / AUC）；双正态模型 AUC = Φ(d/√2)，为教学模拟</div>
+      <div class="src"><b>参考</b> UCI Spambase / kernlab::spam（4601=1813+2788）；规则 capitalAve&gt;t；阈值网格与 AUC 为梯形近似 ⚠；承接第 13 页规则 1（t≈2.4）</div>
       <script>
 (function () {
-  const $ = ML.$, svg = $('rc-s'), sx = ML.scale(0, 1, 70, 610), sy = ML.scale(1, 0, 30, 570);
-  function draw() {
-    const t = $('rc-t').value / 100, d = $('rc-d').value / 10; let h = '';
-    for (let i = 0; i <= 4; i++) h += `<line x1="70" x2="610" y1="${sy(i / 4)}" y2="${sy(i / 4)}" stroke="#eee6d8"/><line y1="30" y2="570" x1="${sx(i / 4)}" x2="${sx(i / 4)}" stroke="#eee6d8"/><text x="${sx(i / 4)}" y="600" text-anchor="middle" font-size="18" fill="#8a90a0">${i / 4}</text><text x="58" y="${sy(i / 4) + 6}" text-anchor="end" font-size="18" fill="#8a90a0">${i / 4}</text>`;
-    h += `<text x="340" y="632" text-anchor="middle" font-size="20" fill="#4a5263">FPR（假阳性率）</text><text transform="translate(20 300) rotate(-90)" text-anchor="middle" font-size="20" fill="#4a5263">TPR（召回率）</text>`;
-    h += `<line x1="${sx(0)}" y1="${sy(0)}" x2="${sx(1)}" y2="${sy(1)}" stroke="#8a90a0" stroke-dasharray="8 6" stroke-width="2.5"/>`;
-    let p = `M${sx(0)} ${sy(0)}`, a = `M${sx(0)} ${sy(0)}`; for (let u = 6; u >= -4; u -= .05) { const x = 1 - ML.Phi(u), y = 1 - ML.Phi(u - d); p += `L${sx(x)} ${sy(y)}`; }
-    h += `<path d="${p} L${sx(1)} ${sy(1)} L${sx(1)} ${sy(0)}Z" fill="#24509e" fill-opacity=".10"/><path d="${p}" fill="none" stroke="#24509e" stroke-width="5"/>`;
-    const fpr = 1 - ML.Phi(t), tpr = 1 - ML.Phi(t - d);
-    h += `<circle cx="${sx(fpr)}" cy="${sy(tpr)}" r="13" fill="#c27a1a" stroke="#fff" stroke-width="3"/>`;
-    svg.innerHTML = h; $('rc-tv').textContent = t.toFixed(1); $('rc-dv').textContent = d.toFixed(1);
-    $('rc-pt').textContent = fpr.toFixed(2) + ' / ' + tpr.toFixed(2); $('rc-auc').textContent = ML.Phi(d / Math.SQRT2).toFixed(3);
+  const $ = ML.$, feat = 'capAvg', R = ML.spamRoc(feat), pts = R.pts, N = SPAM_N;
+  const sx = ML.scale(0, 1, 78, 660), sy = ML.scale(1, 0, 36, 470);
+  let i = Math.min(8, pts.length - 1), seen = new Set([i]), timer = null;
+  const presets = [
+    { label: '很严 t=10', t: 10 },
+    { label: '严 t=5', t: 5 },
+    { label: '规则1 ≈2.5', t: 2.5 },
+    { label: '松 t=1.5', t: 1.5 }
+  ];
+  function nearest(t) { let b = 0; for (let k = 1; k < pts.length; k++) if (Math.abs(pts[k].t - t) < Math.abs(pts[b].t - t)) b = k; return b; }
+  $('rc-presets').innerHTML = presets.map(p => `<button class="btn ghost" data-t="${p.t}" style="padding:10px 16px;font-size:20px">${p.label}</button>`).join('');
+  $('rc-t').max = pts.length - 1;
+
+  function drawAxis(p) {
+    const W = 980, pad = { l: 70, r: 40, t: 36, b: 44 }, xMax = 12;
+    const X = v => pad.l + (Math.min(v, xMax) / xMax) * (W - pad.l - pad.r);
+    const y0 = 78, h = 54;
+    let html = '';
+    html += `<rect x="${pad.l}" y="${y0}" width="${X(p.t) - pad.l}" height="${h}" fill="#24509e" fill-opacity=".14"/>`;
+    html += `<rect x="${X(p.t)}" y="${y0}" width="${X(xMax) - X(p.t)}" height="${h}" fill="#c27a1a" fill-opacity=".20"/>`;
+    html += `<line x1="${pad.l}" y1="${y0 + h}" x2="${X(xMax)}" y2="${y0 + h}" stroke="#cfcac0" stroke-width="1.5"/>`;
+    html += `<line x1="${X(p.t)}" y1="${y0 - 8}" x2="${X(p.t)}" y2="${y0 + h + 8}" stroke="#1d2433" stroke-width="4"/>`;
+    html += `<text x="${(pad.l + X(p.t)) / 2}" y="${y0 + 34}" text-anchor="middle" font-size="22" fill="#24509e">≤ t → 正常</text>`;
+    html += `<text x="${(X(p.t) + X(xMax)) / 2}" y="${y0 + 34}" text-anchor="middle" font-size="22" fill="#8a5a10">t → 垃圾</text>`;
+    html += `<text x="${X(p.t)}" y="${pad.t + 4}" text-anchor="middle" font-size="22" fill="#1d2433" font-family="IBM Plex Mono,monospace" font-weight="700">t = ${p.t}</text>`;
+    [1, 2, 2.5, 4, 6, 8, 10, 12].forEach(v => {
+      html += `<text x="${X(v)}" y="${y0 + h + 28}" text-anchor="middle" font-size="16" fill="#8a90a0" font-family="IBM Plex Mono,monospace">${v === 12 ? '12+' : v}</text>`;
+    });
+    html += `<text x="${(pad.l + X(xMax)) / 2}" y="160" text-anchor="middle" font-size="18" fill="#8a90a0" font-family="IBM Plex Mono,monospace">capitalAve →</text>`;
+    $('rc-axis').innerHTML = html;
   }
-  $('rc-t').oninput = draw; $('rc-d').oninput = draw;
-  $('rc-0').onclick = () => { $('rc-d').value = 0; draw(); }; $('rc-3').onclick = () => { $('rc-d').value = 30; draw(); };
+
+  function drawRoc(p) {
+    let h = '';
+    for (let q = 0; q <= 4; q++) {
+      h += `<line x1="78" x2="660" y1="${sy(q / 4)}" y2="${sy(q / 4)}" stroke="#eee6d8"/>`;
+      h += `<line y1="36" y2="470" x1="${sx(q / 4)}" x2="${sx(q / 4)}" stroke="#eee6d8"/>`;
+      h += `<text x="${sx(q / 4)}" y="498" text-anchor="middle" font-size="17" fill="#8a90a0">${q / 4}</text>`;
+      h += `<text x="66" y="${sy(q / 4) + 5}" text-anchor="end" font-size="17" fill="#8a90a0">${q / 4}</text>`;
+    }
+    h += `<text x="370" y="518" text-anchor="middle" font-size="20" fill="#4a5263">FPR（误杀正常）</text>`;
+    h += `<text transform="translate(22 255) rotate(-90)" text-anchor="middle" font-size="20" fill="#4a5263">TPR（抓住垃圾）</text>`;
+    h += `<line x1="${sx(0)}" y1="${sy(0)}" x2="${sx(1)}" y2="${sy(1)}" stroke="#8a90a0" stroke-dasharray="8 6" stroke-width="2.5"/>`;
+    /* 全曲线浅色底 */
+    h += `<path d="M${sx(0)} ${sy(0)}${pts.slice().reverse().map(q => 'L' + sx(q.fpr) + ' ' + sy(q.tpr)).join('')}L${sx(1)} ${sy(1)}" fill="none" stroke="#cfd8ee" stroke-width="4"/>`;
+    /* 已扫过的点连线（按阈值从高到低） */
+    const ordered = [...seen].sort((a, b) => pts[b].t - pts[a].t);
+    if (ordered.length > 1) {
+      h += `<path d="${ordered.map((k, j) => (j ? 'L' : 'M') + sx(pts[k].fpr) + ' ' + sy(pts[k].tpr)).join('')}" fill="none" stroke="#24509e" stroke-width="4.5"/>`;
+    }
+    ordered.forEach(k => {
+      if (k === i) return;
+      h += `<circle cx="${sx(pts[k].fpr)}" cy="${sy(pts[k].tpr)}" r="7" fill="#24509e" stroke="#fff" stroke-width="2"/>`;
+    });
+    h += `<circle cx="${sx(p.fpr)}" cy="${sy(p.tpr)}" r="14" fill="#c27a1a" stroke="#fff" stroke-width="3"/>`;
+    h += `<text x="${sx(p.fpr) + 16}" y="${sy(p.tpr) - 10}" font-size="18" fill="#c27a1a" font-family="IBM Plex Mono,monospace">t=${p.t}</text>`;
+    $('rc-s').innerHTML = h;
+  }
+
+  function draw() {
+    i = Math.max(0, Math.min(i, pts.length - 1));
+    $('rc-t').value = i;
+    const p = pts[i];
+    seen.add(i);
+    drawAxis(p);
+    drawRoc(p);
+    $('rc-tv').textContent = 't = ' + p.t;
+    $('rc-tp').textContent = p.tp; $('rc-fp').textContent = p.fp;
+    $('rc-fn').textContent = p.fn; $('rc-tn').textContent = p.tn;
+    $('rc-tpr').textContent = (p.tpr * 100).toFixed(1) + '%';
+    $('rc-fpr').textContent = (p.fpr * 100).toFixed(1) + '%';
+    $('rc-xy').textContent = '(' + p.fpr.toFixed(2) + ', ' + p.tpr.toFixed(2) + ')';
+    $('rc-auc').textContent = R.auc.toFixed(3);
+  }
+
+  function stopPlay() {
+    if (timer) { clearInterval(timer); timer = null; }
+    $('rc-play').textContent = '自动扫一遍 ▶';
+  }
+  $('rc-t').oninput = e => { stopPlay(); i = +e.target.value; draw(); };
+  document.querySelectorAll('#rc-presets .btn').forEach(b => b.onclick = () => {
+    stopPlay(); i = nearest(+b.dataset.t); draw();
+  });
+  $('rc-play').onclick = () => {
+    if (timer) { stopPlay(); return; }
+    /* 从最严（高 t，右端）扫到最松 */
+    i = pts.length - 1; seen = new Set(); draw();
+    $('rc-play').textContent = '停止 ■';
+    timer = setInterval(() => {
+      if (i <= 0) { stopPlay(); return; }
+      i -= 1; draw();
+    }, 220);
+  };
   draw();
 })();
       </script>
@@ -1097,7 +1249,7 @@ window.ML = (function () {
         </div>
         <div class="grow col" style="justify-content:space-between">
           <div>
-            <p style="font-size:27px">UCI Spambase 全部 4601 封。规则“<b>特征 &gt; t → 垃圾</b>”，扫描 t 得到一条 ROC。</p>
+            <p style="font-size:27px">同一套扫阈值方法，换不同特征：规则“<b>特征 &gt; t → 垃圾</b>”。哪条 ROC 更靠左上，哪个特征更会分。</p>
             <div class="tabs" id="sr-tabs" style="flex-wrap:wrap;margin:14px 0"></div>
             <div class="ctl"><label>阈值位置</label><input id="sr-t" type="range" min="0" max="40" value="10" style="width:480px"><b id="sr-tv" style="min-width:110px">–</b></div>
           </div>
@@ -1228,8 +1380,8 @@ window.ML = (function () {
       </div>
       <div class="subs reveal d4">
         <div><b>4.1</b>“实现的时候，就是线性回归”</div>
-        <div><b>4.2</b>表格数据：树与基础模型</div>
-        <div><b>4.3</b>项目落地五问</div>
+        <div><b>4.2</b>项目落地五问</div>
+        <div><b></b>表格树模型与 TabPFN → 见 L5.2</div>
       </div>
     </section>
 
@@ -1246,60 +1398,12 @@ window.ML = (function () {
           </div>
         </div>
       </div>
-      <div class="src"><b>参考</b> 原 PPT P30（推文截图：Baron Schwartz @xaprb，2017-11-15，图源 ProgrammerHumor.io）</div>
-    </section>
-
-    <!-- === 树 vs 深度学习 === -->
-    <section class="slide c" data-sec="4 · 2026 与落地" data-title="表格数据：树模型 vs 深度学习" id="s-tab">
-      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.2 表格数据</div><div class="pg"></div>
-      <div class="body">
-        <h2 class="reveal d1" style="font-size:58px">表格数据上，<em>树模型为何难以被取代</em></h2>
-        <p class="lede reveal d2" style="margin-top:14px;font-size:30px">Grinsztajn 等（NeurIPS 2022）：45 个数据集、约 1 万样本量级的中等规模表格数据，树模型（XGBoost、随机森林）仍优于深度网络。作者给出三点原因：</p>
-        <div class="flex gap32 st" style="margin-top:34px">
-          <div class="card b grow" style="min-height:300px"><div class="n">原因 1</div><h3>对无用特征更稳健</h3><p>表格里常有大量信息量很低的列；MLP 受其干扰更大。</p></div>
-          <div class="card t grow" style="min-height:300px"><div class="n">原因 2</div><h3>擅长不规则目标函数</h3><p>树学的是分段常数函数，神经网络偏好平滑函数。</p></div>
-          <div class="card o grow" style="min-height:300px"><div class="n">原因 3</div><h3>特征不可随意旋转</h3><p>表格每列有独立含义；MLP 旋转不变，树逐特征切分。</p></div>
-        </div>
-        <p class="reveal d6" style="margin-top:28px;font-size:26px;color:var(--ink-3)">这是 2022 年的结论，下一页看 2025–2026 的变化。</p>
-      </div>
-      <div class="src"><b>参考</b> R3（NeurIPS 2022 Datasets &amp; Benchmarks）；呼应本讲分类树演示</div>
-    </section>
-
-    <!-- === 表格基础模型时间线 === -->
-    <section class="slide c" data-sec="4 · 2026 与落地" data-title="2025–2026：表格基础模型与工具链" id="s-tfm">
-      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.2 表格数据</div><div class="pg"></div>
-      <div class="body">
-        <h2 class="reveal d1" style="font-size:58px">新变化：<em>“预训练”进入表格数据</em></h2>
-        <div class="tl reveal d2" style="margin-top:44px" id="tf-tl">
-          <button data-i="0" class="on">2022-10<small>NeurIPS：树仍占优</small></button>
-          <button data-i="1">2025-01<small>TabPFN 发表于 Nature</small></button>
-          <button data-i="2">2025-11<small>TabPFN-2.5</small></button>
-          <button data-i="3">2026-06<small>scikit-learn 1.9</small></button>
-        </div>
-        <div class="flex gap32" style="margin-top:36px">
-          <div class="card b grow" style="min-height:420px" id="tf-card"></div>
-          <div class="card g" style="width:560px;min-height:420px"><div class="n">⚠ 怎么读这些结论</div><p style="font-size:27px">TabPFN（Nature）为同行评议；2.5 版的基准结果来自<b>开发方技术报告</b>，应视为自报。论文自述：数据更大、回归更“不平滑”时，XGBoost / CatBoost / AutoGluon 仍可能更好。</p></div>
-        </div>
-      </div>
-      <div class="src"><b>参考</b> R1（Nature, 2025-01）；R2（Prior Labs, arXiv:2511.08667 v2, 2026-02）；R3；R4（scikit-learn 1.9, 2026-06）</div>
-      <script>
-(function () {
-  const D = [
-    ['2022 · 基准研究', '树模型在中等规模表格数据上仍优于深度学习', '“神经网络不是万能的”：表格数据有自己的归纳偏置。'],
-    ['2025-01 · TabPFN', '表格基础模型：一次前向传播完成预测', '在最多 1 万样本、500 特征的数据上，默认设置约 2.8 秒（分类）即胜过调参 4 小时的强基线集成；模型在数百万个合成数据集上预训练，推理时靠“上下文学习”，不用再梯度训练。'],
-    ['2025-11 · TabPFN-2.5', '规模扩到 5 万样本、2000 特征', '开发方称其在一次前向传播中超过调参后的 XGBoost / CatBoost，并追平调参 4 小时的 AutoGluon 1.4 集成（TabArena 基准）。'],
-    ['2026-06 · scikit-learn 1.9', '经典工具链仍在演进', '新增（实验性）训练回调与进度条，更多估计器支持 GPU / Array API，树与线性模型继续完善；最新补丁版 1.9.1 于 2026-09 发布。']
-  ];
-  const card = document.getElementById('tf-card'), bt = document.querySelectorAll('#tf-tl button');
-  function set(i) { bt.forEach((b, k) => b.classList.toggle('on', k === i)); card.innerHTML = `<div class="n">${D[i][0]}</div><h3 style="font-size:46px;margin-bottom:22px">${D[i][1]}</h3><p style="font-size:31px">${D[i][2]}</p>`; }
-  bt.forEach((b, k) => b.onclick = () => set(k)); set(0);
-})();
-      </script>
+      <div class="src"><b>参考</b> 原 PPT P30（推文截图：Baron Schwartz @xaprb，2017-11-15，图源 ProgrammerHumor.io）；树 vs 深度 / TabPFN 已迁至 L5.2</div>
     </section>
 
     <!-- === 落地五问 === -->
     <section class="slide c" data-sec="4 · 2026 与落地" data-title="项目落地五问">
-      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.3 项目落地五问</div><div class="pg"></div>
+      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.2 项目落地五问</div><div class="pg"></div>
       <div class="body">
         <h2 class="reveal d1" style="font-size:60px">管理者的<em>落地五问</em></h2>
         <div class="flex gap16 st" style="margin-top:44px;align-items:stretch">
@@ -1342,8 +1446,8 @@ window.ML = (function () {
           </div>
         </div>
         <div style="width:620px" class="col gap16 reveal d3">
-          <div class="card g"><div class="n">下一讲</div><h3 style="font-size:40px">L5.2 · 机器学习方法</h3><p style="font-size:26px">逻辑回归、决策树、朴素贝叶斯的原理与实践。</p></div>
-          <div class="card g"><div class="n">延伸阅读</div><p style="font-size:25px">R1 Nature：TabPFN<br>R3 NeurIPS 2022 表格数据基准<br>R4 scikit-learn 1.9 发布说明</p></div>
+          <div class="card g"><div class="n">下一讲</div><h3 style="font-size:40px">L5.2 · 决策树与随机森林</h3><p style="font-size:26px">CART、随机森林、提升法；树 vs 深度与 TabPFN。</p></div>
+          <div class="card g"><div class="n">延伸阅读</div><p style="font-size:25px">表格树模型三点原因与 TabPFN 时间线已并入 <b>L5.2</b>。<br>本讲重点：泛化、划分、度量与代价。</p></div>
         </div>
       </div>
       <div class="src"><b>参考</b> 下一讲名称按课程规划（Lecture_5.2.pptx）；其余见参考文献</div>

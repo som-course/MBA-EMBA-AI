@@ -246,7 +246,8 @@ img, video, canvas, svg { max-width: 100%; max-height: 100%; }
 .c .chip { display: inline-block; font: 500 24px/1 var(--f-sans); padding: 14px 20px; background: #fff; border: 1px solid var(--rule); border-left: 4px solid var(--blue); color: var(--ink); }
 .c .chips { display: flex; flex-wrap: wrap; gap: 14px; }
 .c .tl { position: relative; display: flex; gap: 0; border-top: 3px solid var(--ink); }
-.c .tl button { all: unset; cursor: pointer; flex: 1; padding: 22px 6px 0; text-align: left; position: relative; font: 500 24px/1.2 var(--f-mono); color: var(--ink-3); transition: color .2s; }
+.c .tl button { all: unset; cursor: pointer; flex: 1; padding: 22px 6px 0; text-align: left; position: relative; font: 500 24px/1.2 var(--f-mono); color: var(--ink-3); transition: color .25s, opacity .4s ease, transform .4s ease; opacity: 1; transform: none; }
+.c .tl button.wait { opacity: 0; transform: translateY(12px); pointer-events: none; }
 .c .tl button:before { content: ''; position: absolute; left: 0; top: -12px; width: 20px; height: 20px; border-radius: 50%; background: var(--paper); border: 3px solid var(--ink-3); transition: all .2s; }
 .c .tl button small { display: block; margin-top: 8px; font: 400 19px/1.35 var(--f-sans); color: var(--ink-3); padding-right: 10px; }
 .c .tl button:hover { color: var(--blue); }
@@ -679,20 +680,25 @@ window.CT=(function(){
           <svg id="s13" viewBox="0 0 1000 620" style="width:100%;height:620px;margin-top:14px" class="reveal d2"></svg>
         </div>
         <div class="col gap24" style="width:560px;justify-content:center">
-          <div class="sl reveal d2"><span>树的深度</span><input type="range" id="d13" min="0" max="7" value="2"><b id="dv13"></b></div>
+          <div class="sl reveal d2"><span>树的深度</span><input type="range" id="d13" min="0" max="20" value="2"><b id="dv13"></b></div>
+          <div class="flex gap12 reveal d2" style="flex-wrap:wrap">
+            <button class="btn ghost" id="p13" style="padding:12px 18px;font-size:20px">自动加深 ▶</button>
+            <span class="hint" style="align-self:center">深度 0→20，看阶梯如何变碎</span>
+          </div>
           <label class="reveal d3" style="font:500 22px var(--f-mono);color:var(--ink-2);cursor:pointer"><input type="checkbox" id="l13" checked style="width:22px;height:22px;vertical-align:-4px;accent-color:var(--blue)"> 同时显示线性回归直线</label>
           <div class="panel reveal d4"><div class="kv"><span>回归树 · 训练 MSE</span><b id="a13" class="pos"></b></div><div class="kv"><span>回归树 · 测试 MSE</span><b id="b13"></b></div><div class="kv"><span>线性回归 · 测试 MSE</span><b id="c13" style="color:var(--ochre)"></b></div></div>
           <div class="math reveal d5" style="font-size:30px"><i>f</i>(<i>X</i>) = Σ<sub><i>m</i>=1…<i>M</i></sub> <i>c<sub>m</sub></i> · 1<sub>(<i>X</i>∈<i>R<sub>m</sub></i>)</sub></div>
         </div>
       </div>
-      <div class="src"><b>参考</b> 原 PPT P12–P13（原图为矩形划分的二维散点）；此处改为一维数据：y = sin x + 0.3x + 噪声（种子固定；训练 / 测试各 70 点）</div>
-      <script>(function(){const $=id=>document.getElementById(id);const r=CT.rng(13);
-        const mk=()=>{const a=[];for(let i=0;i<70;i++){const x=r()*10;a.push([x,Math.sin(x)+.3*x+CT.gauss(r)*.4]);}return a.sort((p,q)=>p[0]-q[0]);};
-        const TR=mk(),TE=mk();
+      <div class="src"><b>参考</b> 原 PPT P12–P13；一维示意：y = sin x + 0.3x + 噪声（种子固定；训练 220 / 测试 120 点；叶节点最少 2 点，深度可到 20 以演示过拟合变碎）</div>
+      <script>(function(){const $=id=>document.getElementById(id);const r=CT.rng(13);let timer=null;
+        /* 更多点 + 更小叶，深度加大时阶梯才会继续变碎 */
+        const mk=n=>{const a=[];for(let i=0;i<n;i++){const x=r()*10;a.push([x,Math.sin(x)+.3*x+CT.gauss(r)*.35]);}return a.sort((p,q)=>p[0]-q[0]);};
+        const TR=mk(220),TE=mk(120), MIN=2;
         function grow(a,lo,hi,d,mx,out){const n=hi-lo;let m=0;for(let i=lo;i<hi;i++)m+=a[i][1];m/=n;
-          if(d>=mx||n<6){out.push({x0:lo?(a[lo-1][0]+a[lo][0])/2:0,x1:hi<a.length?(a[hi-1][0]+a[hi][0])/2:10,m});return;}
+          if(d>=mx||n<=MIN){out.push({x0:lo?(a[lo-1][0]+a[lo][0])/2:0,x1:hi<a.length?(a[hi-1][0]+a[hi][0])/2:10,m});return;}
           let tot=0,tot2=0;for(let i=lo;i<hi;i++){tot+=a[i][1];tot2+=a[i][1]**2;}let best=null,s=0;
-          for(let k=lo;k<hi-3;k++){s+=a[k][1];const nl=k-lo+1;if(nl<3)continue;let sl=s,sr=tot-s;const rss=(tot2-sl*sl/nl-sr*sr/(n-nl));if(!best||rss<best.r)best={k,r:rss};}
+          for(let k=lo;k<hi-1;k++){s+=a[k][1];const nl=k-lo+1,nr=n-nl;if(nl<1||nr<1)continue;const rss=tot2-s*s/nl-(tot-s)*(tot-s)/nr;if(!best||rss<best.r)best={k,r:rss};}
           if(!best){out.push({x0:lo?(a[lo-1][0]+a[lo][0])/2:0,x1:hi<a.length?(a[hi-1][0]+a[hi][0])/2:10,m});return;}
           grow(a,lo,best.k+1,d+1,mx,out);grow(a,best.k+1,hi,d+1,mx,out);}
         const ols=a=>{const n=a.length;let sx=0,sy=0,sxy=0,sxx=0;a.forEach(p=>{sx+=p[0];sy+=p[1];sxy+=p[0]*p[1];sxx+=p[0]**2});const b=(n*sxy-sx*sy)/(n*sxx-sx*sx);return[(sy-b*sx)/n,b];};
@@ -701,12 +707,16 @@ window.CT=(function(){
         const mse=(S,A,f)=>A.reduce((u,p)=>u+(p[1]-f(S,p[0]))**2,0)/A.length;
         function up(){const d=+$('d13').value;$('dv13').textContent=d;const S=[];grow(TR,0,TR.length,0,d,S);
           let h='<line x1="60" y1="590" x2="960" y2="590" stroke="#1d2433" stroke-width="2"/>';
-          TR.forEach(p=>h+='<circle cx="'+X(p[0])+'" cy="'+Y(p[1])+'" r="6" fill="#24509e" fill-opacity=".65"/>');
-          let pts='';S.forEach(s=>pts+=X(s.x0)+','+Y(s.m)+' '+X(s.x1)+','+Y(s.m)+' ');h+='<polyline points="'+pts+'" fill="none" stroke="#1f7a72" stroke-width="6"/>';
+          TR.forEach(p=>h+='<circle cx="'+X(p[0])+'" cy="'+Y(p[1])+'" r="4" fill="#24509e" fill-opacity=".55"/>');
+          let pts='';S.forEach(s=>pts+=X(s.x0)+','+Y(s.m)+' '+X(s.x1)+','+Y(s.m)+' ');h+='<polyline points="'+pts+'" fill="none" stroke="#1f7a72" stroke-width="5"/>';
           if($('l13').checked)h+='<line x1="'+X(0)+'" y1="'+Y(b0)+'" x2="'+X(10)+'" y2="'+Y(b0+b1*10)+'" stroke="#c27a1a" stroke-width="5" stroke-dasharray="12 8"/>';
           h+='<text x="60" y="30" font-size="22" fill="#8a90a0">叶节点 M = '+S.length+'　绿 = 回归树　橙虚线 = 线性回归</text>';
           $('s13').innerHTML=h;$('a13').textContent=mse(S,TR,tp).toFixed(2);$('b13').textContent=mse(S,TE,tp).toFixed(2);$('c13').textContent=(TE.reduce((u,p)=>u+(p[1]-b0-b1*p[0])**2,0)/TE.length).toFixed(2);}
-        $('d13').oninput=up;$('l13').onchange=up;up();})();</script>
+        function stop(){if(timer){clearInterval(timer);timer=null;}$('p13').textContent='自动加深 ▶';}
+        $('d13').oninput=()=>{stop();up();};$('l13').onchange=up;
+        $('p13').onclick=()=>{if(timer){stop();return;}$('d13').value=0;up();$('p13').textContent='停止 ■';
+          timer=setInterval(()=>{const d=+$('d13').value;if(d>=20){stop();return;}$('d13').value=d+1;up();},280);};
+        up();})();</script>
     </section>
 
     <!-- === SLIDE 14 · 与线性回归对比（交互）=== -->
@@ -791,7 +801,7 @@ window.CT=(function(){
         <div><b>2.1</b>为什么平均能降方差</div>
         <div><b>2.2</b>随机森林的做法与效果</div>
         <div><b>2.3</b>变量重要性</div>
-        <div><b>2.4</b>2025–2026：提升法与表格基础模型</div>
+        <div><b>2.4</b>2025–2026：表格基础模型</div>
       </div>
     </section>
 
@@ -857,6 +867,10 @@ window.CT=(function(){
           <div class="flex between center"><h2 class="reveal d1" style="font-size:56px">树越多，<em>测试误差越稳</em></h2><div class="hint" id="w20">计算中…</div></div>
           <svg id="s20" viewBox="0 0 1000 560" style="width:100%;height:560px;margin-top:14px" class="reveal d2"></svg>
           <div class="sl reveal d3"><span>树的棵数 B</span><input type="range" id="k20" min="1" max="100" value="1"><b id="kv20"></b></div>
+          <div class="flex gap12 reveal d3" style="flex-wrap:wrap;margin-top:8px">
+            <button class="btn ghost" id="p20" style="padding:12px 18px;font-size:20px">自动增加树数 ▶</button>
+            <span class="hint" style="align-self:center">B = 1→100，看准确率如何爬升并趋稳</span>
+          </div>
         </div>
         <div class="col gap24" style="width:520px;justify-content:center">
           <div class="reveal d2"><div class="hint" style="margin-bottom:10px">每次分裂的候选特征数 m（共 8 个）</div><div class="tabs" style="flex-wrap:wrap"><button class="tab b" data-m="1" style="white-space:nowrap">m = 1</button><button class="tab b on" data-m="3" style="white-space:nowrap">m = 3</button><button class="tab b" data-m="8" style="white-space:nowrap">m = 8 (Bagging)</button></div></div>
@@ -866,7 +880,7 @@ window.CT=(function(){
         </div>
       </div>
       <div class="src"><b>参考</b> 原 PPT P20；数据：UCI Spambase 抽样 800 封，8 个特征；浏览器内现场训练，结果随抽样而异，不代表全量数据上的绝对精度</div>
-      <script>(function(){const $=id=>document.getElementById(id);let m=3,ready=false;
+      <script>(function(){const $=id=>document.getElementById(id);let m=3,ready=false,timer=null;
         window.RF=window.RF||{};
         function prep(){if(ready)return;[1,3,8].forEach((mm,i)=>{const T=CT.forest(100,mm,200+mm);const D=CT.D;const votes=Array(300).fill(0),acc=[],ind=[];
           T.forEach((t,b)=>{let c=0;for(let j=0;j<300;j++){const p=CT.pred(t,500+j)>=.5?1:0;votes[j]+=p;}ind.push(CT.acc(t,500,800));
@@ -878,7 +892,11 @@ window.CT=(function(){
           h+='<line x1="70" y1="'+Y(R.single)+'" x2="950" y2="'+Y(R.single)+'" stroke="#c27a1a" stroke-width="3" stroke-dasharray="10 8"/><text x="950" y="'+(Y(R.single)-10)+'" text-anchor="end" font-size="22" fill="#c27a1a">单棵树平均</text>';
           h+='<polyline points="'+R.acc.slice(0,k).map((v,i)=>X(i+1)+','+Y(v)).join(' ')+'" fill="none" stroke="#24509e" stroke-width="5"/><circle cx="'+X(k)+'" cy="'+Y(R.acc[k-1])+'" r="10" fill="#24509e"/><text x="510" y="552" text-anchor="middle" font-size="22" fill="#4a5263">树的棵数 B（1–100）</text><text x="76" y="24" font-size="21" fill="#8a90a0">测试准确率（75%–100%）</text>';
           $('s20').innerHTML=h;$('a20').textContent=(R.acc[k-1]*100).toFixed(1)+'%';$('b20').textContent=(R.single*100).toFixed(1)+'%';}
-        $('k20').oninput=up;document.querySelectorAll('.tab[data-m]').forEach(b=>b.onclick=()=>{m=+b.dataset.m;document.querySelectorAll('.tab[data-m]').forEach(x=>x.classList.toggle('on',x===b));up();});
+        function stop(){if(timer){clearInterval(timer);timer=null;}$('p20').textContent='自动增加树数 ▶';}
+        $('k20').oninput=()=>{stop();up();};
+        document.querySelectorAll('.tab[data-m]').forEach(b=>b.onclick=()=>{stop();m=+b.dataset.m;document.querySelectorAll('.tab[data-m]').forEach(x=>x.classList.toggle('on',x===b));up();});
+        $('p20').onclick=()=>{if(!ready)return;if(timer){stop();return;}$('k20').value=1;up();$('p20').textContent='停止 ■';
+          timer=setInterval(()=>{const k=+$('k20').value;if(k>=100){stop();return;}$('k20').value=Math.min(100,k+2);up();},90);};
         setTimeout(()=>{prep();$('k20').value=30;up();},60);window.rfReady=()=>{prep();};})();</script>
     </section>
 
@@ -937,73 +955,86 @@ window.CT=(function(){
         window.imp22=up;setTimeout(()=>{try{up();}catch(e){setTimeout(up,500);}},400);})();</script>
     </section>
 
-    <!-- === SLIDE 23 · 树 vs 深度学习（2025–2026 更新）=== -->
-    <section class="slide c" data-sec="2 · 随机森林" data-title="2025–2026：表格数据，树模型赢了吗？">
-      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 2025–2026：提升法与表格基础模型</div><div class="pg"></div>
+    <!-- === 表格数据：树 vs 深度学习（自 L5.1 迁入）=== -->
+    <section class="slide c" data-sec="2 · 随机森林" data-title="表格数据：树模型 vs 深度学习" id="s-tab">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 2025–2026：表格基础模型</div><div class="pg"></div>
       <div class="body">
-        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">UPDATE · TABULAR DATA</div>
-        <h2 class="reveal d2" style="font-size:64px;margin-top:10px">深度学习时代，<em>表格数据</em>仍是树的主场</h2>
-        <div class="flex gap32 st" style="margin-top:40px">
-          <div class="card g grow"><div class="n">2022 · NEURIPS</div><h3>树模型仍优于深度学习</h3><p style="font-size:25px">Grinsztajn 等在多数据集基准上发现：中等规模表格数据中，树类模型（RF、梯度提升）整体仍占优。</p></div>
-          <div class="card b grow"><div class="n">2025 · TABARENA</div><h3>差距在收窄</h3><p style="font-size:25px">“活”基准：梯度提升树仍有很强的性价比；深度模型经<b>充分调参 + 集成</b>后可追平甚至超过；小数据上基础模型最强。</p></div>
-          <div class="card t grow"><div class="n">结论 · 实务</div><h3>不是二选一</h3><p style="font-size:25px">跨模型<b>集成</b>优于任何单一模型族。树模型仍是表格业务的稳妥基线。</p></div>
+        <h2 class="reveal d1" style="font-size:58px">表格数据上，<em>树模型为何难以被取代</em></h2>
+        <p class="lede reveal d2" style="margin-top:14px;font-size:30px">Grinsztajn 等（NeurIPS 2022）：45 个数据集、约 1 万样本量级的中等规模表格数据，树模型（XGBoost、随机森林）仍优于深度网络。作者给出三点原因：</p>
+        <div class="flex gap32 st" style="margin-top:34px">
+          <div class="card b grow" style="min-height:300px"><div class="n">原因 1</div><h3>对无用特征更稳健</h3><p>表格里常有大量信息量很低的列；MLP 受其干扰更大。</p></div>
+          <div class="card t grow" style="min-height:300px"><div class="n">原因 2</div><h3>擅长不规则目标函数</h3><p>树学的是分段常数函数，神经网络偏好平滑函数。</p></div>
+          <div class="card o grow" style="min-height:300px"><div class="n">原因 3</div><h3>特征不可随意旋转</h3><p>表格每列有独立含义；MLP 旋转不变，树逐特征切分。</p></div>
         </div>
-        <p class="reveal d5" style="margin-top:34px;font-size:28px">树的启示不过时：<b>先建强基线，再谈复杂模型</b>。</p>
+        <p class="reveal d6" style="margin-top:28px;font-size:26px;color:var(--ink-3)">这是 2022 年的结论，下一页看 2025–2026 的变化。</p>
       </div>
-      <div class="src"><b>参考</b> R5 Grinsztajn et al. (2022)；R6 TabArena (NeurIPS 2025 D&amp;B)；⚠ 基准结论依数据集选择与调参预算而定</div>
+      <div class="src"><b>参考</b> R5 Grinsztajn, Oyallon &amp; Varoquaux (NeurIPS 2022 Datasets &amp; Benchmarks)</div>
     </section>
 
-    <!-- === SLIDE 24 · 提升法（交互）=== -->
-    <section class="slide c" data-sec="2 · 随机森林" data-title="从森林到梯度提升：逐轮拟合残差（交互）">
-      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 2025–2026：提升法与表格基础模型</div><div class="pg"></div>
-      <div class="body flex gap48">
-        <div class="col grow">
-          <div class="flex between center"><h2 class="reveal d1" style="font-size:56px">另一条路：<em>串行</em>地纠错</h2><div class="hint">模拟数据 · 小树逐轮拟合残差</div></div>
-          <svg id="s24" viewBox="0 0 1000 560" style="width:100%;height:560px;margin-top:14px" class="reveal d2"></svg>
-        </div>
-        <div class="col gap24" style="width:560px;justify-content:center">
-          <div class="sl reveal d2"><span>轮数 M</span><input type="range" id="m24" min="0" max="100" value="3"><b id="mv24"></b></div>
-          <div class="sl reveal d2"><span>学习率 η</span><input type="range" id="e24" min="1" max="10" value="5"><b id="ev24"></b></div>
-          <div class="reveal d3"><div class="hint" style="margin-bottom:10px">每棵小树的深度</div><div class="tabs"><button class="tab b on" data-d="1">1（树桩）</button><button class="tab b" data-d="2">2</button><button class="tab b" data-d="3">3</button></div></div>
-          <div class="panel reveal d4"><div class="kv"><span>训练 MSE</span><b id="a24" class="pos"></b></div><div class="kv"><span>测试 MSE</span><b id="b24"></b></div></div>
-          <div class="math reveal d5" style="font-size:30px"><i>F<sub>m</sub></i> = <i>F</i><sub><i>m</i>−1</sub> + <i>η</i> · <i>h<sub>m</sub></i>(残差)</div>
-        </div>
-      </div>
-      <div class="src"><b>参考</b> XGBoost / LightGBM / CatBoost 为表格数据的主流实现（见 R6 TabArena）；示意数据：y = sin x + 0.3x + 噪声（种子固定）</div>
-      <script>(function(){const $=id=>document.getElementById(id);const r=CT.rng(24);let dep=1;
-        const mk=()=>{const a=[];for(let i=0;i<60;i++){const x=r()*10;a.push([x,Math.sin(x)+.3*x+CT.gauss(r)*.35]);}return a.sort((p,q)=>p[0]-q[0]);};
-        const TR=mk(),TE=mk();
-        function fit(a,res,lo,hi,d){const n=hi-lo;let m=0;for(let i=lo;i<hi;i++)m+=res[i];m/=n;if(d===0||n<4)return{m};
-          let tot=0;for(let i=lo;i<hi;i++)tot+=res[i];let s=0,best=null;for(let k=lo;k<hi-2;k++){s+=res[k];const nl=k-lo+1;if(nl<2)continue;const sc=s*s/nl+(tot-s)*(tot-s)/(n-nl);if(!best||sc>best.s)best={k,s:sc};}
-          if(!best)return{m};return{t:(a[best.k][0]+a[best.k+1][0])/2,l:fit(a,res,lo,best.k+1,d-1),r:fit(a,res,best.k+1,hi,d-1)};}
-        const ev=(nd,x)=>{while(nd.t!==undefined)nd=x<=nd.t?nd.l:nd.r;return nd.m;};
-        function run(M,eta){const F=TR.map(()=>0),T=[];const f0=TR.reduce((u,p)=>u+p[1],0)/TR.length;F.fill(f0);
-          for(let m=0;m<M;m++){const res=TR.map((p,i)=>p[1]-F[i]);const t=fit(TR,res,0,TR.length,dep);T.push(t);TR.forEach((p,i)=>F[i]+=eta*ev(t,p[0]));}
-          return{f0,T,eta,pred:x=>f0+T.reduce((u,t)=>u+eta*ev(t,x),0)};}
-        const X=x=>60+x*90,Y=y=>520-(y+1)*115;
-        function up(){const M=+$('m24').value,eta=+$('e24').value/10;$('mv24').textContent=M;$('ev24').textContent=eta.toFixed(1);const R=run(M,eta);
-          let h='<line x1="60" y1="560" x2="960" y2="560" stroke="#1d2433" stroke-width="2"/>';
-          TR.forEach(p=>h+='<circle cx="'+X(p[0])+'" cy="'+Y(p[1])+'" r="6" fill="#24509e" fill-opacity=".6"/>');
-          let pts=[];for(let x=0;x<=10;x+=.05)pts.push(X(x)+','+Y(R.pred(x)));
-          h+='<polyline points="'+pts.join(' ')+'" fill="none" stroke="#1f7a72" stroke-width="6"/><text x="60" y="30" font-size="22" fill="#8a90a0">绿线 = 前 '+M+' 棵小树累加的预测</text>';
-          $('s24').innerHTML=h;const ms=A=>A.reduce((u,p)=>u+(p[1]-R.pred(p[0]))**2,0)/A.length;$('a24').textContent=ms(TR).toFixed(3);$('b24').textContent=ms(TE).toFixed(3);}
-        $('m24').oninput=up;$('e24').oninput=up;document.querySelectorAll('.tab[data-d]').forEach(b=>b.onclick=()=>{dep=+b.dataset.d;document.querySelectorAll('.tab[data-d]').forEach(x=>x.classList.toggle('on',x===b));up();});up();})();</script>
-    </section>
-
-    <!-- === SLIDE 25 · 表格基础模型 TabPFN === -->
-    <section class="slide c" data-sec="2 · 随机森林" data-title="2025–2026：表格基础模型 TabPFN">
-      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 2025–2026：提升法与表格基础模型</div><div class="pg"></div>
+    <!-- === 表格基础模型时间线（自 L5.1 迁入，替换原 TabPFN 单页）=== -->
+    <section class="slide c" data-sec="2 · 随机森林" data-title="2025–2026：表格基础模型与工具链" id="s-tfm">
+      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.4 2025–2026：表格基础模型</div><div class="pg"></div>
       <div class="body">
-        <div class="mono blue reveal d1" style="font-size:26px;letter-spacing:.14em">UPDATE · TABULAR FOUNDATION MODEL</div>
-        <h2 class="reveal d2" style="font-size:64px;margin-top:10px">AI 4.0 的思路，<em>进入表格数据</em></h2>
-        <div class="flex gap32 st" style="margin-top:40px">
-          <div class="card b grow"><div class="n">机制</div><h3>预训练一次，上下文里“读表”</h3><p style="font-size:25px">TabPFN：在海量合成数据集上预训练的 Transformer；新任务不再训练，把训练表放进输入，一次前向传播给出预测。</p></div>
-          <div class="card t grow"><div class="n">2025.01 · NATURE</div><h3>小数据上超过调参后的树</h3><p style="font-size:25px">论文报告：≤10,000 样本、≤500 特征的基准上，平均约 2.8 秒的分类预测优于调参 4 小时的强基线集成。</p></div>
-          <div class="card o grow"><div class="n">2025.11 · TABPFN-2.5</div><h3>规模扩大到 5 万 × 2 千</h3><p style="font-size:25px">技术报告称支持至 50,000 样本、2,000 特征，在 TabArena 上优于调参后的 XGBoost / CatBoost。</p></div>
+        <div class="flex between center reveal d1">
+          <h2 style="font-size:52px">新变化：<em>“预训练”进入表格数据</em></h2>
+          <button class="btn" id="tf52-next" style="padding:12px 20px;font-size:20px">下一个节点 ▶</button>
         </div>
-        <p class="reveal d5" style="margin-top:34px;font-size:27px">⚠ 结果多为作者自报；大样本、高维稀疏、需要可审计规则的场景，<b>树模型仍是首选基线</b>。</p>
+        <p class="hint" style="margin-top:8px">点击按钮或按 → ：时间轴上一次只出现一个节点</p>
+        <div class="tl" style="margin-top:36px" id="tf52-tl">
+          <button data-i="0" class="wait">2022-10<small>NeurIPS：树仍占优</small></button>
+          <button data-i="1" class="wait">2025-01<small>TabPFN 发表于 Nature</small></button>
+          <button data-i="2" class="wait">2025-11<small>TabPFN-2.5</small></button>
+          <button data-i="3" class="wait">2026-06<small>scikit-learn 1.9</small></button>
+        </div>
+        <div class="flex gap32" style="margin-top:36px">
+          <div class="card b grow" style="min-height:400px" id="tf52-card"></div>
+          <div class="card g" id="tf52-note" style="width:560px;min-height:400px;opacity:0;transition:opacity .4s"><div class="n">⚠ 怎么读这些结论</div><p style="font-size:27px">TabPFN（Nature）为同行评议；2.5 版的基准结果来自<b>开发方技术报告</b>，应视为自报。论文自述：数据更大、回归更“不平滑”时，XGBoost / CatBoost / AutoGluon 仍可能更好。</p></div>
+        </div>
       </div>
-      <div class="src"><b>参考</b> R7 Hollmann et al., Nature 2025；R8 TabPFN-2.5 报告（arXiv:2511.08667，Prior Labs）；R6 TabArena；⚠ 基准为论文自报</div>
+      <div class="src"><b>参考</b> R5；R7 Hollmann et al., Nature 2025；R8 TabPFN-2.5（arXiv:2511.08667）；R6 TabArena；R12 scikit-learn 1.9</div>
+      <script>
+(function () {
+  const D = [
+    ['2022 · 基准研究', '树模型在中等规模表格数据上仍优于深度学习', '“神经网络不是万能的”：表格数据有自己的归纳偏置。'],
+    ['2025-01 · TabPFN', '表格基础模型：一次前向传播完成预测', '在最多 1 万样本、500 特征的数据上，默认设置约 2.8 秒（分类）即胜过调参 4 小时的强基线集成；模型在数百万个合成数据集上预训练，推理时靠“上下文学习”，不用再梯度训练。'],
+    ['2025-11 · TabPFN-2.5', '规模扩到 5 万样本、2000 特征', '开发方称其在一次前向传播中超过调参后的 XGBoost / CatBoost，并追平调参 4 小时的 AutoGluon 1.4 集成（TabArena 基准）。'],
+    ['2026-06 · scikit-learn 1.9', '经典工具链仍在演进', '新增（实验性）训练回调与进度条，更多估计器支持 GPU / Array API，树与线性模型继续完善；最新补丁版 1.9.1 于 2026-09 发布。']
+  ];
+  const slide = document.getElementById('s-tfm');
+  const card = document.getElementById('tf52-card');
+  const note = document.getElementById('tf52-note');
+  const nxt = document.getElementById('tf52-next');
+  const bt = [...document.querySelectorAll('#tf52-tl button')];
+  let idx = -1;
+  function paint(i) {
+    idx = i;
+    bt.forEach((b, k) => {
+      b.classList.toggle('wait', k > i);
+      b.classList.toggle('on', k === i);
+    });
+    if (i < 0) {
+      card.innerHTML = '<div class="n">时间轴</div><h3 style="font-size:42px;margin-bottom:18px">点击「下一个节点」开始</h3><p style="font-size:28px">从 2022 年到 2026 年，表格数据上的模型路线如何演变。</p>';
+      note.style.opacity = '0';
+      nxt.textContent = '下一个节点 ▶';
+      return;
+    }
+    card.innerHTML = `<div class="n">${D[i][0]}</div><h3 style="font-size:44px;margin-bottom:20px">${D[i][1]}</h3><p style="font-size:30px">${D[i][2]}</p>`;
+    note.style.opacity = i >= D.length - 1 ? '1' : '0.35';
+    nxt.textContent = i >= D.length - 1 ? '重来 ↺' : '下一个节点 ▶';
+  }
+  function go(i) { paint(Math.max(-1, Math.min(D.length - 1, i))); }
+  bt.forEach((b, k) => b.onclick = () => { if (k <= idx) go(k); });
+  nxt.onclick = () => { if (idx >= D.length - 1) go(-1); else go(idx + 1); };
+  /* 页内步进：→ 先推进时间轴，走完再翻页 */
+  slide._stepNav = {
+    max: D.length + 1,
+    get idx() { return idx + 1; },
+    go(i) { go(i - 1); },
+    reset() { go(-1); }
+  };
+  paint(-1);
+})();
+      </script>
     </section>
 
     <!-- === SLIDE 26 · 章节 Part 3 === -->
@@ -1149,8 +1180,8 @@ window.CT=(function(){
     <!-- === 参考文献 === -->
     <section class="slide c" data-sec="附录" data-title="参考文献">
       <div class="toprule"></div><div class="tag"><b>附录</b> · 参考文献</div><div class="pg"></div>
-      <div class="body"><h2 class="reveal d1" style="font-size:52px;margin-bottom:18px">参考文献 <em>R1–R11</em></h2>
-        <div style="columns:2;column-gap:56px;font:400 20px/1.5 var(--f-mono);color:var(--ink-2)"><p style="font:inherit;margin:0 0 12px"><b>R1</b> Breiman, Friedman, Olshen &amp; Stone (1984). <i>Classification and Regression Trees</i>. Wadsworth.</p><p style="font:inherit;margin:0 0 12px"><b>R2</b> Breiman, L. (2001). Random Forests. <i>Machine Learning</i> 45(1), 5–32.</p><p style="font:inherit;margin:0 0 12px"><b>R3</b> Hastie, Tibshirani &amp; Friedman (2009). <i>The Elements of Statistical Learning</i>, 2nd ed., Springer（第 9、15 章）。</p><p style="font:inherit;margin:0 0 12px"><b>R4</b> Strobl, Boulesteix, Zeileis &amp; Hothorn (2007). Bias in random forest variable importance measures. <i>BMC Bioinformatics</i> 8:25.</p><p style="font:inherit;margin:0 0 12px"><b>R5</b> Grinsztajn, Oyallon &amp; Varoquaux (2022). Why do tree-based models still outperform deep learning on typical tabular data? NeurIPS 2022 Datasets &amp; Benchmarks.</p><p style="font:inherit;margin:0 0 12px"><b>R6</b> Erickson et al. (2025). TabArena: A Living Benchmark for Machine Learning on Tabular Data. NeurIPS 2025 D&amp;B；arXiv:2506.16791。</p><p style="font:inherit;margin:0 0 12px"><b>R7</b> Hollmann et al. (2025). Accurate predictions on small data with a tabular foundation model. <i>Nature</i>（TabPFN）— nature.com/articles/s41586-024-08328-6</p><p style="font:inherit;margin:0 0 12px"><b>R8</b> Prior Labs (2025). TabPFN-2.5 Model Report. arXiv:2511.08667。</p><p style="font:inherit;margin:0 0 12px"><b>R9</b> Quinlan, J. R. (1986). Induction of decision trees. <i>Machine Learning</i> 1(1), 81–106.</p><p style="font:inherit;margin:0 0 12px"><b>R10</b> Hopkins, Reeber, Forman &amp; Suermondt (1999). Spambase. UCI Machine Learning Repository（本讲交互页所用数据，随机抽样 800 封）。</p><p style="font:inherit;margin:0 0 12px"><b>R11</b> 《中华人民共和国个人信息保护法》第二十四条（自动化决策）。⚠ 引用以法条原文为准。</p><p style="font:inherit;margin:0 0 12px"><b>P</b> 原 PPT：Materials/Lecture_5.2.pptx（P2 选民决策树图、P20 随机森林示意、P22 变量重要性图来自原稿；⚠ 原图出处未逐项核对）</p></div></div>
+      <div class="body"><h2 class="reveal d1" style="font-size:52px;margin-bottom:18px">参考文献 <em>R1–R12</em></h2>
+        <div style="columns:2;column-gap:56px;font:400 20px/1.5 var(--f-mono);color:var(--ink-2)"><p style="font:inherit;margin:0 0 12px"><b>R1</b> Breiman, Friedman, Olshen &amp; Stone (1984). <i>Classification and Regression Trees</i>. Wadsworth.</p><p style="font:inherit;margin:0 0 12px"><b>R2</b> Breiman, L. (2001). Random Forests. <i>Machine Learning</i> 45(1), 5–32.</p><p style="font:inherit;margin:0 0 12px"><b>R3</b> Hastie, Tibshirani &amp; Friedman (2009). <i>The Elements of Statistical Learning</i>, 2nd ed., Springer（第 9、15 章）。</p><p style="font:inherit;margin:0 0 12px"><b>R4</b> Strobl, Boulesteix, Zeileis &amp; Hothorn (2007). Bias in random forest variable importance measures. <i>BMC Bioinformatics</i> 8:25.</p><p style="font:inherit;margin:0 0 12px"><b>R5</b> Grinsztajn, Oyallon &amp; Varoquaux (2022). Why do tree-based models still outperform deep learning on typical tabular data? NeurIPS 2022 Datasets &amp; Benchmarks.</p><p style="font:inherit;margin:0 0 12px"><b>R6</b> Erickson et al. (2025). TabArena: A Living Benchmark for Machine Learning on Tabular Data. NeurIPS 2025 D&amp;B；arXiv:2506.16791。</p><p style="font:inherit;margin:0 0 12px"><b>R7</b> Hollmann et al. (2025). Accurate predictions on small data with a tabular foundation model. <i>Nature</i>（TabPFN）— nature.com/articles/s41586-024-08328-6</p><p style="font:inherit;margin:0 0 12px"><b>R8</b> Prior Labs (2025). TabPFN-2.5 Model Report. arXiv:2511.08667。</p><p style="font:inherit;margin:0 0 12px"><b>R9</b> Quinlan, J. R. (1986). Induction of decision trees. <i>Machine Learning</i> 1(1), 81–106.</p><p style="font:inherit;margin:0 0 12px"><b>R10</b> Hopkins, Reeber, Forman &amp; Suermondt (1999). Spambase. UCI Machine Learning Repository（本讲交互页所用数据，随机抽样 800 封）。</p><p style="font:inherit;margin:0 0 12px"><b>R11</b> 《中华人民共和国个人信息保护法》第二十四条（自动化决策）。⚠ 引用以法条原文为准。</p><p style="font:inherit;margin:0 0 12px"><b>R12</b> scikit-learn 1.9 release（2026-06）与 1.9.1（2026-09）— blog.scikit-learn.org/updates/release-1-9/</p><p style="font:inherit;margin:0 0 12px"><b>P</b> 原 PPT：Materials/Lecture_5.2.pptx；树 vs 深度三点原因与 TabPFN 时间线自 L5.1 迁入</p></div></div>
     </section>
 
   </div>
@@ -1188,11 +1219,27 @@ slides.forEach((s, k) => { const p = s.querySelector('.pg'); if (p) p.textConten
 function show(i) {
   cur = Math.max(0, Math.min(slides.length - 1, i));
   slides.forEach((s, k) => { s.classList.toggle('active', k === cur); s.classList.toggle('visible', k === cur); });
+  const sn = slides[cur]._stepNav;
+  if (sn) sn.reset();
   counter.textContent = `${cur + 1} / ${slides.length}`;
   history.replaceState(null, '', '#' + (cur + 1));
   document.querySelectorAll('#outline a').forEach((a, k) => a.classList.toggle('cur', +a.dataset.i === cur));
   if (window.syncSidebar) syncSidebar();
 }
+function slideStepNext(slide) {
+  const n = slide && slide._stepNav;
+  if (!n || n.idx >= n.max - 1) return false;
+  n.go(n.idx + 1);
+  return true;
+}
+function slideStepPrev(slide) {
+  const n = slide && slide._stepNav;
+  if (!n || n.idx <= 0) return false;
+  n.go(n.idx - 1);
+  return true;
+}
+function deckNext() { if (!slideStepNext(slides[cur])) show(cur + 1); }
+function deckPrev() { if (!slideStepPrev(slides[cur])) show(cur - 1); }
 
 /* === 目录（Outline）=== */
 const ol = document.getElementById('outline');
@@ -1213,8 +1260,8 @@ const ol = document.getElementById('outline');
 })();
 function toggleOutline(f) { ol.classList.toggle('open', f === undefined ? !ol.classList.contains('open') : f); }
 document.getElementById('bOutline').onclick = () => toggleOutline();
-document.getElementById('bPrev').onclick = () => show(cur - 1);
-document.getElementById('bNext').onclick = () => show(cur + 1);
+document.getElementById('bPrev').onclick = () => deckPrev();
+document.getElementById('bNext').onclick = () => deckNext();
 ol.querySelector('.close').onclick = () => toggleOutline(false);
 
 /* === 侧边导航栏：折叠分组，当前页高亮，可跳到任意页 === */
@@ -1250,8 +1297,8 @@ addEventListener('keydown', e => {
   if (e.key === 's' || e.key === 'S') toggleSidebar();
   if (e.key === 'o' || e.key === 'O') toggleOutline();
   if (ol.classList.contains('open')) return;
-  if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); show(cur + 1); }
-  if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); show(cur - 1); }
+  if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); deckNext(); }
+  if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); deckPrev(); }
   if (e.key === 'Home') show(0);
   if (e.key === 'End') show(slides.length - 1);
 });

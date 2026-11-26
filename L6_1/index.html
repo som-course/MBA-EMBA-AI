@@ -540,34 +540,42 @@ img, video, canvas, svg { max-width: 100%; max-height: 100%; }
     <section class="slide c" data-sec="2 · 深度学习" data-title="一个神经元在做什么（交互）">
       <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.1 神经网络与训练</div><div class="pg"></div>
       <div class="body">
-        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">一个神经元 = <em>加权求和 + 激活</em></h2><div class="hint">拖动滑块 · 观察输出</div></div>
-        <div class="flex gap48 reveal d2" style="margin-top:30px">
-          <div class="card g" style="width:820px"><div class="n">参数</div>
-            <div class="col gap16">
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:54px">一个神经元 = <em>加权求和 + 激活</em></h2><div class="hint">拖动滑块 · 切换激活函数</div></div>
+        <div class="flex gap40 reveal d2" style="margin-top:22px">
+          <div class="card g" style="width:780px"><div class="n">参数</div>
+            <div class="col gap14">
               <div class="ctl">输入 x₁ <input type="range" id="nx1" min="-10" max="10" value="6"><b id="nx1v"></b></div>
               <div class="ctl">输入 x₂ <input type="range" id="nx2" min="-10" max="10" value="-4"><b id="nx2v"></b></div>
               <div class="ctl">权重 w₁ <input type="range" id="nw1" min="-20" max="20" value="12"><b id="nw1v"></b></div>
               <div class="ctl">权重 w₂ <input type="range" id="nw2" min="-20" max="20" value="-8"><b id="nw2v"></b></div>
               <div class="ctl">偏置 b <input type="range" id="nb" min="-20" max="20" value="2"><b id="nbv"></b></div>
-              <div class="tabs" style="margin-top:8px"><button class="tab b on" data-a="sig">sigmoid</button><button class="tab b" data-a="tanh">tanh</button><button class="tab b" data-a="relu">ReLU</button></div>
+              <div class="tabs" style="margin-top:6px"><button class="tab b on" data-a="sig">sigmoid</button><button class="tab b" data-a="tanh">tanh</button><button class="tab b" data-a="relu">ReLU</button></div>
+              <div class="card b" style="padding:14px 18px;margin-top:4px"><div class="n">激活函数定义</div><div class="eq" id="nform" style="font-size:28px;line-height:1.45;margin:0"></div></div>
             </div></div>
-          <div class="grow col gap24">
-            <svg id="nsvg" viewBox="0 0 760 330" style="width:100%;height:330px"></svg>
-            <div class="card b"><div class="n">计算</div><div class="eq" id="neq" style="font-size:34px"></div></div>
+          <div class="grow col gap20">
+            <svg id="nsvg" viewBox="0 0 760 300" style="width:100%;height:300px"></svg>
+            <div class="card b"><div class="n">代入计算</div><div class="eq" id="neq" style="font-size:30px;line-height:1.5"></div></div>
           </div>
         </div>
       </div>
       <div class="src"><b>参考</b> 原 PPT P17 概念；教学演示（参数为示意）</div>
       <script>(function(){const s=document.currentScript.parentNode,$=i=>s.querySelector('#'+i);let act='sig';
         const f={sig:z=>1/(1+Math.exp(-z)),tanh:Math.tanh,relu:z=>Math.max(0,z)};
+        const FORM={
+          sig:'σ(z) = <span style="white-space:nowrap">1 / (1 + e<sup>−z</sup>)</span><br><span style="font-size:22px;color:var(--ink-2)">输出 ∈ (0, 1)</span>',
+          tanh:'tanh(z) = <span style="white-space:nowrap">(e<sup>z</sup> − e<sup>−z</sup>) / (e<sup>z</sup> + e<sup>−z</sup>)</span><br><span style="font-size:22px;color:var(--ink-2)">输出 ∈ (−1, 1)</span>',
+          relu:'ReLU(z) = max(0, z) = <span style="white-space:nowrap">{ z (z&gt;0) ; 0 (z≤0)</span><br><span style="font-size:22px;color:var(--ink-2)">输出 ∈ [0, +∞)</span>'
+        };
+        const ANAME={sig:'σ',tanh:'tanh',relu:'ReLU'};
         function up(){const x1=$('nx1').value/10,x2=$('nx2').value/10,w1=$('nw1').value/10,w2=$('nw2').value/10,b=$('nb').value/10;
           $('nx1v').textContent=x1.toFixed(1);$('nx2v').textContent=x2.toFixed(1);$('nw1v').textContent=w1.toFixed(1);$('nw2v').textContent=w2.toFixed(1);$('nbv').textContent=b.toFixed(1);
           const z=w1*x1+w2*x2+b,a=f[act](z);const col=w=>w>=0?'#24509e':'#c27a1a',th=w=>1+Math.abs(w)*4;
-          $('nsvg').innerHTML=`<line x1="110" y1="80" x2="380" y2="165" stroke="${col(w1)}" stroke-width="${th(w1)}"/><line x1="110" y1="250" x2="380" y2="165" stroke="${col(w2)}" stroke-width="${th(w2)}"/><line x1="440" y1="165" x2="640" y2="165" stroke="#1d2433" stroke-width="3"/>
-          <circle cx="80" cy="80" r="34" fill="#f2eee6" stroke="#8a90a0" stroke-width="2"/><circle cx="80" cy="250" r="34" fill="#f2eee6" stroke="#8a90a0" stroke-width="2"/><circle cx="410" cy="165" r="58" fill="#eef2fa" stroke="#24509e" stroke-width="4"/>
-          <g font-family="IBM Plex Mono" font-size="22" fill="#1d2433" text-anchor="middle"><text x="80" y="88">${x1.toFixed(1)}</text><text x="80" y="258">${x2.toFixed(1)}</text><text x="410" y="156" fill="#4a5263" font-size="19">z=${z.toFixed(2)}</text><text x="410" y="186" fill="#24509e" font-size="24" font-weight="700">${a.toFixed(2)}</text>
-          <text x="240" y="108" fill="${col(w1)}" font-size="20">w₁=${w1.toFixed(1)}</text><text x="240" y="236" fill="${col(w2)}" font-size="20">w₂=${w2.toFixed(1)}</text><text x="680" y="158" font-size="22" fill="#24509e">输出</text><text x="680" y="188" font-size="22" fill="#24509e">${a.toFixed(2)}</text></g>`;
-          $('neq').innerHTML=`z = ${w1.toFixed(1)}×${x1.toFixed(1)} + ${w2.toFixed(1)}×${x2.toFixed(1)} + ${b.toFixed(1)} = <b class="blue">${z.toFixed(2)}</b><br>a = ${act==='sig'?'σ':act==='tanh'?'tanh':'max(0,·)'}(z) = <b class="blue">${a.toFixed(3)}</b>`;}
+          $('nform').innerHTML=FORM[act];
+          $('nsvg').innerHTML=`<line x1="110" y1="70" x2="380" y2="150" stroke="${col(w1)}" stroke-width="${th(w1)}"/><line x1="110" y1="230" x2="380" y2="150" stroke="${col(w2)}" stroke-width="${th(w2)}"/><line x1="440" y1="150" x2="640" y2="150" stroke="#1d2433" stroke-width="3"/>
+          <circle cx="80" cy="70" r="32" fill="#f2eee6" stroke="#8a90a0" stroke-width="2"/><circle cx="80" cy="230" r="32" fill="#f2eee6" stroke="#8a90a0" stroke-width="2"/><circle cx="410" cy="150" r="52" fill="#eef2fa" stroke="#24509e" stroke-width="4"/>
+          <g font-family="IBM Plex Mono" font-size="22" fill="#1d2433" text-anchor="middle"><text x="80" y="78">${x1.toFixed(1)}</text><text x="80" y="238">${x2.toFixed(1)}</text><text x="410" y="142" fill="#4a5263" font-size="18">z=${z.toFixed(2)}</text><text x="410" y="170" fill="#24509e" font-size="22" font-weight="700">${a.toFixed(2)}</text>
+          <text x="240" y="98" fill="${col(w1)}" font-size="18">w₁=${w1.toFixed(1)}</text><text x="240" y="216" fill="${col(w2)}" font-size="18">w₂=${w2.toFixed(1)}</text><text x="680" y="144" font-size="20" fill="#24509e">输出</text><text x="680" y="172" font-size="20" fill="#24509e">${a.toFixed(2)}</text></g>`;
+          $('neq').innerHTML=`z = w₁x₁ + w₂x₂ + b = ${w1.toFixed(1)}×${x1.toFixed(1)} + ${w2.toFixed(1)}×${x2.toFixed(1)} + ${b.toFixed(1)} = <b class="blue">${z.toFixed(2)}</b><br>a = ${ANAME[act]}(z) = <b class="blue">${a.toFixed(3)}</b>`;}
         s.querySelectorAll('input').forEach(i=>i.oninput=up);s.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{act=t.dataset.a;s.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));up();});up();})();</script>
     </section>
 
@@ -587,10 +595,10 @@ img, video, canvas, svg { max-width: 100%; max-height: 100%; }
       </div>
       <div class="src"><b>参考</b> 原 PPT P27（LeNet 使用 logistic 激活，如今多用 ReLU）；教学演示</div>
       <script>(function(){const s=document.currentScript.parentNode,$=i=>s.querySelector('#'+i);let act='sig';
-        const F={sig:[z=>1/(1+Math.exp(-z)),z=>{const a=1/(1+Math.exp(-z));return a*(1-a)},'σ(z) = 1/(1+e<sup>−z</sup>)','(0,1)，两端饱和：梯度趋近 0 → 深层难训练。LeNet 时代使用。'],
-          tanh:[Math.tanh,z=>1-Math.tanh(z)**2,'tanh(z)','(−1,1)，零中心；仍会饱和。'],
+        const F={sig:[z=>1/(1+Math.exp(-z)),z=>{const a=1/(1+Math.exp(-z));return a*(1-a)},'σ(z) = 1 / (1 + e<sup>−z</sup>)','(0,1)，两端饱和：梯度趋近 0 → 深层难训练。LeNet 时代使用。'],
+          tanh:[Math.tanh,z=>1-Math.tanh(z)**2,'tanh(z) = (e<sup>z</sup> − e<sup>−z</sup>) / (e<sup>z</sup> + e<sup>−z</sup>)','(−1,1)，零中心；仍会饱和。'],
           relu:[z=>Math.max(0,z),z=>z>0?1:0,'ReLU(z) = max(0, z)','计算简单，正区间梯度恒为 1；AlexNet（2012）起成为默认选择。'],
-          lrelu:[z=>z>0?z:.1*z,z=>z>0?1:.1,'Leaky ReLU = max(0.1z, z)','负区间保留小斜率，避免“死神经元”。']};
+          lrelu:[z=>z>0?z:.1*z,z=>z>0?1:.1,'Leaky ReLU(z) = max(0.1z, z)','负区间保留小斜率，避免“死神经元”。']};
         const X=z=>450+z*70,Y=v=>260-v*90;
         function up(){const z=$('avz').value/10,[f,d,eq,tx]=F[act];$('avv').textContent=z.toFixed(1);
           let p='',q='';for(let t=-6;t<=6.001;t+=.1){p+=(t<-5.9?'M':'L')+X(t)+' '+Y(f(t))+' ';q+=(t<-5.9?'M':'L')+X(t)+' '+Y(d(t))+' ';}
@@ -1302,13 +1310,41 @@ img, video, canvas, svg { max-width: 100%; max-height: 100%; }
 
     <section class="slide c" data-sec="5 · 中国数据产业的机会" data-title="理由 6：以应用为导向的政策">
       <div class="toprule"></div><div class="tag"><b>PART 5</b> · 5.1 六个理由（2018 视角）</div><div class="pg"></div>
-      <div class="body flex gap32">
-        <figure class="contain reveal d3" style="width:1000px;height:600px;align-self:center"><img src="assets/p51_1.png" alt="理由6"></figure>
-        <div class="col grow" style="justify-content:center"><div class="pill fill reveal d1" style="align-self:flex-start">理由 6</div><h2 class="reveal d2" style="font-size:44px;margin-top:14px">政策</h2>
-          <div class="card b reveal d3" style="margin-top:18px"><div class="n">2017 → 2025</div><p style="font-size:25px;margin:0">2017《新一代人工智能发展规划》→ 2025《关于深入实施“人工智能+”行动的意见》（国发〔2025〕11 号），设 2027 / 2030 / 2035 三个节点。</p></div>
-          <p class="small reveal d4" style="margin-top:16px">政策也在<b>收紧</b>：如人脸识别管理办法（见 Part 3）。</p></div>
+      <div class="body">
+        <div class="flex between center">
+          <div class="flex center gap24">
+            <div class="pill fill reveal d1">理由 6</div>
+            <h2 class="reveal d2" style="font-size:48px;margin:0">政策：从 2017 规划到<em>“人工智能+”</em></h2>
+          </div>
+          <div class="mono blue reveal d1" style="font-size:20px;letter-spacing:.08em">国发〔2025〕11 号</div>
+        </div>
+        <div class="flex gap32 reveal d3" style="margin-top:18px;align-items:stretch">
+          <figure class="contain" style="width:520px;height:560px;flex-shrink:0"><img src="assets/p51_1.png" alt="理由6：2017 规划与基础设施"><figcaption>原稿：2017《新一代人工智能发展规划》与基建案例</figcaption></figure>
+          <div class="grow col gap16" style="justify-content:center">
+            <p style="font-size:24px;margin:0 0 4px;color:var(--ink-2)">2025《关于深入实施“人工智能+”行动的意见》设三个节点：</p>
+            <div class="card b" style="padding:18px 22px">
+              <div class="flex center gap20">
+                <div class="bignum" style="font-size:56px;min-width:140px;line-height:1">2027</div>
+                <p style="font-size:23px;margin:0;line-height:1.45"><b>普及率超 70%</b>：与科技、产业、消费、民生、治理、全球合作六大领域广泛深度融合；智能经济核心产业规模快速增长；公共治理作用明显增强</p>
+              </div>
+            </div>
+            <div class="card t" style="padding:18px 22px">
+              <div class="flex center gap20">
+                <div class="bignum" style="font-size:56px;min-width:140px;line-height:1;color:var(--teal)">2030</div>
+                <p style="font-size:23px;margin:0;line-height:1.45"><b>普及率超 90%</b>：人工智能全面赋能高质量发展；智能经济成为重要增长极；推动技术普惠和成果共享</p>
+              </div>
+            </div>
+            <div class="card o" style="padding:18px 22px">
+              <div class="flex center gap20">
+                <div class="bignum" style="font-size:56px;min-width:140px;line-height:1;color:var(--ochre)">2035</div>
+                <p style="font-size:23px;margin:0;line-height:1.45"><b>全面步入</b>智能经济和智能社会发展新阶段，为基本实现社会主义现代化提供有力支撑</p>
+              </div>
+            </div>
+            <p class="small" style="margin:0">政策也在<b>收紧</b>：如人脸识别管理办法（见 Part 3）。普及率指新一代智能终端、智能体等应用。</p>
+          </div>
+        </div>
       </div>
-      <div class="src"><b>参考</b> 原 PPT P51（2017 国务院规划：2020 / 2030 目标）；R11 国务院国发〔2025〕11 号（引自 L2 R5）；R6</div>
+      <div class="src"><b>参考</b> 原 PPT P51（2017 规划）；R11 国务院国发〔2025〕11 号（gov.cn）；引自 L2 R5</div>
     </section>
 
     <section class="slide c" data-sec="5 · 中国数据产业的机会" data-title="六个理由：2018 → 2026 回访（交互）">

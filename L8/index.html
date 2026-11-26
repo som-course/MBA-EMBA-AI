@@ -352,7 +352,7 @@ window.CO = [
   { id: 'Lovable', L: 1, f: .552, v: 6, n: 1, cn: '用自然语言生成网页与应用', x: '上线 8 个月年化收入破 1 亿美元（据报道）' },
   // 基础模型层
   { id: 'OpenAI', L: 2, f: 182.6, v: 852, th: 'openai', cn: 'GPT 系列、ChatGPT、Codex', x: '2026-11 新一轮估值 1.25 万亿；IPO 推迟到 2027' },
-  { id: 'Anthropic', L: 2, f: 60, v: 380, th: 'anthropic', cn: 'Claude 系列；强调安全与企业场景', x: '2026-05 估值 9,650 亿；2026-11 IPO 路演' },
+  { id: 'Anthropic', L: 2, f: 60, v: 380, th: 'anthropic', cn: 'Claude 系列；强调安全与企业场景', x: '2026-11-19 Nasdaq ANT 上市；完全稀释约 $1.5T ⚠' },
   { id: 'Mistral AI', L: 2, f: 3.1, v: 14, th: 'mistral', cn: '欧洲的开放权重大模型', x: '2026-09 融资 30 亿欧元、估值 > 210 亿欧元' },
   { id: 'Cohere', L: 2, f: 1.6, v: 7, th: 'cohere', cn: '可私有化部署的企业大模型', x: '主打“North”企业平台与主权部署' },
   { id: 'SSI', L: 2, f: 3, v: 32, n: 1, cn: 'Safe Superintelligence：只做安全超级智能研究', x: '无产品、无收入；Ilya Sutskever 联合创立' },
@@ -394,6 +394,35 @@ window.coCard = (id, o = {}) => {
   const c = CO.find(x => x.id === id), l = LAYERS[c.L];
   return `<div class="co${o.nods?' sm':''}" style="--cc:${l.c};${o.st || ''}"><div class="nm">${c.id}${c.n ? '<em>NEW</em>' : ''}</div><div class="ds" ${o.nods ? 'style="display:none"' : o.dsz ? `style="font-size:${o.dsz}px"` : ''}>${c.cn}</div>
   <div class="mt"><span>融资 <b>${c.f ? fmtB(c.f) : '0'}</b></span><span>估值 <b>${c.v ? fmtB(c.v) : '—'}</b></span></div>${o.nox || !c.x ? '' : `<div class="xx" ${o.xsz ? `style="font-size:${o.xsz}px"` : ''}>${c.x}</div>`}</div>`;
+};
+</script>
+
+<script>
+/* 页内分步：时间线等；翻页键先走完步进再换页 */
+window.registerSlideSteps = function (slide, max, onGo) {
+  let idx = 0;
+  slide._stepNav = {
+    max,
+    get idx() { return idx; },
+    go(i) {
+      idx = Math.max(0, Math.min(max - 1, i));
+      onGo(idx);
+    },
+    reset() { this.go(0); }
+  };
+  slide._stepNav.go(0);
+};
+window.slideStepNext = function (slide) {
+  const n = slide._stepNav;
+  if (!n || n.idx >= n.max - 1) return false;
+  n.go(n.idx + 1);
+  return true;
+};
+window.slideStepPrev = function (slide) {
+  const n = slide._stepNav;
+  if (!n || n.idx <= 0) return false;
+  n.go(n.idx - 1);
+  return true;
 };
 </script>
 
@@ -532,28 +561,46 @@ window.coCard = (id, o = {}) => {
       <div class="src"><b>参考</b> 原 PPT P2；R2 Forbes 新闻稿、R4《How Forbes Compiled…》；⚠ “自 2019 年起”据第八届推算</div>
     </section>
 
-    <!-- === SLIDE 6 · 一年换血（交互） === -->
+    <!-- === SLIDE 6 · 一年换血（步进） === -->
     <section class="slide c" data-sec="1 · AI 50 榜单" data-title="一年换血：30 留、20 进、20 出（交互）" id="s-churn">
       <div class="toprule"></div><div class="tag"><b>PART 1</b> · 1.2 变化</div><div class="pg"></div>
       <div class="body">
-        <div class="flex between center"><h2 class="reveal d1" style="font-size:60px">一年之内，<em>40%</em> 的名单换了人</h2><div class="hint">点击切换</div></div>
+        <div class="flex between center reveal d1">
+          <h2 style="font-size:56px;margin:0">一年之内，<em>40%</em> 的名单换了人</h2>
+          <div class="hint">← → 逐步推进</div>
+        </div>
         <div class="tabs reveal d2" id="chT" style="margin-top:26px"></div>
         <div class="reveal d3" style="margin-top:34px;min-height:420px"><div id="chC" class="flex gap16" style="flex-wrap:wrap"></div></div>
         <div class="card o reveal d4" id="chN" style="margin-top:20px;padding:22px 30px"></div>
       </div>
       <script>(function(){
+        const s=document.currentScript.parentElement;
         const col=['#1f7a72','#c27a1a','#24509e','#5a6272'];
         const keep=CO.filter(c=>!c.n).map(c=>c.id), nw=CO.filter(c=>c.n).map(c=>c.id);
         const acq={'Scale AI':'CEO 加入 Meta','xAI':'并入 SpaceX','Windsurf':'Google 聘走联创并授权技术；Cognition 收购余下部分'};
-        const T=[['留任 30',keep,'b','30 家连续两年入选：模型层与基础设施的“老面孔”居多（OpenAI、Anthropic、Databricks、Cohere、Mistral……），也有 Cursor、Harvey、Midjourney 这样的应用。'],
-                 ['新晋 20',nw,'t','新面孔集中在两端：<b>编程 Agent</b>（Cognition、Replit、Lovable）与<b>垂直行业</b>（Legora、Rogo、EliseAI、Chai），以及 SSI、Reflection 等“新实验室”。'],
-                 ['退出 20',DROPPED,'o','只有 <b>3 家有一手说明</b>：Scale AI（CEO 去 Meta）、xAI（并入 SpaceX）、Windsurf（被拆分）。其余 17 家只是<b>未入选</b>，原因榜单没有披露，不应读成“失败”。']];
-        const B=document.getElementById('chT');B.innerHTML=T.map((t,i)=>`<button class="tab b" data-i="${i}" style="font-size:25px;padding:17px 28px">${t[0]}</button>`).join('');
-        function pick(i){B.querySelectorAll('.tab').forEach((b,k)=>b.classList.toggle('on',k===i));const t=T[i];
-          document.getElementById('chC').innerHTML=t[1].map(n=>{const c=CO.find(x=>x.id===n);const st=i===2?(acq[n]?'border-color:var(--ochre);color:var(--ochre);font-weight:700':'color:var(--ink-3);border-color:var(--rule)'):'border-color:'+col[c.L]+';color:'+col[c.L];return `<span class="chip" style="font-size:28px;padding:14px 22px;${st}" title="${acq[n]||''}">${n}</span>`}).join('');
-          const n=document.getElementById('chN');n.innerHTML='<p style="font-size:26px;color:var(--ink)">'+t[3]+'</p>'+(i===2?'<p style="font-size:22px;margin-top:8px;color:var(--ink-2)">'+Object.entries(acq).map(([k,v])=>'<b style="color:var(--ochre)">'+k+'</b>：'+v).join('　·　')+'</p>':'<p class="hint" style="margin-top:10px">颜色 = 所在层：<span style="color:#1f7a72">数据</span> · <span style="color:#c27a1a">开发算力</span> · <span style="color:#24509e">模型</span> · <span style="color:#5a6272">应用</span></p>');}
-        B.querySelectorAll('.tab').forEach(b=>b.onclick=()=>pick(+b.dataset.i));pick(0);})();</script>
-      <div class="src"><b>参考</b> 原 PPT P4–P53（2025 名单）对比 R1 Forbes 2026 名单（本课自行比对）；R3 三家被收购/人才收购的说明；⚠ Windsurf、xAI 的处理方式以 Forbes 报道为准</div>
+        const T=[
+          ['留任 30',keep,'b','30 家连续两年入选：模型层与基础设施的“老面孔”居多（OpenAI、Anthropic、Databricks、Cohere、Mistral……），也有 Cursor、Harvey、Midjourney 这样的应用。'],
+          ['新晋 20',nw,'t','新面孔集中在两端：<b>编程 Agent</b>（Cognition、Replit、Lovable）与<b>垂直行业</b>（Legora、Rogo、EliseAI、Chai），以及 SSI、Reflection 等“新实验室”。'],
+          ['退出 20',DROPPED,'o','只有 <b>3 家有一手说明</b>：Scale AI（CEO 去 Meta）、xAI（并入 SpaceX）、Windsurf（被拆分）。其余 17 家只是<b>未入选</b>，原因榜单没有披露，不应读成“失败”。']
+        ];
+        const B=document.getElementById('chT');
+        B.innerHTML=T.map((t,i)=>`<button class="tab b" data-i="${i}" style="font-size:25px;padding:17px 28px">${t[0]}</button>`).join('');
+        const tabsEl=[...B.querySelectorAll('.tab')];
+        function pick(i){
+          tabsEl.forEach((b,k)=>{b.classList.toggle('on',k===i);b.style.opacity=k<=i?'1':'.4';});
+          const t=T[i];
+          document.getElementById('chC').innerHTML=t[1].map(n=>{
+            const c=CO.find(x=>x.id===n);
+            const st=i===2?(acq[n]?'border-color:var(--ochre);color:var(--ochre);font-weight:700':'color:var(--ink-3);border-color:var(--rule)'):'border-color:'+col[c.L]+';color:'+col[c.L];
+            return `<span class="chip" style="font-size:28px;padding:14px 22px;${st}" title="${acq[n]||''}">${n}</span>`;
+          }).join('');
+          const n=document.getElementById('chN');
+          n.innerHTML='<div class="n" style="margin-bottom:6px">第 '+(i+1)+' / 3 · '+t[0]+'</div><p style="font-size:26px;color:var(--ink)">'+t[3]+'</p>'+(i===2?'<p style="font-size:22px;margin-top:8px;color:var(--ink-2)">'+Object.entries(acq).map(([k,v])=>'<b style="color:var(--ochre)">'+k+'</b>：'+v).join('　·　')+'</p>':'<p class="hint" style="margin-top:10px">颜色 = 所在层：<span style="color:#1f7a72">数据</span> · <span style="color:#c27a1a">开发算力</span> · <span style="color:#24509e">模型</span> · <span style="color:#5a6272">应用</span></p>');
+        }
+        tabsEl.forEach(b=>b.onclick=()=>s._stepNav.go(+b.dataset.i));
+        registerSlideSteps(s, T.length, pick);
+      })();</script>
+      <div class="src"><b>参考</b> 原 PPT P4–P53（2025 名单）对比 R1 Forbes 2026 名单（本课自行比对）；R3 三家被收购/人才收购的说明；⚠ Windsurf、xAI 的处理方式以 Forbes 报道为准。← → 先走完三组</div>
     </section>
 
     <!-- === SLIDE 7 · 五大趋势 === -->
@@ -802,50 +849,6 @@ window.coCard = (id, o = {}) => {
         document.getElementById('fmT').innerHTML='<tr><th>公司</th><th>做什么</th><th>类型（本课归类）</th><th style="text-align:right">融资</th><th style="text-align:right">估值 2026-04</th></tr>'+F.map(c=>`<tr><td style="font-size:26px">${c.id}${c.n?' <span class="pill fill" style="font-size:14px;padding:3px 7px">NEW</span>':''}</td><td style="font-size:25px">${c.cn}</td><td style="font-size:23px;color:var(--ink-3)">${kind[c.id]}</td><td style="text-align:right;font:500 25px/1.5 var(--f-mono);white-space:nowrap">${fmtB(c.f)}</td><td style="text-align:right;font:500 25px/1.5 var(--f-mono);white-space:nowrap">${c.v?fmtB(c.v):'—'}</td></tr>`).join('');
       })();</script>
       <div class="src"><b>参考</b> 原 PPT P56（基础模型与通用平台层：OpenAI、Anthropic、Cohere、Mistral、xAI……）；R1 Forbes；R6、R7 ⚠ 融资/估值二手；“类型”为课堂归类；xAI 已并入 SpaceX</div>
-    </section>
-
-    <!-- === SLIDE 19 · OpenAI vs Anthropic（交互） === -->
-    <section class="slide c" data-sec="2 · 四层产业栈" data-title="两家的七个月：发榜时 vs 今天（交互）" id="s-duo">
-      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 基础模型层</div><div class="pg"></div>
-      <div class="body">
-        <div class="flex between center"><h2 class="reveal d1" style="font-size:58px">OpenAI 与 Anthropic：<em>七个月</em></h2>
-          <div class="sw reveal d2" id="duS"><button class="on" data-m="0">发榜时 · 2026-04</button><button data-m="1">今天 · 2026-11</button></div></div>
-        <div class="flex gap32" style="margin-top:34px" id="duC"></div>
-        <p class="hint" id="duN" style="margin-top:22px;font-size:20px;line-height:1.6;letter-spacing:0"></p>
-      </div>
-      <script>(function(){
-        const D=[
-          [{n:'OpenAI',c:'b',rows:[['累计融资','$182.6B'],['估值','$852B（2026-03/04 一轮 $122B）'],['年化收入','> $25B（2026 年 2 月末，报道）'],['状态','私有；传将 IPO']]},
-           {n:'Anthropic',c:'t',rows:[['累计融资','$60B'],['估值','$380B'],['年化收入','> $30B（2026 年 4 月初，公司称）'],['状态','私有；Claude 登顶 App Store 下载榜']]}],
-          [{n:'OpenAI',c:'b',rows:[['新一轮','已入账 $11B，估值 <b>$1.25T</b>（原计划 $30B）'],['IPO','推迟，<b>预计 2027</b>'],['结构','企业收入占比 > 40%，预计年底与消费者持平'],['API','每分钟处理 > 150 亿 token（DevDay 2025：60 亿）']]},
-           {n:'Anthropic',c:'t',rows:[['2026-05','融资 $65B，投后 <b>$965B</b>'],['IPO','11-10 路演；$70–78 × 8.25 亿股；<b>11-18 定价、11-19 在 Nasdaq 以 ANT 上市（拟）</b>'],['估值','完全稀释约 $1.3–1.45T（口径不一 ⚠）'],['收入','年化 ≈ $65B（2026 年 7 月末，二手 ⚠）']]}]];
-        const note=['来源：Forbes AI 50 页面（融资、估值）；OpenAI/Anthropic 收入为发榜前后媒体与公司口径。','来源：Bloomberg/The Verge、Reuters、CNBC、Anthropic 公告、OpenAI 企业更新；⚠ Anthropic 估值区间在不同媒体口径不同（NBC/Reuters 另有“最高约 $1.02T”表述），IPO 尚未定价，课堂上请再核对。'];
-        function draw(m){
-          document.getElementById('duC').innerHTML=D[m].map(x=>`<div class="card ${x.c} grow" style="padding:32px 38px"><h3 style="font-size:48px">${x.n}</h3>${x.rows.map(r=>`<div class="kv" style="padding:16px 0"><b style="width:140px;font-size:21px">${r[0]}</b><span style="font-size:27px">${r[1]}</span></div>`).join('')}</div>`).join('');
-          document.getElementById('duN').innerHTML=note[m];
-        }
-        document.getElementById('duS').querySelectorAll('button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#duS button').forEach(x=>x.classList.toggle('on',x===b));draw(+b.dataset.m);});
-        draw(0);})();</script>
-      <div class="src"><b>参考</b> R1–R3 Forbes（2026-04）；R8 Anthropic/CNBC/Yahoo（2026-11）；R9 Bloomberg/Verge（OpenAI $1.25T）；R20 OpenAI 企业更新；R16 BlockWest ⚠</div>
-    </section>
-
-    <!-- === SLIDE 20 · 摆脱依赖 === -->
-    <section class="slide c" data-sec="2 · 四层产业栈" data-title="不想只依赖两家：开放权重、主权与微调">
-      <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.3 基础模型层</div><div class="pg"></div>
-      <div class="body">
-        <h2 class="reveal d1" style="font-size:58px">Breaking dependence on <em>Big AI</em></h2>
-        <p class="reveal d2" style="margin-top:12px;font-size:27px">Forbes 2026 的第一条趋势：客户与创业公司都在找<b>不被少数平台绑定</b>的路。三条路：</p>
-        <div class="flex gap24 st" style="margin-top:34px">
-          <div class="card b grow" style="padding:30px 32px"><div class="n">路 1</div><h3 style="font-size:38px">开放权重</h3><p style="font-size:25px;margin-top:10px">模型权重公开，可下载、可改。<br><b>Mistral</b>（欧洲）、<b>Reflection</b>（美国，$8B，尚未发布自有模型）。Forbes：中国的 DeepSeek 等在开放权重上领先，美国政府乐见本土替代。</p></div>
-          <div class="card t grow" style="padding:30px 32px"><div class="n">路 2</div><h3 style="font-size:38px">私有化与主权</h3><p style="font-size:25px;margin-top:10px">数据不出域、可在内网运行。<br><b>Cohere</b> 的 North 平台；<b>Mistral</b> 的客户含欧洲政府机构（法国、希腊、卢森堡 ⚠）。主权 AI 成为卖点。</p></div>
-          <div class="card o grow" style="padding:30px 32px"><div class="n">路 3</div><h3 style="font-size:38px">微调与自建</h3><p style="font-size:25px;margin-top:10px">把开放模型调成自己的。<br><b>Thinking Machines</b> 的 Tinker（LoRA 微调 API）；<b>Fireworks、Together</b> 托管数百种开放模型；Harvey 在 2026-09 发布首个后训练开放权重模型。</p></div>
-        </div>
-        <div class="flex gap24 center reveal d5" style="margin-top:36px;padding:24px 32px;background:var(--paper-2)">
-          <span class="pill" style="color:var(--ink-3)">管理含义</span>
-          <p style="font-size:26px;flex:1">选模型不只是选“最强的”：要同时看<b>成本、可控性、数据边界、供应商集中度</b>。</p>
-        </div>
-      </div>
-      <div class="src"><b>参考</b> R2、R3 Forbes（Reflection、Mistral）；R7 note.com（Cohere、Mistral 客户、Tinker）⚠ 二手；R14 Harvey 官方博客（2026-09-09）；“三条路”为课堂归纳</div>
     </section>
 
     <!-- === SLIDE 21 · 应用层七个域（交互） === -->
@@ -1113,7 +1116,7 @@ window.coCard = (id, o = {}) => {
           if(m===0)C.innerHTML=`<div class="flex gap48"><div class="stat grow"><div class="v" style="font-size:130px">$102<small>B</small></div><div class="l" style="font-size:28px">2026 Q3 流向 AI 公司的风险投资，占全球 <b>64%</b>（$159B）</div></div><div class="stat grow"><div class="v" style="font-size:130px">27</div><div class="l" style="font-size:28px">Q3 融资 ≥ 10 亿美元的公司数——<b>纪录</b></div></div><div class="stat grow"><div class="v" style="font-size:130px">$679<small>B</small></div><div class="l" style="font-size:28px">2026 年前三季度全球风险投资累计，历史同期最高</div></div></div>
             <div class="card o" style="margin-top:46px;padding:28px 36px"><p style="font-size:28px;color:var(--ink)"><b>集中度</b>：Databricks、SSI 本季各融资 50 亿美元。</p></div>`;
           else C.innerHTML=`<p style="font-size:27px">私募最后一轮估值 ÷ 年化收入（⚠ BlockWest 二手测算，仅示意量级）</p><div style="margin-top:16px">${V.map(v=>`<div class="hb" style="margin:18px 0"><div class="lb" style="width:330px;font-size:29px">${v[0]}</div><div class="tr" style="height:44px"><div class="fl ${v[1]>50?'n':v[1]>30?'o':''}" style="--w:${(v[1]/85*100).toFixed(1)}%;width:${(v[1]/85*100).toFixed(1)}%"></div></div><div class="vl" style="width:150px;font-size:30px">${v[1]}×</div></div>`).join('')}</div>
-            <div class="flex gap24" style="margin-top:34px"><div class="card g grow" style="padding:22px 30px"><p style="font-size:25px">SSI：估值 $32B，<b>无产品、无收入</b>——定价靠团队与叙事。</p></div><div class="card o grow" style="padding:22px 30px"><p style="font-size:25px"><b>冷却迹象</b>（⚠ 媒体报道）：OpenAI 新一轮计划融资 $30B，实际已入账约 $11B（估值 $1.25T）；Anthropic IPO 估值报道口径不一（约 $1.0–1.45T）。</p></div></div>`;}
+            <div class="flex gap24" style="margin-top:34px"><div class="card g grow" style="padding:22px 30px"><p style="font-size:25px">SSI：估值 $32B，<b>无产品、无收入</b>——定价靠团队与叙事。</p></div><div class="card o grow" style="padding:22px 30px"><p style="font-size:25px"><b>冷却迹象</b>（⚠ 媒体报道）：OpenAI 新一轮计划融资 $30B，实际已入账约 $11B（估值 $1.25T）；Anthropic 已上市（ANT）；完全稀释约 <b>$1.5T</b> ⚠。</p></div></div>`;}
         document.getElementById('cpS').querySelectorAll('button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#cpS button').forEach(x=>x.classList.toggle('on',x===b));draw(+b.dataset.m);});
         draw(0);})();</script>
       <div class="src"><b>参考</b> R17 Crunchbase News（2026-10-05，数据截至 10-02）；R16 BlockWest Research ⚠ 二手；R9 The Verge/Bloomberg；R8 Reuters/NBC；估值倍数 = 估值 ÷ 年化收入，不同时点口径不一</div>
@@ -1130,15 +1133,15 @@ window.coCard = (id, o = {}) => {
           <div><div class="d">2026-02</div><h4>xAI 并入 SpaceX</h4><p>合并实体 Forbes 估值 1.25 万亿美元（二手称并购价 2,500 亿 ⚠）</p></div>
           <div><div class="d">2026-06 → 08</div><h4>SpaceX 收购 Cursor</h4><p>600 亿美元；8 月完成（⚠ 二手）</p></div>
           <div><div class="d">2026-08</div><h4>Stripe 收购 OpenRouter</h4><p>据报道 > 70 亿美元（⚠ 知情人士）；它是 Brink List 公司</p></div>
-          <div><div class="d">2026-11</div><h4>Anthropic IPO</h4><p>路演中；拟 11-19 在 Nasdaq 上市</p></div>
+          <div><div class="d">2026-11-19</div><h4>Anthropic 上市</h4><p>Nasdaq <b>ANT</b>；定价 $83；完全稀释约 $1.5T ⚠</p></div>
         </div>
         <div class="flex gap24 reveal d5" style="margin-top:60px">
           <div class="card o grow" style="padding:26px 32px"><div class="n">被买走</div><p style="font-size:26px">买家是<b>平台与巨头</b>：人才 + 授权，或整家收购。</p></div>
-          <div class="card b grow" style="padding:26px 32px"><div class="n">上市</div><p style="font-size:26px">少数头部公司走向<b>公开市场</b>；OpenAI 预计 2027。</p></div>
+          <div class="card b grow" style="padding:26px 32px"><div class="n">上市</div><p style="font-size:26px"><b>Anthropic</b> 已公开交易；OpenAI 预计 2027。</p></div>
           <div class="card t grow" style="padding:26px 32px"><div class="n">继续独立</div><p style="font-size:26px">Midjourney、Gamma 等<b>少融资、早盈利</b>的路线仍然成立。</p></div>
         </div>
       </div>
-      <div class="src"><b>参考</b> R3 Forbes（Scale AI、xAI、Windsurf）；R10 Forbes（Cursor）；R16 BlockWest ⚠（xAI 并购价）；R18 Fortune ⚠；R8 Reuters/CNBC（Anthropic IPO）</div>
+      <div class="src"><b>参考</b> R3 Forbes（Scale AI、xAI、Windsurf）；R10 Forbes（Cursor）；R16 BlockWest ⚠（xAI 并购价）；R18 Fortune ⚠；R8 Anthropic 官方定价/交割 + Reuters（完全稀释市值 ⚠）</div>
     </section>
 
 
@@ -1355,8 +1358,9 @@ window.coCard = (id, o = {}) => {
       </div>
       <div class="subs reveal d4">
         <div><b>4.1</b>个人、组织、系统</div>
-        <div><b>4.2</b>认知飞轮</div>
-        <div><b>4.3</b>课程回顾与启示</div>
+        <div><b>4.2</b>认知飞轮与知识边界</div>
+        <div><b>4.3</b>五级阶梯：下一程</div>
+        <div><b>4.4</b>课程回顾与启示</div>
       </div>
     </section>
 
@@ -1627,9 +1631,142 @@ window.coCard = (id, o = {}) => {
       <div class="src"><b>说明</b> 二维示意：点为知识“向量”，S¹–S³ 为 Minkowski 和（大集合取随机子样），非线性为示意变换；最后一幕为三维示意（真实知识空间维度远高于 3）。观点为课堂论述，非实证结论 ⚠</div>
     </section>
 
+    <!-- === 五级阶梯：2027–2030 === -->
+    <section class="slide c" data-sec="4 · 认知与收束" data-title="五级阶梯：2027–2030 突破创新体与组织" id="s-levels">
+      <div class="toprule"></div><div class="tag"><b>PART 4</b> · 4.3 五级阶梯：下一程</div><div class="pg"></div>
+      <div class="body">
+        <div class="flex between center reveal d1">
+          <h2 style="font-size:48px;margin:0">回看五级阶梯：<em>下一程在哪里</em></h2>
+          <div class="flex gap16 center"><span class="pill blue">OpenAI · 2024-07</span><div class="hint">← → 逐级升起</div></div>
+        </div>
+        <div class="flex gap40 reveal d2" style="margin-top:8px;align-items:stretch">
+          <div class="col" style="width:820px;flex:none">
+            <svg class="lvSvg" viewBox="0 0 780 680" style="width:820px;height:600px;display:block" aria-label="AI 五级阶梯">
+              <style>
+                #s-levels .lvRise{transform-box:fill-box;transform-origin:center bottom;transform:scaleY(0.001);transition:transform .55s cubic-bezier(.2,.85,.25,1)}
+                #s-levels .lvLab{opacity:0;transition:opacity .28s ease}
+                #s-levels .lvBar.is-up .lvRise{transform:scaleY(1)}
+                #s-levels .lvBar.is-up .lvLab{opacity:1;transition-delay:.18s}
+                #s-levels .lvBar.is-on .lvR{stroke-width:5}
+                #s-levels .lvBar.is-focus .lvR{stroke-width:5}
+                #s-levels .lvPtr{transition:transform .4s cubic-bezier(.2,.85,.25,1)}
+              </style>
+              <g class="lvBar" data-k="0" style="cursor:pointer">
+                <g class="lvRise" style="transform-origin:92px 570px">
+                  <rect class="lvR" x="28" y="460" width="128" height="110" fill="#fff" stroke="#1d2433" stroke-width="2.5"/>
+                </g>
+                <g class="lvLab">
+                  <text x="92" y="508" text-anchor="middle" font-size="26" fill="#8a90a0" font-family="IBM Plex Mono,monospace" font-weight="500">L1</text>
+                  <text x="92" y="548" text-anchor="middle" font-size="32" fill="#1d2433" font-family="Noto Sans SC,sans-serif" font-weight="700">对话</text>
+                </g>
+              </g>
+              <g class="lvBar" data-k="1" style="cursor:pointer">
+                <g class="lvRise" style="transform-origin:236px 570px">
+                  <rect class="lvR" x="172" y="360" width="128" height="210" fill="#fff" stroke="#1d2433" stroke-width="2.5"/>
+                </g>
+                <g class="lvLab">
+                  <text x="236" y="408" text-anchor="middle" font-size="26" fill="#8a90a0" font-family="IBM Plex Mono,monospace" font-weight="500">L2</text>
+                  <text x="236" y="448" text-anchor="middle" font-size="32" fill="#1d2433" font-family="Noto Sans SC,sans-serif" font-weight="700">推理</text>
+                </g>
+              </g>
+              <g class="lvBar" data-k="2" style="cursor:pointer">
+                <g class="lvRise" style="transform-origin:380px 570px">
+                  <rect class="lvR" x="316" y="260" width="128" height="310" fill="#24509e" stroke="#24509e" stroke-width="2.5"/>
+                </g>
+                <g class="lvLab">
+                  <text x="380" y="308" text-anchor="middle" font-size="26" fill="#cfd9ef" font-family="IBM Plex Mono,monospace" font-weight="500">L3</text>
+                  <text x="380" y="348" text-anchor="middle" font-size="32" fill="#fff" font-family="Noto Sans SC,sans-serif" font-weight="700">智能体</text>
+                </g>
+              </g>
+              <g class="lvBar" data-k="3" style="cursor:pointer">
+                <g class="lvRise" style="transform-origin:524px 570px">
+                  <rect class="lvR" x="460" y="160" width="128" height="410" fill="#f2eee6" stroke="#c27a1a" stroke-width="3" stroke-dasharray="9 7"/>
+                </g>
+                <g class="lvLab">
+                  <text x="524" y="208" text-anchor="middle" font-size="26" fill="#c27a1a" font-family="IBM Plex Mono,monospace" font-weight="500">L4</text>
+                  <text x="524" y="248" text-anchor="middle" font-size="32" fill="#1d2433" font-family="Noto Sans SC,sans-serif" font-weight="700">创新体</text>
+                </g>
+              </g>
+              <g class="lvBar" data-k="4" style="cursor:pointer">
+                <g class="lvRise" style="transform-origin:668px 570px">
+                  <rect class="lvR" x="604" y="60" width="128" height="510" fill="#f2eee6" stroke="#c27a1a" stroke-width="3" stroke-dasharray="9 7"/>
+                </g>
+                <g class="lvLab">
+                  <text x="668" y="108" text-anchor="middle" font-size="26" fill="#c27a1a" font-family="IBM Plex Mono,monospace" font-weight="500">L5</text>
+                  <text x="668" y="148" text-anchor="middle" font-size="32" fill="#1d2433" font-family="Noto Sans SC,sans-serif" font-weight="700">组织</text>
+                </g>
+              </g>
+              <path d="M 28 590 H 444" stroke="#1f7a72" stroke-width="3"/>
+              <text x="236" y="630" text-anchor="middle" font-size="26" fill="#1f7a72" font-family="Noto Sans SC,sans-serif" font-weight="700">已经落地</text>
+              <path d="M 460 590 H 732" stroke="#c27a1a" stroke-width="3" stroke-dasharray="8 6"/>
+              <text x="596" y="630" text-anchor="middle" font-size="26" fill="#c27a1a" font-family="Noto Sans SC,sans-serif" font-weight="700">正在到来</text>
+              <text x="390" y="668" text-anchor="middle" font-size="22" fill="#8a90a0" font-family="Source Serif 4,serif" font-style="italic">OpenAI 五级进展框架（Bloomberg, 2024-07）</text>
+              <polygon class="lvPtr" points="0,0 -12,-20 12,-20" fill="#24509e" transform="translate(92,575)"/>
+            </svg>
+          </div>
+          <div class="col grow gap16 lvP" style="justify-content:center"></div>
+        </div>
+      </div>
+      <div class="src"><b>参考</b> L7.2 同款阶梯；Bloomberg, OpenAI Sets Levels… (2024-07-11)；2027–2030 判断为本课展望 ⚠。← → 逐级升起</div>
+      <script>(function(){
+        const s=document.currentScript.parentElement,q=c=>s.querySelector(c);
+        const bars=[...s.querySelectorAll('.lvBar')];
+        const ptr=q('.lvPtr');
+        const CX=[92,236,380,524,668];
+        const D=[
+          {n:'L1 · 对话 Chatbot',def:'能够进行基本对话',oa:'conversational language',ex:'ChatGPT 之后，对话成为默认入口；产业侧已是基础设施。',st:'✔ 已实现',tone:'t',c:'#1f7a72'},
+          {n:'L2 · 推理 Reasoning',def:'能够进行逻辑推理和解决问题',oa:'human-level problem solving',ex:'推理模型把“先想后答”产品化；复杂分析、数学、代码质量上台阶。',st:'✔ 已实现（在许多任务上）',tone:'t',c:'#1f7a72'},
+          {n:'L3 · 智能体 Agent',def:'能够自主行动和决策',oa:'systems that can take actions',ex:'Claude Code / Codex / Cowork：读写文件、调用工具、改写岗位流程。',st:'✔ 已落地，但“能做 ≠ 做得稳”',tone:'b',c:'#24509e'},
+          {n:'L4 · 创新体 Innovation',def:'能够创造新想法和解决方案',oa:'AI that can aid in invention',ex:'AlphaEvolve、AI for Science：开始提出新解；瓶颈在判断与验证。',st:'◐ 局部出现',tone:'o',c:'#c27a1a'},
+          {n:'L5 · 组织 Organization',def:'能够管理和协调复杂系统',oa:'AI that can do the work of an organization',ex:'智能体团队、Manager Agent、Agent-native 组织：从单兵到编制。',st:'○ 早期探索',tone:'o',c:'#c27a1a'}
+        ];
+        let ready=false;
+        function pick(k){
+          bars.forEach((g,i)=>{
+            const up=i<=Math.min(k,4), on=(k<5?i===k:i>=3);
+            const rise=g.querySelector('.lvRise');
+            rise.style.transitionDelay = (ready && up && (k<5?i===k:i>=3)) ? '0s' : (ready && up ? (i*0.07)+'s' : '0s');
+            if(!ready && up) rise.style.transitionDelay=(i*0.1)+'s';
+            g.classList.toggle('is-up', up);
+            g.classList.toggle('is-on', k<5 && on);
+            g.classList.toggle('is-focus', k===5 && i>=3);
+            g.style.opacity = up ? (on?'1':'.72') : '.28';
+          });
+          if(k<5){
+            const d=D[k];
+            ptr.setAttribute('transform','translate('+CX[k]+',575)');
+            ptr.setAttribute('fill', d.c);
+            q('.lvP').innerHTML=
+              '<div class="n">第 '+(k+1)+' / 5 级</div>'+
+              '<div class="card '+d.tone+'" style="margin-top:8px">'+
+                '<div class="n">'+d.n+'</div>'+
+                '<h3 style="font-size:38px;margin-top:6px">'+d.def+'</h3>'+
+                '<p class="mono" style="font-size:21px;margin-top:10px;color:var(--ink-3)">OpenAI：'+d.oa+'</p>'+
+              '</div>'+
+              '<div class="box" style="margin-top:4px"><div class="lbl">产业侧的样子</div><p style="font-size:27px;margin-top:8px">'+d.ex+'</p></div>'+
+              '<div class="box" style="border-left:6px solid '+d.c+'"><div class="lbl">课程判断 · 状态</div><p style="font-size:27px;margin-top:8px"><b>'+d.st+'</b></p></div>';
+          }else{
+            ptr.setAttribute('transform','translate(596,575)');
+            ptr.setAttribute('fill','#c27a1a');
+            q('.lvP').innerHTML=
+              '<div class="n">展望 · 2027–2030</div>'+
+              '<div class="card o" style="margin-top:8px">'+
+                '<div class="n">下一程的主战场</div>'+
+                '<h3 style="font-size:42px;margin-top:8px;line-height:1.35">核心是突破<br><em>创新体</em> 与 <em>组织</em></h3>'+
+              '</div>'+
+              '<div class="box" style="margin-top:4px"><div class="lbl">L1–L3</div><p style="font-size:27px;margin-top:8px">对话、推理、智能体——<b>已经落地</b>，正在改写岗位与流程。</p></div>'+
+              '<div class="box" style="border-left:6px solid #c27a1a"><div class="lbl">L4–L5 · 本课判断 ⚠</div><p style="font-size:27px;margin-top:8px"><b>2027–2030</b>：产业与管理的增量，在于让 AI <b>提出新解</b>、并 <b>像组织一样协同</b>。</p></div>';
+          }
+        }
+        bars.forEach(g=>g.onclick=()=>s._stepNav.go(+g.dataset.k));
+        registerSlideSteps(s, 6, pick);
+        requestAnimationFrame(()=>{requestAnimationFrame(()=>{ready=true;});});
+      })();</script>
+    </section>
+
     <!-- === 课程回顾 === -->
     <section class="slide c" data-sec="4 · 认知与收束" data-title="课程回顾：Data → AI → Business Value">
-      <div class="toprule"></div><div class="tag"><b>REVIEW</b> · 课程回顾</div><div class="pg"></div>
+      <div class="toprule"></div><div class="tag"><b>REVIEW</b> · 4.4 课程回顾</div><div class="pg"></div>
       <div class="body">
         <h2 class="reveal d1" style="font-size:58px">八讲走完：<em>Data → AI → Business Value</em></h2>
         <div class="flex gap12 st" style="margin-top:46px;gap:12px" id="rv"></div>
@@ -1686,7 +1823,7 @@ window.coCard = (id, o = {}) => {
             <div><b class="mono blue">R5</b> S. Chierchio, R. Shrivastava, <i>The AI 50 Brink List</i>, Forbes, 2026-04-16</div>
             <div><b class="mono blue">R6</b> foundevo, <i>Forbes AI 50 List 2026</i>, 2026-04-29 ⚠ 二手</div>
             <div><b class="mono blue">R7</b> S. Sawada, <i>I researched all 50 companies on the Forbes AI 50</i>, note.com, 2026-08-01 ⚠ 二手</div>
-            <div><b class="mono blue">R8</b> Anthropic roadshow launch；CNBC、NBC/Reuters，2026-11-10；Yahoo Finance，2026-11-13</div>
+            <div><b class="mono blue">R8</b> Anthropic 官方定价/交割（2026-11-18/20）；Nasdaq ANT（11-19）；Reuters 完全稀释市值 ≈ $1.5T ⚠；路演报道 CNBC/Yahoo 2026-11-10</div>
             <div><b class="mono blue">R9</b> The Verge / Bloomberg, <i>OpenAI valued at $1.25 trillion</i>, 2026-11；Reuters, 2026-10-19</div>
             <div><b class="mono blue">R10</b> Forbes, <i>SpaceX Will Buy AI Coding Firm Cursor For $60 Billion</i>, 2026-06-16</div>
             <div><b class="mono blue">R11</b> TechCrunch（Cursor），2026-03-02、2026-04-17</div>
@@ -1814,8 +1951,10 @@ const ol = document.getElementById('outline');
 })();
 function toggleOutline(f) { ol.classList.toggle('open', f === undefined ? !ol.classList.contains('open') : f); }
 document.getElementById('bOutline').onclick = () => toggleOutline();
-document.getElementById('bPrev').onclick = () => show(cur - 1);
-document.getElementById('bNext').onclick = () => show(cur + 1);
+function deckNext() { if (!(window.slideStepNext && slideStepNext(slides[cur]))) show(cur + 1); }
+function deckPrev() { if (!(window.slideStepPrev && slideStepPrev(slides[cur]))) show(cur - 1); }
+document.getElementById('bPrev').onclick = () => deckPrev();
+document.getElementById('bNext').onclick = () => deckNext();
 ol.querySelector('.close').onclick = () => toggleOutline(false);
 
 /* === 侧边导航栏：折叠分组，当前页高亮，可跳到任意页 === */
@@ -1851,8 +1990,8 @@ addEventListener('keydown', e => {
   if (e.key === 's' || e.key === 'S') toggleSidebar();
   if (e.key === 'o' || e.key === 'O') toggleOutline();
   if (ol.classList.contains('open')) return;
-  if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); show(cur + 1); }
-  if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); show(cur - 1); }
+  if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); deckNext(); }
+  if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); deckPrev(); }
   if (e.key === 'Home') show(0);
   if (e.key === 'End') show(slides.length - 1);
 });

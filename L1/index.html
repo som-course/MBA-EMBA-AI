@@ -1257,20 +1257,24 @@ img, video, canvas, svg { max-width: 100%; max-height: 100%; }
     <section class="slide c" data-sec="2.5 过去一年更加有用" data-title="2026 模型发布时间线（交互）">
       <div class="toprule"></div><div class="tag"><b>PART 2</b> · 2.5 过去一年更加有用 · 模型</div><div class="pg"></div>
       <div class="body">
-        <div class="flex between center"><h2 class="reveal d1" style="font-size:60px">2026：<em>每个月都有新前沿</em></h2>
+        <div class="flex between center"><h2 class="reveal d1" style="font-size:56px">2026：<em>每个月都有新前沿</em></h2>
           <div class="tabs reveal d2" id="tlTabs"><button class="tab b on" data-k="all">全部</button><button class="tab" data-k="A">Anthropic</button><button class="tab" data-k="O">OpenAI</button><button class="tab" data-k="G">Google</button><button class="tab" data-k="C">中国</button></div></div>
-        <div class="reveal d3" id="tlList" style="margin-top:26px;display:grid;grid-template-columns:1fr 1fr;column-gap:56px;grid-auto-flow:column;grid-template-rows:repeat(10,auto)"></div>
+        <div class="reveal d3" id="tlList" style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;column-gap:48px;grid-auto-flow:column;grid-template-rows:repeat(12,auto)"></div>
       </div>
-      <div class="src"><b>参考</b> 厂商官网与发布说明 [R1][R2][R6][R7][R13][R14][R16][R28][R30]、OpenAI [R63–R65]、中国公司 [R80–R104]；⚠ Gemini 4 为二手聚合站信息 [R29]，请标注“据公开报道”</div>
+      <div class="src"><b>参考</b> 厂商官网 [R1][R2][R6][R13][R14]；OpenAI GPT-6.2 [R139]；Google Gemini 4 Carbon / Hydrogen [R140][R141]；Qwen4-Max [R142]；GLM-5.4 [R143]；Anthropic Fable/Mythos 5.2 [R1]；中国公司 [R80–R104]。列表截至 2026-11-28；删减了 Sora 关停与 Gemini 3.5 Flash 以腾出版面</div>
       <script>(function(){
-        const E=[['02-05','A','Claude Opus 4.6'],['02-05','O','GPT-5.3-Codex'],['02-19','G','Gemini 3.1 Pro'],['03-24','O','宣布关停 Sora'],
-          ['04-07','A','Mythos Preview · 不公开'],['04-23','O','GPT-5.5'],['04-24','C','DeepSeek-V4 Preview'],['05-19','G','Gemini 3.5 Flash'],
-          ['06-09','A','Fable 5 / Mythos 5'],['07-09','O','GPT-5.6 + ChatGPT Work'],['07-16','C','Kimi K3'],['09-03','O','GPT-6 Astra'],
-          ['09-22','A','Opus 5.5'],['10-13','G','Gemini 4 Argon ⚠'],['11-09','A','Fable / Mythos 5.2'],['08-03','C','Qwen3.8-Max（随后开放权重）'],['03-05','O','GPT-5.4 · 1M 上下文'],['06-01','C','MiniMax M3'],['08-14','C','智谱 GLM-5.3'],['09-22','O','GPT-6 Sol / Luna']]
-          .sort((a,b)=>a[0]<b[0]?-1:1);
+        const E=[
+          ['02-05','A','Claude Opus 4.6'],['02-05','O','GPT-5.3-Codex'],['02-19','G','Gemini 3.1 Pro'],['03-05','O','GPT-5.4 · 1M 上下文'],
+          ['04-07','A','Mythos Preview · 不公开'],['04-23','O','GPT-5.5'],['04-24','C','DeepSeek-V4 Preview'],
+          ['06-01','C','MiniMax M3'],['06-09','A','Fable 5 / Mythos 5'],['07-09','O','GPT-5.6 + ChatGPT Work'],['07-16','C','Kimi K3'],
+          ['08-03','C','Qwen3.8-Max（随后开放权重）'],['08-14','C','智谱 GLM-5.3'],['09-03','O','GPT-6 Astra'],
+          ['09-22','A','Opus 5.5'],['09-22','O','GPT-6 Sol / Luna'],['10-13','G','Gemini 4 Argon'],
+          ['11-09','A','Fable / Mythos 5.2'],['11-10','G','Gemini 4 Carbon'],['11-12','G','Gemini 4 Hydrogen'],
+          ['11-16','C','Qwen4-Max'],['11-17','O','GPT-6.2 Astra / Sol'],['11-23','C','智谱 GLM-5.4']
+        ].sort((a,b)=>a[0]<b[0]?-1:1);
         const col={A:'var(--ochre)',O:'var(--teal)',G:'var(--blue)',C:'#b03a2e'},nm={A:'Anthropic',O:'OpenAI',G:'Google',C:'中国'};
         const L=document.getElementById('tlList');
-        L.innerHTML=E.map(e=>`<div data-c="${e[1]}" style="display:flex;align-items:center;gap:20px;padding:13px 0;border-bottom:1px solid var(--rule);transition:opacity .35s"><span class="mono" style="font-size:22px;color:var(--ink-3);width:84px">${e[0]}</span><span class="mono" style="font-size:17px;letter-spacing:.06em;width:128px;color:${col[e[1]]};border:1.5px solid ${col[e[1]]};border-radius:99px;padding:6px 0;text-align:center">${nm[e[1]]}</span><span style="font:500 28px var(--f-sans);color:var(--ink)">${e[2]}</span></div>`).join('');
+        L.innerHTML=E.map(e=>`<div data-c="${e[1]}" style="display:flex;align-items:center;gap:16px;padding:9px 0;border-bottom:1px solid var(--rule);transition:opacity .35s"><span class="mono" style="font-size:20px;color:var(--ink-3);width:78px">${e[0]}</span><span class="mono" style="font-size:15px;letter-spacing:.06em;width:118px;color:${col[e[1]]};border:1.5px solid ${col[e[1]]};border-radius:99px;padding:5px 0;text-align:center">${nm[e[1]]}</span><span style="font:500 25px var(--f-sans);color:var(--ink)">${e[2]}</span></div>`).join('');
         document.querySelectorAll('#tlTabs .tab').forEach(b=>b.onclick=()=>{const k=b.dataset.k;document.querySelectorAll('#tlTabs .tab').forEach(x=>x.classList.toggle('on',x===b));L.querySelectorAll('[data-c]').forEach(d=>d.style.opacity=(k==='all'||d.dataset.c===k)?1:.14);});})();</script>
     </section>
 
@@ -1817,12 +1821,13 @@ img, video, canvas, svg { max-width: 100%; max-height: 100%; }
             <div class="r"><span class="d">2026.10.14</span><span class="t">GPT-5.5 从 ChatGPT 下线（API 不受影响）</span></div>
             <div class="r"><span class="d">2026.10.26</span><span class="t"><b>GPT-6.1 Terra</b>：$1 / $5，视觉推理与电脑使用</span></div>
             <div class="r"><span class="d">2026.10.30</span><span class="t">GPT-6 Rosalind：生命科学研究，仅限审批客户</span></div>
+            <div class="r hot"><span class="d">2026.11.17</span><span class="t"><b>GPT-6.2 Astra / Sol</b>：Work · Codex · API；Sol 额度更高</span></div>
             </div>
-            <div class="card b reveal d5" style="margin-top:20px;padding:18px 26px"><p style="font-size:25px;line-height:1.5;margin:0;color:var(--ink)">近似水平，<b>约 4 周内降到 1/5 价格</b>；GPT-4（2023）$30 / $60 → GPT-6.1 Sol $2 / $10。</p></div>
+            <div class="card b reveal d5" style="margin-top:16px;padding:16px 24px"><p style="font-size:24px;line-height:1.5;margin:0;color:var(--ink)">近似水平，<b>约 4 周内降到 1/5 价格</b>；11 月再推 <b>6.2</b> 双档。</p></div>
           </div>
         </div>
       </div>
-      <div class="src"><b>参考</b> GPT-6 系列发布页 [R65]；API changelog [R14]；Release notes [R13]。⚠ 基准为 OpenAI 自报；GPT-4 为 2023 年公开报价 [R75]</div>
+      <div class="src"><b>参考</b> GPT-6 系列 [R65]；GPT-6.2 Astra/Sol [R139]；API changelog [R14]。⚠ 基准为 OpenAI 自报；GPT-4 为 2023 年公开报价 [R75]</div>
     </section>
 
     <!-- === 第 57 页 · Perplexity and Intelligence（2026.11.22）=== -->
@@ -3866,7 +3871,10 @@ img, video, canvas, svg { max-width: 100%; max-height: 100%; }
           <p style="font:inherit;margin:0 0 7px"><b>R79</b> 首款硬件：WIRED（OpenAI drops “io” branding）；The Verge 2026-02-10；MacRumors 2026-07-28（二手）</p>
           <p style="font:inherit;margin:0 0 7px"><b>R137</b> Perplexity and Intelligence — openai.com/index/perplexity-and-intelligence/ （Jakub Pachocki，2026-11-22；首次公开预训练 log-perplexity 锚点）</p>
           <p style="font:inherit;margin:0 0 7px"><b>R138</b> 下游 scaling 不可靠性 — EMNLP 2025 Findings（scaling laws for downstream tasks）— aclanthology.org/2025.findings-emnlp.877/</p>
-          <p style="font:inherit;margin:10px 0 0;color:var(--ink-3)">页面截图 / 配图均来自上述 OpenAI 官方页面，仅作课堂教学引用。</p>
+          <p style="font:inherit;margin:0 0 7px"><b>R139</b> GPT-6.2 Astra / Sol — learn.chatgpt.com/docs/whats-new/gpt-62-astra-sol （2026-11-17；Work · Codex · API）</p>
+          <p style="font:inherit;margin:0 0 7px"><b>R140</b> Gemini 4 Carbon available — blog.google/…/gemini-4-carbon-now-available/ （2026-11-10）；Introducing Carbon 2026-10-28</p>
+          <p style="font:inherit;margin:0 0 7px"><b>R141</b> Gemini 4 Hydrogen — blog.google/…/introducing-gemini-4-hydrogen/ （2026-11-12；agentic / 全用户面）</p>
+          <p style="font:inherit;margin:10px 0 0;color:var(--ink-3)">页面截图 / 配图均来自上述 OpenAI 官方页面，仅作课堂教学引用。R140–R141 为 Google 官方博文。</p>
         </div></div>
     </section>
 
@@ -3919,6 +3927,8 @@ img, video, canvas, svg { max-width: 100%; max-height: 100%; }
           <p style="font:inherit;margin:0 0 7px"><b>R102</b> 千问产品 — qwenlm.github.io/qwen-code-docs ；github.com/QwenLM/qwen-code ；woshipm.com/ai/6444687.html（2026-08-11，⚠）；alibabacloud.com/help/zh/qwenwork ；help.aliyun.com/zh/model-studio/qwen4-max-preview 与 /models ；tmtpost.com/nictation/8200816.html ；digit.cn / digintoai.com（Qwen4 预览，⚠）</p>
           <p style="font:inherit;margin:0 0 7px"><b>R103</b> Kimi 产品 — kimi.com/help/agent/agent-overview 与 agent-swarm ；kimi.com/help/kimi-code/membership-guide ；kimi.com/help/membership/membership-overview（2026-10-19）；platform.kimi.ai/docs/platform-changelog ；llmlineage.com/en/families/kimi ；opper.ai/model-releases/moonshot ；theaiengineering.com/releases/moonshot-ai（后三者 ⚠ 二手时间线）</p>
           <p style="font:inherit;margin:0 0 7px"><b>R104</b> GitHub 星数 — api.github.com/repos（2026-11-15 查询）：QwenLM/qwen-code 30,515；MoonshotAI/kimi-cli 11,405；zai-org/Open-AutoGLM 26,599</p>
+          <p style="font:inherit;margin:0 0 7px"><b>R142</b> Qwen4-Max — Alibaba Group 新闻稿 2026-11-16（alibabagroup.com）；QwenCloud Token Plan / API</p>
+          <p style="font:inherit;margin:0 0 7px"><b>R143</b> GLM-5.4 — z.ai/blog/glm-5.4 （2026-11-23）；docs.bigmodel.cn/cn/update/new-releases ；docs.bigmodel.cn/cn/guide/models/glm-5.4（API 待安全评估后开放 ⚠）</p>
           <p style="font:inherit;margin:14px 0 0;color:var(--ink-3)">汇率：US$1 ≈ HK$7.8 ≈ ¥7.2（课堂估算）。所有市值 / 股价截至 2026-11-13 收盘；⚠ 表示二手报道或口径不一，使用时请回查原文。</p>
         </div></div>
     </section>
